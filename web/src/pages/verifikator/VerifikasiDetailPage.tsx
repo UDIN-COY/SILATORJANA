@@ -270,7 +270,7 @@ export function VerifikasiDetailPage() {
                     <Button disabled={isUpdating} onClick={() => updateStatus('diverifikasi')} className="w-full bg-green-600 hover:bg-green-700 h-10">
                        {isUpdating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />} Verifikasi & Lanjut
                     </Button>
-                    <Button disabled={isUpdating} onClick={() => updateStatus('revisi')} className="w-full bg-amber-500 hover:bg-amber-600 text-white h-10">
+                    <Button disabled={isUpdating} onClick={() => navigate(`/dashboard/verifikator/revisi/${id}`)} className="w-full bg-amber-500 hover:bg-amber-600 text-white h-10">
                        {isUpdating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <AlertCircle className="size-4 mr-2" />} Kembalikan untuk Revisi
                     </Button>
                     <Button disabled={isUpdating} onClick={() => updateStatus('ditolak')} variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 h-10">

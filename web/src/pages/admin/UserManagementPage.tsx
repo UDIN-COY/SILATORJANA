@@ -86,6 +86,7 @@ export function UserManagementPage() {
                   <TableCell className="px-6 text-slate-600">{u.email}</TableCell>
                   <TableCell className="px-6"><Badge className={`${roleColors[u.role] || 'bg-slate-100 text-slate-700'} capitalize`}>{u.role}</Badge></TableCell>
                   <TableCell className="px-6 text-right space-x-2">
+                    <Button variant="outline" size="icon" className="h-8 w-8 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => navigate(`/dashboard/admin/users/${u.$id}`)}><Eye className="size-4" /></Button>
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(`/dashboard/admin/users/edit/${u.$id}`)}><Edit className="size-4" /></Button>
                     <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleDelete(u.$id)}><Trash2 className="size-4" /></Button>
                   </TableCell>

@@ -10,6 +10,8 @@ import { useState, useEffect } from 'react';
 import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
 import { ID } from 'appwrite';
 
+import { hashPassword } from '@/lib/helpers';
+
 export function UserFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -33,14 +35,16 @@ export function UserFormPage() {
     setIsSaving(true);
     try {
       const data: any = { nama: form.nama, email: form.email, role: form.role };
-      if (form.password) data.password = form.password;
+      if (form.password) {
+        data.password = await hashPassword(form.password);
+      }
       if (form.role === 'pengusul' && form.jurusan_id) data.jurusan_id = form.jurusan_id;
       if (form.role === 'verifikator' && form.verifikator_unit) data.verifikator_unit = form.verifikator_unit;
 
       if (isEdit) {
         await databases.updateDocument(APPWRITE_DB_ID, 'users', id!, data);
       } else {
-        data.password = form.password || 'password123';
+        if (!data.password) data.password = await hashPassword('password123');
         await databases.createDocument(APPWRITE_DB_ID, 'users', ID.unique(), data);
       }
       navigate('/dashboard/admin/users');

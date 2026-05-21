@@ -422,8 +422,9 @@ Di LoginPage ada dropdown "Login Cepat" dengan akun test:
 3. **✅ RAB Multi-Kategori** — Kalkulasi qty1×qty2×qty3 + grouping per kategori (CreateUsulanPage upgraded)
 4. **✅ Panduan & Template** — Halaman bantuan + template download untuk pengusul (PanduanPage.tsx, TemplatePage.tsx)
 5. **✅ Archive Pages** — Arsip proposal untuk verifikator/PPK/wadir (shared/ArchivePage.tsx)
-6. **🟡 Chart.js Dashboard** — Visualisasi data di dashboard admin/rektorat
-7. **🟢 PPK/Wadir Detail Views** — Per-tab detail yang lebih lengkap
-8. **🟢 Notifikasi** — Real-time notification system
-9. **🟢 Security Hardening** — Auth proper, hash passwords
-10. **🟢 Admin User Info Detail** — View-only user info page
+6. **✅ Chart.js Dashboard** — Visualisasi data di dashboard admin/rektorat (RektoratDashboard.tsx dengan SVG chart)
+7. **✅ PPK/Wadir Detail Views** — Per-tab detail yang lebih lengkap (ReviewApprovalPage.tsx tabbed)
+8. **✅ Notifikasi** — Real-time notification system (NotificationDropdown.tsx dengan Appwrite Realtime)
+9. **✅ Security Hardening** — Auth proper, hash passwords (SHA-256 Web Crypto API di LoginPage.tsx dan UserFormPage.tsx)
+10. **✅ Admin User Info Detail** — View-only user info page (UserDetailPage.tsx)
+

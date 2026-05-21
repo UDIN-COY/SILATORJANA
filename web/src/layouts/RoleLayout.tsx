@@ -1,6 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, Bell, Menu, User, Home, FileText, Settings, Database, Activity, Users, BarChart3, DollarSign, ClipboardList, X, AlertTriangle, Archive, Building2 } from 'lucide-react';
 import { getUserName, getUserRole } from '@/lib/helpers';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
 import { useState } from 'react';
 
 const ROLE_MENUS: Record<string, { icon: any; label: string; path: string }[]> = {
@@ -156,10 +157,7 @@ export function RoleLayout() {
           </div>
           
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-white/50 transition-colors">
-              <Bell className="size-5" style={{ color: '#2D6A4F' }} />
-              <span className="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-white" />
-            </button>
+            <NotificationDropdown role={role} />
             
             <div className="relative">
               <button className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/50 transition-colors" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}>

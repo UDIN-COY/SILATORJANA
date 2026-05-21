@@ -49,7 +49,7 @@ export function RevisiFormPage() {
     setIsSaving(true);
     try {
       const catatan = Object.entries(comments)
-        .filter(([, v]) => v.trim())
+        .filter(([, v]) => (v as string).trim())
         .map(([k, v]) => `[${k}]: ${v}`)
         .join('\n');
       
@@ -69,7 +69,7 @@ export function RevisiFormPage() {
   if (!kegiatan) return <div className="py-12 text-center text-slate-500">Data tidak ditemukan.</div>;
 
   const rabTotal = rabList.reduce((sum: number, r: any) => sum + (parseFloat(r.total) || 0), 0);
-  const hasComments = Object.values(comments).some(v => v.trim());
+  const hasComments = Object.values(comments).some(v => (v as string).trim());
 
   const CommentBox = ({ field }: { field: string }) => (
     <div className="mt-3 flex items-start gap-2">
@@ -198,7 +198,7 @@ export function RevisiFormPage() {
       {/* Submit Bar */}
       <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 -mx-4 sm:-mx-6 lg:-mx-8 flex justify-between items-center shadow-lg rounded-t-xl">
         <span className="text-sm text-slate-500">
-          {hasComments ? `${Object.values(comments).filter(v => v.trim()).length} catatan revisi` : 'Belum ada catatan revisi'}
+          {hasComments ? `${Object.values(comments).filter(v => (v as string).trim()).length} catatan revisi` : 'Belum ada catatan revisi'}
         </span>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => navigate(-1)}>Batal</Button>

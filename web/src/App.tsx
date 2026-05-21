@@ -5,6 +5,7 @@ import { LandingPage } from './pages/LandingPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { UserManagementPage } from './pages/admin/UserManagementPage';
 import { UserFormPage } from './pages/admin/UserFormPage';
+import { UserDetailPage } from './pages/admin/UserDetailPage';
 import { IkuConfigPage } from './pages/admin/IkuConfigPage';
 import { AdminMonitoringPage } from './pages/admin/AdminMonitoringPage';
 import { RoleLayout } from './layouts/RoleLayout';
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="users" element={<UserManagementPage />} />
             <Route path="users/tambah" element={<UserFormPage />} />
             <Route path="users/edit/:id" element={<UserFormPage />} />
+            <Route path="users/:id" element={<UserDetailPage />} />
             <Route path="master" element={<IkuConfigPage />} />
             <Route path="monitoring" element={<AdminMonitoringPage />} />
             <Route path="profile" element={<ProfilePage />} />
