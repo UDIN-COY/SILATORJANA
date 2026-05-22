@@ -124,7 +124,7 @@ export function RoleLayout() {
   );
 
   return (
-    <div className="flex min-h-screen w-full" style={{ background: 'linear-gradient(135deg, #c8e6c9 0%, #e8f5e9 15%, #a5d6a7 30%, #e8f5e9 50%, #81c784 70%, #a5d6a7 100%)', backgroundAttachment: 'fixed' }}>
+    <div className="flex min-h-screen w-full" style={{ background: 'linear-gradient(160deg, #f0f7f2 0%, #f7faf8 40%, #eef5f0 100%)', backgroundAttachment: 'fixed' }}>
       {/* Desktop Sidebar */}
       <aside className="w-[260px] hidden md:flex flex-col fixed top-0 left-0 h-screen z-50 overflow-y-auto overflow-x-hidden" style={{ background: 'linear-gradient(180deg, #0f5137 0%, #0b3f2e 100%)', borderTopRightRadius: 25, borderBottomRightRadius: 25, boxShadow: '8px 0 24px rgba(21,62,48,0.25)' }}>
         <SidebarContent />
