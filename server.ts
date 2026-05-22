@@ -140,6 +140,44 @@ async function startServer() {
     }
   });
 
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { message, history } = req.body;
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error("Missing OPENROUTER_API_KEY environment variable.");
+      }
+      
+      const prompt = `Sebagai Asisten Jana, asisten virtual di aplikasi Pengajuan Proposal Kegiatan Politeknik Negeri Jakarta. Berikan jawaban yang singkat, hangat, and profesional. Di aplikasi ini, pengguna bisa melihat Panduan di menu 'Panduan' dan mengunduh Template (seperti KAK, RAB, Proposal, LPJ) di menu 'Template'. Jangan berkhayal memberikan tautan/URL palsu. Jawab sesuai konteks sistem ini saja.\n\nPertanyaan pengguna: ${message}`;
+      
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-120b:free",
+          max_tokens: 1000,
+          messages: [
+            { role: "user", content: prompt }
+          ]
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || "Gagal menghubungi OpenRouter");
+      }
+
+      res.json({ reply: data.choices[0]?.message?.content || "Tidak ada respons." });
+    } catch (e: any) {
+      console.error("OpenRouter Error:", e);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
