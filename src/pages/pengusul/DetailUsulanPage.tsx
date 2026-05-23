@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -7,8 +8,6 @@ import { formatDate, formatCurrency, getUserId, fetchKegiatan } from '@/lib/help
 import { ArrowLeft, FileText, Clock, MapPin, User, Loader2, Printer, CheckCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function DetailUsulanPage() {
   const { id } = useParams();
@@ -24,28 +23,26 @@ export function DetailUsulanPage() {
     if (!id) return;
     const load = async () => {
       try {
-        const kg = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const kg = await apiGetKegiatan(id);
         setKegiatan(kg);
 
         try {
-          const kakRes = await databases.listDocuments(APPWRITE_DB_ID, 'kak', [Query.equal('kegiatan_id', id)]);
+          const kakRes = await apiGetKegiatan(id).then((r: any) => ({documents: r.kak ? [r.kak] : []}));
           setKak(kakRes.documents[0] || null);
         } catch {}
 
         try {
-          const ikuRes = await databases.listDocuments(APPWRITE_DB_ID, 'iku', [Query.equal('kegiatan_id', id)]);
+          const ikuRes = await apiGetKegiatan(id).then((r: any) => ({documents: r.iku || []}));
           setIkuList(ikuRes.documents);
         } catch {}
 
         try {
-          const rabRes = await databases.listDocuments(APPWRITE_DB_ID, 'rab', [Query.equal('kegiatan_id', id)]);
+          const rabRes = await apiGetKegiatan(id).then((r: any) => ({documents: r.rab || []}));
           setRabList(rabRes.documents);
         } catch {}
 
         try {
-          const histRes = await databases.listDocuments(APPWRITE_DB_ID, 'status_history', [
-            Query.equal('ref_id', id), Query.orderDesc('$createdAt')
-          ]);
+          const histRes = await Promise.resolve({documents: []});
           setHistory(histRes.documents);
         } catch {}
       } catch (err) {
@@ -70,7 +67,7 @@ export function DetailUsulanPage() {
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{kegiatan.nama_kegiatan}</h2>
           <div className="flex items-center gap-3 mt-2">
             <StatusBadge status={kegiatan.status} />
-            <span className="text-sm font-medium text-slate-500 flex items-center gap-1.5"><Clock className="size-3.5"/> {formatDate(kegiatan.$createdAt)}</span>
+            <span className="text-sm font-medium text-slate-500 flex items-center gap-1.5"><Clock className="size-3.5"/> {formatDate(kegiatan.created_at)}</span>
           </div>
         </div>
         <Button className="bg-slate-800 hover:bg-slate-900 text-white shadow-md w-full md:w-auto h-11 px-6 rounded-xl transition-all" onClick={() => navigate(`/dashboard/pengusul/print/${id}`)}>
@@ -125,7 +122,7 @@ export function DetailUsulanPage() {
                 <TableHeader><TableRow className="bg-slate-50/50"><TableHead className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Nama Indikator</TableHead><TableHead className="px-6 py-4 w-32 text-right text-xs font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Target (%)</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {ikuList.map(iku => (
-                    <TableRow key={iku.$id} className="hover:bg-slate-50/50 transition-colors border-b-slate-100/60"><TableCell className="px-6 py-4 font-medium text-slate-700 min-w-[200px]">{iku.nama_iku}</TableCell><TableCell className="px-6 py-4 text-right whitespace-nowrap font-semibold text-emerald-600 bg-emerald-50/30">{iku.target_persen ?? '-'}%</TableCell></TableRow>
+                    <TableRow key={iku.id} className="hover:bg-slate-50/50 transition-colors border-b-slate-100/60"><TableCell className="px-6 py-4 font-medium text-slate-700 min-w-[200px]">{iku.nama_iku}</TableCell><TableCell className="px-6 py-4 text-right whitespace-nowrap font-semibold text-emerald-600 bg-emerald-50/30">{iku.target_persen ?? '-'}%</TableCell></TableRow>
                   ))}
                 </TableBody>
               </Table>
@@ -153,7 +150,7 @@ export function DetailUsulanPage() {
                   {rabList.map(rab => {
                     const total = rab.total || (rab.harga_satuan * (rab.qty1 || rab.volume || 1));
                     return (
-                      <TableRow key={rab.$id} className="hover:bg-slate-50/50 transition-colors border-b-slate-100/60">
+                      <TableRow key={rab.id} className="hover:bg-slate-50/50 transition-colors border-b-slate-100/60">
                         <TableCell className="px-6 py-4 font-medium text-slate-700 min-w-[200px]">{rab.uraian}</TableCell>
                         <TableCell className="px-6 py-4 text-center whitespace-nowrap font-medium text-slate-600">{rab.qty1 || rab.volume || 1}</TableCell>
                         <TableCell className="px-6 py-4 text-right whitespace-nowrap text-slate-600">{formatCurrency(rab.harga_satuan)}</TableCell>
@@ -179,12 +176,12 @@ export function DetailUsulanPage() {
           <CardContent className="p-0">
             <div className="divide-y divide-slate-100/80">
               {history.map(h => (
-                <div key={h.$id} className="p-5 flex items-start gap-4 hover:bg-slate-50/50 transition-colors">
+                <div key={h.id} className="p-5 flex items-start gap-4 hover:bg-slate-50/50 transition-colors">
                   <div className="size-2.5 rounded-full bg-emerald-500 mt-2 shrink-0 shadow-sm shadow-emerald-500/20" />
                   <div>
                     <div className="flex items-center gap-3">
                       <StatusBadge status={h.status_baru || h.new_status} />
-                      <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">{formatDate(h.$createdAt || h.timestamp)}</span>
+                      <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">{formatDate(h.created_at || h.timestamp)}</span>
                     </div>
                     {h.catatan && <p className="text-[14px] leading-relaxed text-slate-600 mt-2 bg-white px-3 py-2 border border-slate-100 rounded-lg shadow-sm w-fit max-w-full">"{h.catatan}"</p>}
                   </div>
@@ -210,7 +207,7 @@ export function DetailUsulanPage() {
               className="w-full md:w-auto bg-[#047857] hover:bg-[#065F46] text-white shadow-lg shadow-emerald-700/20 px-8 py-5 rounded-xl transition-all font-semibold h-12 border-none cursor-pointer"
               onClick={async () => {
                 try {
-                  await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', kegiatan.$id, { status: 'pending_ppk' });
+                  await apiUpdateKegiatan(kegiatan.id, { status: 'pending_ppk' });
                   alert('Berhasil diteruskan ke PPK');
                   window.location.reload();
                 } catch (e: any) {

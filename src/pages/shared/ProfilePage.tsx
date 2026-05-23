@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { apiGetUser, apiUpdateUser } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Save, Loader2, User } from 'lucide-react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
 import { getCurrentUser } from '@/lib/helpers';
 
 export function ProfilePage() {
@@ -20,8 +20,8 @@ export function ProfilePage() {
 
   useEffect(() => {
     const currentUser = getCurrentUser();
-    if (currentUser && currentUser.$id) {
-      loadProfile(currentUser.$id);
+    if (currentUser && currentUser.id) {
+      loadProfile(currentUser.id);
     } else {
       setIsLoading(false);
     }
@@ -30,7 +30,7 @@ export function ProfilePage() {
   const loadProfile = async (id: string) => {
     setIsLoading(true);
     try {
-      const doc = await databases.getDocument(APPWRITE_DB_ID, 'users', id);
+      const doc = await apiGetUser(id);
       setUser(doc);
       setFormData({
         nama: doc.nama || '',
@@ -56,7 +56,7 @@ export function ProfilePage() {
       if (formData.password) {
         updates.password = formData.password;
       }
-      const updatedUser = await databases.updateDocument(APPWRITE_DB_ID, 'users', user.$id, updates);
+      const updatedUser = await apiUpdateUser(user.id, updates);
       
       // Update local storage
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));

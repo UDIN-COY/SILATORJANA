@@ -31,6 +31,16 @@ web/test-*.js
 web/setPassword.ts
 web/appwrite_schema_dump.json
 
+# Laravel Backend
+backend/vendor/
+backend/.env
+backend/storage/*.key
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+backend/bootstrap/cache/*
+
 # System files
 .DS_Store
 Thumbs.db

@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatDate } from '@/lib/helpers';
 import { Eye, CheckCircle, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function WadirDashboard() {
   const navigate = useNavigate();
@@ -16,8 +15,8 @@ export function WadirDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [Query.orderDesc('$updatedAt'), Query.limit(200)]);
-        setItems(res.documents);
+        const res = await apiListKegiatan();
+        setItems((res.data || res));
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();
   }, []);
@@ -72,9 +71,9 @@ export function WadirDashboard() {
           <CardHeader className="border-b border-amber-100"><CardTitle className="text-base text-amber-800">Menunggu Persetujuan ({pending.length})</CardTitle></CardHeader>
           <CardContent className="p-0"><div className="divide-y divide-amber-100">
             {pending.map(item => (
-              <div key={item.$id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 sm:gap-4 hover:bg-amber-50/50">
-                <div className="min-w-0"><p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p><p className="text-xs text-slate-500 mt-1">{formatDate(item.$createdAt)}</p></div>
-                <div className="shrink-0"><Button size="sm" onClick={() => navigate(`/dashboard/wadir2/review/${item.$id}`)} className="bg-emerald-700 hover:bg-emerald-800"><Eye className="size-4 mr-1" />Review</Button></div>
+              <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 sm:gap-4 hover:bg-amber-50/50">
+                <div className="min-w-0"><p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p><p className="text-xs text-slate-500 mt-1">{formatDate(item.created_at)}</p></div>
+                <div className="shrink-0"><Button size="sm" onClick={() => navigate(`/dashboard/wadir2/review/${item.id}`)} className="bg-emerald-700 hover:bg-emerald-800"><Eye className="size-4 mr-1" />Review</Button></div>
               </div>
             ))}
           </div></CardContent>

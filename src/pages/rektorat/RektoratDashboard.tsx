@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { formatCurrency } from '@/lib/helpers';
 import { BarChart3, FileText, CheckCircle, XCircle, Clock, TrendingUp, Loader2, ArrowUpRight, PieChart } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { useNavigate } from 'react-router-dom';
 
 const STATUS_GROUPS: Record<string, string[]> = {
@@ -25,8 +24,8 @@ export function RektoratDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [Query.limit(500)]);
-        const docs = res.documents;
+        const res = await apiListKegiatan();
+        const docs = (res.data || res);
         const approved = docs.filter((d: any) => STATUS_GROUPS.approved.includes(d.status?.toLowerCase())).length;
         const rejected = docs.filter((d: any) => STATUS_GROUPS.rejected.includes(d.status?.toLowerCase())).length;
         const pending = docs.length - approved - rejected;
@@ -52,7 +51,7 @@ export function RektoratDashboard() {
           monthly[key] = 0;
         }
         docs.forEach((d: any) => {
-          const created = new Date(d.$createdAt);
+          const created = new Date(d.created_at);
           const key = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}`;
           if (monthly[key] !== undefined) monthly[key]++;
         });

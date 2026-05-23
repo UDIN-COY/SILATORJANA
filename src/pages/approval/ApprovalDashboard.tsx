@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,8 +7,6 @@ import { Search, Eye, Filter, CheckCircle2, ShieldAlert, Loader2 } from 'lucide-
 import { Input } from '@/components/ui/input';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function ApprovalDashboard() {
   const navigate = useNavigate();
@@ -29,23 +28,9 @@ export function ApprovalDashboard() {
   useEffect(() => {
     const fetchUsulan = async () => {
       try {
-        let targetStatuses: string[] = [];
-        if (role === 'ppk') targetStatuses = ['diverifikasi', 'disetujui_ppk', 'ditolak_ppk'];
-        if (role === 'wadir') targetStatuses = ['disetujui_ppk', 'disetujui_wadir', 'ditolak_wadir'];
-        if (role === 'rektorat') targetStatuses = ['disetujui_wadir', 'disetujui_rektorat', 'ditolak_rektorat'];
-
-        const queries = [
-          Query.orderDesc('$createdAt'),
-          Query.limit(50)
-        ];
-
-        if (targetStatuses.length > 0) {
-          queries.push(Query.equal('status', targetStatuses));
-        }
-
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', queries);
-        
-        setUsulanList(res?.documents || []);
+        const res = await apiListKegiatan();
+        const docs = res.data || res || [];
+        setUsulanList(Array.isArray(docs) ? docs : []);
       } catch (error) {
         console.error(error);
       } finally {
@@ -145,10 +130,10 @@ export function ApprovalDashboard() {
                   if (role === 'rektorat' && item.status === 'disetujui_wadir') isWaiting = true;
 
                   return (
-                  <TableRow key={item.$id} className="hover:bg-slate-50/50">
-                    <TableCell className="font-medium text-xs">{item.$id.slice(-8).toUpperCase()}</TableCell>
+                  <TableRow key={item.id} className="hover:bg-slate-50/50">
+                    <TableCell className="font-medium text-xs">{String(item.id).padStart(8, '0')}</TableCell>
                     <TableCell>{item.nama_kegiatan}</TableCell>
-                    <TableCell className="text-slate-600">{new Date(item.$createdAt).toLocaleDateString('id-ID')}</TableCell>
+                    <TableCell className="text-slate-600">{new Date(item.created_at).toLocaleDateString('id-ID')}</TableCell>
                     <TableCell>
                       {isWaiting ? (
                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 capitalize">Menunggu {roleTitle}</Badge>
@@ -161,7 +146,7 @@ export function ApprovalDashboard() {
                         variant="outline" 
                         size="sm" 
                         className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                        onClick={() => navigate(`/dashboard/${role}/usulan/${item.$id}`)}
+                        onClick={() => navigate(`/dashboard/${role}/usulan/${item.id}`)}
                       >
                         <Eye className="size-4 mr-1.5" /> {isWaiting ? 'Proses' : 'Detail'}
                       </Button>

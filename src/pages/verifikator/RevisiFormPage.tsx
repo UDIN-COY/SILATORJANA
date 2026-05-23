@@ -1,10 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ArrowLeft, Save, Send, Loader2, MessageSquare, FileText, TrendingUp, DollarSign, Info } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
 import { fetchKAK, fetchIKU, fetchRAB, formatCurrency, formatDate } from '@/lib/helpers';
 
 const TABS = [
@@ -32,7 +32,7 @@ export function RevisiFormPage() {
     if (!id) return;
     (async () => {
       try {
-        const doc = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const doc = await apiGetKegiatan(id);
         setKegiatan(doc);
         const [k, i, r] = await Promise.all([fetchKAK(id), fetchIKU(id), fetchRAB(id)]);
         setKak(k); setIkuList(i); setRabList(r);
@@ -53,7 +53,7 @@ export function RevisiFormPage() {
         .map(([k, v]) => `[${k}]: ${v}`)
         .join('\n');
       
-      await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', id, {
+      await apiUpdateKegiatan(id, {
         status: 'revision_requested',
         catatan_revisi: catatan || 'Perlu revisi',
       });
@@ -218,7 +218,7 @@ export function RevisiFormPage() {
              {ikuList.length > 0 ? (
                <div className="grid grid-cols-1 gap-6">
                  {ikuList.map((iku: any, i: number) => (
-                   <div key={iku.$id || i} className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                   <div key={iku.id || i} className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
                      <div className="sm:w-1/3 shrink-0 flex flex-col justify-between h-full">
                         <div>
                            <span className="text-slate-400 text-xs font-bold uppercase tracking-widest block mb-2">Item IKU #{i+1}</span>
@@ -263,7 +263,7 @@ export function RevisiFormPage() {
              {rabList.length > 0 ? (
                 <div className="grid grid-cols-1 gap-6">
                   {rabList.map((r: any, i: number) => (
-                    <div key={r.$id || i} className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 p-6 rounded-2xl bg-white border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div key={r.id || i} className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 p-6 rounded-2xl bg-white border border-slate-200 shadow-sm relative overflow-hidden">
                       <div className="absolute top-0 left-0 w-1 h-full bg-slate-200/60"></div>
                       <div className="sm:w-2/5 shrink-0">
                          <span className="text-slate-400 text-[11px] font-bold uppercase tracking-widest block mb-2">Item Anggaran #{i+1} <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-500 ml-2">{r.kategori || '-'}</span></span>

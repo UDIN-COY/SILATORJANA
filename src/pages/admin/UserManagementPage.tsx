@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiDeleteUser, apiListUsers } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Edit, Trash2, Eye, Loader2, Users, Shield, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function UserManagementPage() {
   const navigate = useNavigate();
@@ -19,10 +18,9 @@ export function UserManagementPage() {
   useEffect(() => {
     (async () => {
       try {
-        const queries: any[] = [Query.orderDesc('$createdAt'), Query.limit(100)];
-        if (roleFilter) queries.push(Query.equal('role', roleFilter));
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'users', queries);
-        setUsers(res.documents);
+        const res = await apiListUsers();
+        const docs = res.data || res || [];
+        setUsers(Array.isArray(docs) ? docs : []);
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();
   }, [roleFilter]);
@@ -39,8 +37,8 @@ export function UserManagementPage() {
   const handleDelete = async (userId: string) => {
     if (!confirm('Yakin ingin menghapus user ini?')) return;
     try {
-      await databases.deleteDocument(APPWRITE_DB_ID, 'users', userId);
-      setUsers(prev => prev.filter(u => u.$id !== userId));
+      await apiDeleteUser(userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
     } catch (e: any) { alert('Gagal: ' + e.message); }
   };
 
@@ -81,14 +79,14 @@ export function UserManagementPage() {
               {isLoading ? <TableRow><TableCell colSpan={4} className="py-8 text-center"><Loader2 className="animate-spin text-emerald-700 mx-auto" /></TableCell></TableRow> :
               filtered.length === 0 ? <TableRow><TableCell colSpan={4} className="py-8 text-center text-slate-500">Tidak ada user.</TableCell></TableRow> :
               filtered.map(u => (
-                <TableRow key={u.$id} className="hover:bg-slate-50/50">
+                <TableRow key={u.id} className="hover:bg-slate-50/50">
                   <TableCell className="px-6 font-medium">{u.nama}</TableCell>
                   <TableCell className="px-6 text-slate-600">{u.email}</TableCell>
                   <TableCell className="px-6"><Badge className={`${roleColors[u.role] || 'bg-slate-100 text-slate-700'} capitalize`}>{u.role}</Badge></TableCell>
                   <TableCell className="px-6 text-right space-x-2">
-                    <Button variant="outline" size="icon" className="h-8 w-8 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => navigate(`/dashboard/admin/users/${u.$id}`)}><Eye className="size-4" /></Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(`/dashboard/admin/users/edit/${u.$id}`)}><Edit className="size-4" /></Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleDelete(u.$id)}><Trash2 className="size-4" /></Button>
+                    <Button variant="outline" size="icon" className="h-8 w-8 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => navigate(`/dashboard/admin/users/${u.id}`)}><Eye className="size-4" /></Button>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(`/dashboard/admin/users/edit/${u.id}`)}><Edit className="size-4" /></Button>
+                    <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleDelete(u.id)}><Trash2 className="size-4" /></Button>
                   </TableCell>
                 </TableRow>
               ))}

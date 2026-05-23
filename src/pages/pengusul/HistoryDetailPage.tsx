@@ -1,12 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { apiGetKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ProgressTracker } from '@/components/ProgressTracker';
 import { ArrowLeft, Calendar, Building2, User, DollarSign, FileText, Loader2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { formatDate, formatCurrency, fetchKAK, fetchIKU, fetchRAB } from '@/lib/helpers';
 
 export function HistoryDetailPage() {
@@ -22,7 +21,7 @@ export function HistoryDetailPage() {
     if (!id) return;
     (async () => {
       try {
-        const doc = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const doc = await apiGetKegiatan(id);
         setKegiatan(doc);
         const [kakData, ikuData, rabData] = await Promise.all([fetchKAK(id), fetchIKU(id), fetchRAB(id)]);
         setKak(kakData);
@@ -54,7 +53,7 @@ export function HistoryDetailPage() {
             <div className="flex justify-between"><span className="text-slate-500">Jenis</span><span className="font-medium">{kegiatan.jenis_kegiatan || '-'}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Jurusan</span><span className="font-medium">{kegiatan.nama_jurusan || '-'}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Pengusul</span><span className="font-medium">{kegiatan.pengusul_nama || '-'}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Tanggal</span><span className="font-medium">{formatDate(kegiatan.$createdAt)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Tanggal</span><span className="font-medium">{formatDate(kegiatan.created_at)}</span></div>
           </div>
         </CardContent></Card>
 
@@ -87,7 +86,7 @@ export function HistoryDetailPage() {
           <h3 className="font-semibold text-slate-900">Indikator Kinerja Utama (IKU)</h3>
           <div className="divide-y divide-slate-100">
             {ikuList.map((iku: any, i: number) => (
-              <div key={iku.$id || i} className="py-2 flex justify-between">
+              <div key={iku.id || i} className="py-2 flex justify-between">
                 <span className="text-sm">{iku.nama_iku || iku.indikator || '-'}</span>
                 <span className="text-sm font-semibold text-emerald-700">{iku.target_persen != null ? `${iku.target_persen}%` : '-'}</span>
               </div>
@@ -105,7 +104,7 @@ export function HistoryDetailPage() {
                 <th className="py-2 px-3">No</th><th className="py-2 px-3">Uraian</th><th className="py-2 px-3">Kategori</th><th className="py-2 px-3 text-right">Harga Satuan</th><th className="py-2 px-3 text-right">Total</th>
               </tr></thead>
               <tbody>{rabList.map((r: any, i: number) => (
-                <tr key={r.$id || i} className="border-b border-slate-50 hover:bg-slate-50/50">
+                <tr key={r.id || i} className="border-b border-slate-50 hover:bg-slate-50/50">
                   <td className="py-2 px-3">{i + 1}</td>
                   <td className="py-2 px-3 font-medium">{r.uraian}</td>
                   <td className="py-2 px-3 capitalize">{r.kategori || '-'}</td>

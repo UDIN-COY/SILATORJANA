@@ -1,4 +1,5 @@
 import React from 'react';
+import { apiCreateUser, apiGetUser, apiUpdateUser } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,8 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { ID } from 'appwrite';
 
 import { hashPassword } from '@/lib/helpers';
 
@@ -24,7 +23,7 @@ export function UserFormPage() {
     if (!id) return;
     (async () => {
       try {
-        const doc = await databases.getDocument(APPWRITE_DB_ID, 'users', id);
+        const doc = await apiGetUser(id);
         setForm({ nama: doc.nama || '', email: doc.email || '', password: '', role: doc.role || 'pengusul', jurusan_id: doc.jurusan_id || '', verifikator_unit: doc.verifikator_unit || '' });
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();
@@ -42,10 +41,10 @@ export function UserFormPage() {
       if (form.role === 'verifikator' && form.verifikator_unit) data.verifikator_unit = form.verifikator_unit;
 
       if (isEdit) {
-        await databases.updateDocument(APPWRITE_DB_ID, 'users', id!, data);
+        await apiUpdateUser(id!, data);
       } else {
         if (!data.password) data.password = await hashPassword('password123');
-        await databases.createDocument(APPWRITE_DB_ID, 'users', ID.unique(), data);
+        await apiCreateUser(data);
       }
       navigate('/dashboard/admin/users');
     } catch (e: any) { alert('Gagal: ' + e.message); }

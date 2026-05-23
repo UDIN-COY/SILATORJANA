@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Search, Building2, TrendingUp, DollarSign, FileText, Loader2, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { formatCurrency, getStatusColor } from '@/lib/helpers';
 
 interface JurusanSummary {
@@ -25,8 +24,8 @@ export function RekapJurusanPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [Query.limit(500)]);
-        setItems(res.documents);
+        const res = await apiListKegiatan();
+        setItems((res.data || res));
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();
   }, []);

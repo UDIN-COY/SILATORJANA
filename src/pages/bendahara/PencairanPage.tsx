@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function PencairanPage() {
   const navigate = useNavigate();
@@ -23,10 +22,10 @@ export function PencairanPage() {
     const fetchData = async () => {
       try {
         if (!id) return;
-        const kegiatan = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const kegiatan = await apiGetKegiatan(id);
         setData(kegiatan);
 
-        const rabList = await databases.listDocuments(APPWRITE_DB_ID, 'rab', [Query.equal('kegiatan_id', id)]);
+        const rabList = await apiGetKegiatan(id).then((r: any) => ({documents: r.rab || []}));
         setRabData(rabList.documents);
       } catch (error) {
         console.error(error);
@@ -45,7 +44,7 @@ export function PencairanPage() {
     
     setIsSubmitting(true);
     try {
-      await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', id, {
+      await apiUpdateKegiatan(id, {
         status: 'menunggu_lpj'
       });
       // In a real app we would store the pencairan data into a specific collection as well.

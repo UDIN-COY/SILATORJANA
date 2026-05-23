@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatDate, formatCurrency } from '@/lib/helpers';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, Filter, TrendingUp, Loader2, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function RektoratLaporanPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -17,17 +16,17 @@ export function RektoratLaporanPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [Query.limit(500), Query.orderDesc('$createdAt')]);
-        setItems(res.documents);
+        const res = await apiListKegiatan();
+        setItems((res.data || res));
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();
   }, []);
 
-  const yearSet = new Set<number>(); items.forEach(i => yearSet.add(new Date(i.$createdAt).getFullYear()));
+  const yearSet = new Set<number>(); items.forEach(i => yearSet.add(new Date(i.created_at).getFullYear()));
   const years = Array.from(yearSet).sort((a, b) => b - a);
 
   const filtered = items.filter(i => {
-    if (filterYear !== 'all' && new Date(i.$createdAt).getFullYear().toString() !== filterYear) return false;
+    if (filterYear !== 'all' && new Date(i.created_at).getFullYear().toString() !== filterYear) return false;
     if (filterStatus !== 'all' && i.status !== filterStatus) return false;
     return true;
   });
@@ -64,8 +63,8 @@ export function RektoratLaporanPage() {
           {isLoading ? <div className="py-12 text-center"><Loader2 className="animate-spin text-blue-600 mx-auto" /></div> :
           <div className="divide-y divide-slate-100">
             {filtered.map(item => (
-              <div key={item.$id} className="p-4 hover:bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                <div className="flex items-start sm:items-center gap-3 min-w-0"><FileText className="size-5 text-slate-400 shrink-0" /><div className="min-w-0"><p className="font-medium text-slate-900 truncate">{item.nama_kegiatan}</p><p className="text-xs text-slate-500 truncate">{item.nama_jurusan || '-'} · {formatDate(item.$createdAt)}</p></div></div>
+              <div key={item.id} className="p-4 hover:bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-start sm:items-center gap-3 min-w-0"><FileText className="size-5 text-slate-400 shrink-0" /><div className="min-w-0"><p className="font-medium text-slate-900 truncate">{item.nama_kegiatan}</p><p className="text-xs text-slate-500 truncate">{item.nama_jurusan || '-'} · {formatDate(item.created_at)}</p></div></div>
                 <div className="shrink-0"><StatusBadge status={item.status} /></div>
               </div>
             ))}

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatDate } from '@/lib/helpers';
@@ -6,8 +7,6 @@ import { Search, Eye, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function VerifikatorProposalList() {
   const navigate = useNavigate();
@@ -18,10 +17,8 @@ export function VerifikatorProposalList() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.orderDesc('$updatedAt'), Query.limit(100)
-        ]);
-        setItems(res.documents.filter((d: any) => ['submitted','revision_requested','revisi_done','verified'].includes(d.status?.toLowerCase())));
+        const res = await apiListKegiatan();
+        setItems((res.data || res).filter((d: any) => ['submitted','revision_requested','revisi_done','verified'].includes(d.status?.toLowerCase())));
       } catch (e) { console.error(e); }
       finally { setIsLoading(false); }
     })();
@@ -67,11 +64,11 @@ export function VerifikatorProposalList() {
           ) : (
              <div className="divide-y divide-slate-100/80">
                {filtered.map(item => (
-                 <div key={item.$id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 hover:bg-blue-50/30 transition-colors gap-4">
+                 <div key={item.id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 hover:bg-blue-50/30 transition-colors gap-4">
                    <div className="flex-1">
                      <p className="font-bold text-[15px] text-slate-800 group-hover:text-blue-700 transition-colors">{item.nama_kegiatan || 'Usulan Tanpa Nama'}</p>
                      <div className="flex items-center gap-3 mt-1.5 opacity-80">
-                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{formatDate(item.$createdAt)}</p>
+                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{formatDate(item.created_at)}</p>
                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                        <p className="text-xs font-medium text-slate-500">{item.pengusul_organisasi || 'Pengusul Umum'}</p>
                      </div>
@@ -81,7 +78,7 @@ export function VerifikatorProposalList() {
                      <Button 
                        size="sm" 
                        className="bg-[#047857] hover:bg-[#065F46] text-white shadow-sm shadow-emerald-700/20 h-9 rounded-lg font-semibold"
-                       onClick={() => navigate(`/dashboard/verifikator/usulan/${item.$id}`)}
+                       onClick={() => navigate(`/dashboard/verifikator/usulan/${item.id}`)}
                      >
                        <Eye className="size-4 mr-1.5" /> Periksa
                      </Button>

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,12 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Save, Send, Plus, Loader2, Trash2, MessageSquare, AlertTriangle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { ID } from 'appwrite';
 import { fetchKAK, fetchIKU, fetchRAB, formatCurrency } from '@/lib/helpers';
 
 interface RabItem {
-  $id?: string;
+  id?: number;
   kategori: string;
   uraian: string;
   qty1: number;
@@ -57,13 +56,13 @@ export function EditRevisiPage() {
     kurun_waktu_mulai: '', kurun_waktu_selesai: '',
   });
   const [rabItems, setRabItems] = useState<RabItem[]>([]);
-  const [deletedRabIds, setDeletedRabIds] = useState<string[]>([]);
+  const [deletedRabIds, setDeletedRabIds] = useState<(string | number)[]>([]);
 
   useEffect(() => {
     if (!id) return;
     (async () => {
       try {
-        const doc = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const doc = await apiGetKegiatan(id);
         setKegiatan(doc);
         setRevisiComments(parseRevisiComments(doc.catatan_revisi || ''));
         setForm(prev => ({
@@ -78,7 +77,7 @@ export function EditRevisiPage() {
 
         const kak = await fetchKAK(id);
         if (kak) {
-          setKakId(kak.$id);
+          setKakId(kak.id);
           setForm(prev => ({
             ...prev,
             gambaran_umum: kak.gambaran_umum || '',
@@ -94,7 +93,7 @@ export function EditRevisiPage() {
 
         const rabDocs = await fetchRAB(id);
         setRabItems(rabDocs.map((r: any) => ({
-          $id: r.$id, kategori: r.kategori || 'barang', uraian: r.uraian || '',
+          id: r.id, kategori: r.kategori || 'barang', uraian: r.uraian || '',
           qty1: r.qty1 || r.volume || 1, satuan1: r.satuan1 || '', qty2: r.qty2 || 1,
           satuan2: r.satuan2 || '', qty3: r.qty3 || 0, harga_satuan: r.harga_satuan || 0,
         })));
@@ -111,7 +110,7 @@ export function EditRevisiPage() {
 
   const removeRab = (idx: number) => {
     const item = rabItems[idx];
-    if (item.$id) setDeletedRabIds(prev => [...prev, item.$id!]);
+    if (item.id) setDeletedRabIds(prev => [...prev, item.id!]);
     setRabItems(prev => prev.filter((_, i) => i !== idx));
   };
 
@@ -127,7 +126,7 @@ export function EditRevisiPage() {
     setIsSubmitting(true);
     try {
       // Update kegiatan
-      await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', id, {
+      await apiUpdateKegiatan(id, {
         nama_kegiatan: form.nama_kegiatan,
         deskripsi: form.deskripsi || null,
         jenis_kegiatan: form.jenis_kegiatan || null,
@@ -139,36 +138,21 @@ export function EditRevisiPage() {
         total_anggaran: grandTotal,
       });
 
-      // Update or create KAK
-      const kakData: Record<string, any> = { kegiatan_id: id };
+      // Update KAK + RAB via nested update
+      const kakData: Record<string, any> = {};
       for (const key of ['gambaran_umum','penerima_manfaat','strategi_pencapaian','metode_pelaksanaan','tahapan_pelaksanaan','indikator_kinerja','kurun_waktu_mulai','kurun_waktu_selesai'] as const) {
         if ((form as any)[key]) kakData[key] = (form as any)[key];
       }
-      if (kakId) {
-        await databases.updateDocument(APPWRITE_DB_ID, 'kak', kakId, kakData);
-      } else {
-        await databases.createDocument(APPWRITE_DB_ID, 'kak', ID.unique(), kakData);
-      }
 
-      // Delete removed RAB items
-      for (const delId of deletedRabIds) {
-        try { await databases.deleteDocument(APPWRITE_DB_ID, 'rab', delId); } catch {}
-      }
-
-      // Upsert RAB items
-      for (const item of rabItems) {
-        const rabData = {
-          kegiatan_id: id, kategori: item.kategori, uraian: item.uraian,
+      // Send nested KAK + RAB to Laravel
+      await apiUpdateKegiatan(id, {
+        kak: kakData,
+        rab: rabItems.map(item => ({
+          kategori: item.kategori, uraian: item.uraian,
           qty1: item.qty1, satuan1: item.satuan1, qty2: item.qty2, satuan2: item.satuan2,
           qty3: item.qty3, harga_satuan: item.harga_satuan,
-          total: calcTotal(item),
-        };
-        if (item.$id) {
-          await databases.updateDocument(APPWRITE_DB_ID, 'rab', item.$id, rabData);
-        } else {
-          await databases.createDocument(APPWRITE_DB_ID, 'rab', ID.unique(), rabData);
-        }
-      }
+        })),
+      });
 
       alert('Revisi berhasil dikirim!');
       navigate('/dashboard/pengusul/needs-work');

@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { apiGetKegiatan, apiGetUser, apiListUsers, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Check, X, AlertCircle, Loader2, User, FileText, DollarSign, Target, Info } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatCurrency } from '@/lib/helpers';
 
@@ -27,33 +26,30 @@ export function VerifikasiDetailPage() {
     const fetchData = async () => {
       try {
         if (!id) return;
-        const kegiatan = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const kegiatan = await apiGetKegiatan(id);
         setData(kegiatan);
 
         // Fetch KAK
-        const kakList = await databases.listDocuments(APPWRITE_DB_ID, 'kak', [Query.equal('kegiatan_id', id)]);
+        const kakList = await apiGetKegiatan(id).then((r: any) => ({documents: r.kak ? [r.kak] : []}));
         if (kakList.documents.length > 0) setKakData(kakList.documents[0]);
 
         // Fetch IKU (multiple)
-        const ikuList = await databases.listDocuments(APPWRITE_DB_ID, 'iku', [Query.equal('kegiatan_id', id)]);
+        const ikuList = await apiGetKegiatan(id).then((r: any) => ({documents: r.iku || []}));
         setIkuData(ikuList.documents);
 
         // Fetch RAB
-        const rabList = await databases.listDocuments(APPWRITE_DB_ID, 'rab', [Query.equal('kegiatan_id', id)]);
+        const rabList = await apiGetKegiatan(id).then((r: any) => ({documents: r.rab || []}));
         setRabData(rabList.documents);
 
         // Fetch Pengusul info
         if (kegiatan.pengusul_id) {
           try {
-            const userList = await databases.listDocuments(APPWRITE_DB_ID, 'users', [
-              Query.equal('user_id', kegiatan.pengusul_id),
-              Query.limit(1),
-            ]);
+            const userList = await apiListUsers();
             if (userList.documents.length > 0) setPengusulData(userList.documents[0]);
           } catch {
             // user_id might be Appwrite $id
             try {
-              const userDoc = await databases.getDocument(APPWRITE_DB_ID, 'users', String(kegiatan.pengusul_id));
+              const userDoc = await apiGetUser(String(kegiatan.pengusul_id));
               setPengusulData(userDoc);
             } catch { /* skip */ }
           }
@@ -77,7 +73,7 @@ export function VerifikasiDetailPage() {
       if (status === 'rejected' && catatan.trim()) {
         updateData.catatan_revisi = catatan.trim();
       }
-      await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', id, updateData);
+      await apiUpdateKegiatan(id, updateData);
       navigate('/dashboard/verifikator');
     } catch (error: any) {
       alert("Gagal mengupdate status: " + error.message);
@@ -194,8 +190,8 @@ export function VerifikasiDetailPage() {
                   </div>
                 )}
                 <div className="pt-6 border-t border-slate-100/80 grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50/40 p-4 rounded-xl">
-                  <InfoRow label="Timestamp Dibuat" value={fmt(data.$createdAt)} />
-                  <InfoRow label="Timestamp Terakhir Perubahan" value={fmt(data.$updatedAt)} />
+                  <InfoRow label="Timestamp Dibuat" value={fmt(data.created_at)} />
+                  <InfoRow label="Timestamp Terakhir Perubahan" value={fmt(data.updated_at)} />
                 </div>
               </CardContent>
             </Card>
@@ -220,8 +216,8 @@ export function VerifikasiDetailPage() {
                     <div className="space-y-6">
                       <InfoRow label="Unit Jurusan Terhubung" value={pengusulData.jurusan || data.nama_jurusan} />
                       <InfoRow label="Asal Organisasi" value={data.pengusul_organisasi} />
-                      <InfoRow label="Tanggal Tercatat Pengajuan" value={fmt(data.$createdAt)} />
-                      <InfoRow label="Tanggal Terakhir Update" value={fmt(data.$updatedAt)} />
+                      <InfoRow label="Tanggal Tercatat Pengajuan" value={fmt(data.created_at)} />
+                      <InfoRow label="Tanggal Terakhir Update" value={fmt(data.updated_at)} />
                     </div>
                   </div>
                 ) : (
@@ -234,7 +230,7 @@ export function VerifikasiDetailPage() {
                       <InfoRow label="Nama Formulir Pengusul" value={data.pengusul_nama} />
                       <InfoRow label="Asal Organisasi" value={data.pengusul_organisasi} />
                       <InfoRow label="Unit Jurusan Terhubung" value={data.nama_jurusan} />
-                      <InfoRow label="Tanggal Tercatat Pengajuan" value={fmt(data.$createdAt)} />
+                      <InfoRow label="Tanggal Tercatat Pengajuan" value={fmt(data.created_at)} />
                     </div>
                   </div>
                 )}

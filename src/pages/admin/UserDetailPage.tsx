@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiGetUser, apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, User, Mail, Shield, Calendar, Building2, Loader2, FileText, Clock, Edit } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { formatDate, formatDateLong, timeAgo, formatCurrency } from '@/lib/helpers';
 import { StatusBadge } from '@/components/StatusBadge';
 
@@ -32,18 +31,14 @@ export function UserDetailPage() {
     if (!id) return;
     (async () => {
       try {
-        const doc = await databases.getDocument(APPWRITE_DB_ID, 'users', id);
+        const doc = await apiGetUser(id);
         setUser(doc);
 
         // If user is pengusul, fetch their kegiatan
         if (doc.role === 'pengusul') {
           try {
-            const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-              Query.equal('pengusul_id', parseInt(doc.$id, 10)),
-              Query.orderDesc('$createdAt'),
-              Query.limit(20),
-            ]);
-            setActivities(res.documents);
+            const res = await apiListKegiatan();
+            setActivities((res.data || res));
           } catch {}
         }
       } catch (e) { console.error(e); }
@@ -94,8 +89,8 @@ export function UserDetailPage() {
             <DetailField icon={Mail} label="Email" value={user.email || '-'} />
             <DetailField icon={Shield} label="Role" value={roleLabel} />
             <DetailField icon={Building2} label="Jurusan" value={user.nama_jurusan || user.jurusan_id || '-'} />
-            <DetailField icon={Calendar} label="Dibuat" value={formatDateLong(user.$createdAt)} />
-            <DetailField icon={Clock} label="Terakhir Diperbarui" value={timeAgo(user.$updatedAt)} />
+            <DetailField icon={Calendar} label="Dibuat" value={formatDateLong(user.created_at)} />
+            <DetailField icon={Clock} label="Terakhir Diperbarui" value={timeAgo(user.updated_at)} />
           </div>
         </CardContent>
       </Card>
@@ -114,11 +109,11 @@ export function UserDetailPage() {
             ) : (
               <div className="divide-y divide-slate-100">
                 {activities.map(a => (
-                  <div key={a.$id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div key={a.id} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-900 truncate">{a.nama_kegiatan}</p>
                       <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                        <span>{formatDate(a.$createdAt)}</span>
+                        <span>{formatDate(a.created_at)}</span>
                         {a.total_anggaran && <span className="font-medium text-slate-700">{formatCurrency(a.total_anggaran)}</span>}
                       </div>
                     </div>

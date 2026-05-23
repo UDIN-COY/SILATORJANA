@@ -1,7 +1,6 @@
 import { MonitoringPage } from '@/components/MonitoringPage';
+import { apiListKegiatan } from '@/lib/api';
 import { getUserId } from '@/lib/helpers';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { useState, useEffect } from 'react';
 
 export function PengusulMonitoringPage() {
@@ -12,11 +11,8 @@ export function PengusulMonitoringPage() {
     const load = async () => {
       try {
         const userId = getUserId();
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.equal('pengusul_id', userId),
-          Query.orderDesc('$updatedAt'),
-        ]);
-        setItems(res.documents);
+        const res = await apiListKegiatan();
+        setItems((res.data || res));
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
     load();

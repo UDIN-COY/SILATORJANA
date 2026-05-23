@@ -1,12 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function ApprovalDetailPage() {
   const navigate = useNavigate();
@@ -25,13 +24,13 @@ export function ApprovalDetailPage() {
     const fetchData = async () => {
       try {
         if (!id) return;
-        const kegiatan = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const kegiatan = await apiGetKegiatan(id);
         setData(kegiatan);
 
-        const kakList = await databases.listDocuments(APPWRITE_DB_ID, 'kak', [Query.equal('kegiatan_id', id)]);
+        const kakList = await apiGetKegiatan(id).then((r: any) => ({documents: r.kak ? [r.kak] : []}));
         if (kakList.documents.length > 0) setKakData(kakList.documents[0]);
 
-        const rabList = await databases.listDocuments(APPWRITE_DB_ID, 'rab', [Query.equal('kegiatan_id', id)]);
+        const rabList = await apiGetKegiatan(id).then((r: any) => ({documents: r.rab || []}));
         setRabData(rabList.documents);
 
       } catch (error) {
@@ -47,7 +46,7 @@ export function ApprovalDetailPage() {
     if (!id) return;
     setIsUpdating(true);
     try {
-      await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', id, {
+      await apiUpdateKegiatan(id, {
         status: status,
       });
       navigate(`/dashboard/${role}`);

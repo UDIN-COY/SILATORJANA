@@ -1,11 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { apiGetKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ProgressTracker } from '@/components/ProgressTracker';
 import { ArrowLeft, Calendar, Building2, User, DollarSign, FileText, Loader2, ExternalLink } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
 import { fetchKAK, fetchIKU, fetchRAB, formatDate, formatCurrency } from '@/lib/helpers';
 
 export function RektoratDetailPage() {
@@ -21,7 +21,7 @@ export function RektoratDetailPage() {
     if (!id) return;
     (async () => {
       try {
-        const doc = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const doc = await apiGetKegiatan(id);
         setKegiatan(doc);
         const [k, i, r] = await Promise.all([fetchKAK(id), fetchIKU(id), fetchRAB(id)]);
         setKak(k); setIkuList(i); setRabList(r);
@@ -48,7 +48,7 @@ export function RektoratDetailPage() {
         {[
           { icon: Building2, label: 'Jurusan', value: kegiatan.nama_jurusan || '-', color: 'blue' },
           { icon: User, label: 'Pengusul', value: kegiatan.pengusul_nama || '-', color: 'indigo' },
-          { icon: Calendar, label: 'Tanggal', value: formatDate(kegiatan.$createdAt), color: 'purple' },
+          { icon: Calendar, label: 'Tanggal', value: formatDate(kegiatan.created_at), color: 'purple' },
           { icon: DollarSign, label: 'Total Anggaran', value: formatCurrency(rabTotal), color: 'emerald' },
         ].map((stat, i) => (
           <Card key={i} className="shadow-sm"><CardContent className="p-4 flex items-center gap-3">
@@ -81,7 +81,7 @@ export function RektoratDetailPage() {
           <h3 className="font-semibold text-slate-900">IKU</h3>
           <div className="divide-y divide-slate-100">
             {ikuList.map((iku: any, i: number) => (
-              <div key={iku.$id || i} className="py-2 flex justify-between text-sm">
+              <div key={iku.id || i} className="py-2 flex justify-between text-sm">
                 <span>{iku.nama_iku || iku.indikator || '-'}</span>
                 <span className="font-semibold text-emerald-700">{iku.target_persen != null ? `${iku.target_persen}%` : '-'}</span>
               </div>
@@ -97,7 +97,7 @@ export function RektoratDetailPage() {
             <table className="w-full text-sm">
               <thead><tr className="border-b text-left text-slate-600"><th className="py-2 px-3">No</th><th className="py-2 px-3">Uraian</th><th className="py-2 px-3">Kategori</th><th className="py-2 px-3 text-right">Total</th></tr></thead>
               <tbody>{rabList.map((r: any, i: number) => (
-                <tr key={r.$id || i} className="border-b border-slate-50"><td className="py-2 px-3">{i+1}</td><td className="py-2 px-3">{r.uraian}</td><td className="py-2 px-3 capitalize">{r.kategori || '-'}</td><td className="py-2 px-3 text-right font-semibold">{formatCurrency(r.total)}</td></tr>
+                <tr key={r.id || i} className="border-b border-slate-50"><td className="py-2 px-3">{i+1}</td><td className="py-2 px-3">{r.uraian}</td><td className="py-2 px-3 capitalize">{r.kategori || '-'}</td><td className="py-2 px-3 text-right font-semibold">{formatCurrency(r.total)}</td></tr>
               ))}</tbody>
             </table>
           </div>

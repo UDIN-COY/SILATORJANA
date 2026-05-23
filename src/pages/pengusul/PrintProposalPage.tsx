@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { apiGetKegiatan } from '@/lib/api';
 import React, { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
 import { fetchKAK, fetchIKU, fetchRAB, formatCurrency } from '@/lib/helpers';
 import './print.css'; // The exact CSS from the old PHP system
 
@@ -42,7 +42,7 @@ export function PrintProposalPage() {
         if (!id) return;
         (async () => {
             try {
-                const doc = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+                const doc = await apiGetKegiatan(id);
                 setKegiatan(doc);
                 
                 const initialName = `KAK_${doc.nama_kegiatan?.replace(/ /g, '_') || 'Kegiatan'}_${new Date().toISOString().split('T')[0].replace(/-/g, '')}`;
@@ -77,7 +77,7 @@ export function PrintProposalPage() {
     if (isLoading) return <div className="p-8 text-center">Loading PDF Data...</div>;
     if (!kegiatan) return <div className="p-8 text-center text-red-500">Data tidak ditemukan.</div>;
 
-    const documentNumber = `KGT-${String(kegiatan.$id).slice(-4).padStart(4, '0')}/${new Date().getFullYear()}`;
+    const documentNumber = `KGT-${String(kegiatan.id).slice(-4).padStart(4, '0')}/${new Date().getFullYear()}`;
     const userName = kegiatan.pengusul_nama || 'Pengusul';
     const userJurusan = kegiatan.nama_jurusan || kegiatan.pengusul_organisasi || '-';
 
@@ -315,7 +315,7 @@ export function PrintProposalPage() {
                                     </thead>
                                     <tbody>
                                         {ikuList.map((iku, idx) => (
-                                            <tr key={iku.$id || idx}>
+                                            <tr key={iku.id || idx}>
                                                 <td className="text-center">{idx + 1}</td>
                                                 <td className="text-left">{iku.nama_iku || iku.indikator || '-'}</td>
                                             </tr>
@@ -372,7 +372,7 @@ export function PrintProposalPage() {
                                                         subtotal += jumlah;
                                                         
                                                         return (
-                                                            <tr key={rab.$id || idx}>
+                                                            <tr key={rab.id || idx}>
                                                                 <td>{idx + 1}</td>
                                                                 <td className="col-uraian">{rab.uraian || '-'}</td>
                                                                 <td>{qty1 || '-'}</td>

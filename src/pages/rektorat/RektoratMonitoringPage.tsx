@@ -1,6 +1,5 @@
 import { MonitoringPage } from '@/components/MonitoringPage';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
+import { apiListKegiatan } from '@/lib/api';
 import { useState, useEffect } from 'react';
 
 export function RektoratMonitoringPage() {
@@ -9,8 +8,8 @@ export function RektoratMonitoringPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [Query.orderDesc('$updatedAt'), Query.limit(300)]);
-        setItems(res.documents);
+        const res = await apiListKegiatan();
+        setItems((res.data || res));
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();
   }, []);

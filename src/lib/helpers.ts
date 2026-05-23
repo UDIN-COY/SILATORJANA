@@ -1,5 +1,4 @@
-import { databases, APPWRITE_DB_ID } from './appwrite';
-import { Query } from 'appwrite';
+// helpers.ts — Status mapping, formatters, and data fetch helpers (via Laravel API)
 
 // ============================================================
 // Security & Crypto
@@ -164,7 +163,8 @@ export function getCurrentUser(): any | null {
 
 export function getUserId(): string {
   const user = getCurrentUser();
-  return user?.$id || user?.user_id || '';
+  const id = user?.id || user?.$id || user?.user_id || '';
+  return String(id);
 }
 
 export function getUserRole(): string {
@@ -178,40 +178,36 @@ export function getUserName(): string {
 }
 
 // ============================================================
-// Database Helpers
+// Database Helpers (via Laravel API)
 // ============================================================
-export async function fetchKegiatan(queries: any[] = []) {
-  const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', queries);
-  return res.documents;
+import { apiGetKegiatan, apiListKegiatan } from './api';
+
+export async function fetchKegiatan(params: Record<string, string> = {}) {
+  const res = await apiListKegiatan(params);
+  return res.data || res;
 }
 
-export async function fetchKegiatanById(id: string) {
-  const doc = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
-  return doc;
+export async function fetchKegiatanById(id: string | number) {
+  return apiGetKegiatan(id);
 }
 
-export async function fetchKAK(kegiatanId: string) {
-  const res = await databases.listDocuments(APPWRITE_DB_ID, 'kak', [
-    Query.equal('kegiatan_id', kegiatanId)
-  ]);
-  return res.documents[0] || null;
+export async function fetchKAK(kegiatanId: string | number) {
+  const kegiatan = await apiGetKegiatan(kegiatanId);
+  return kegiatan.kak || null;
 }
 
-export async function fetchIKU(kegiatanId: string) {
-  const res = await databases.listDocuments(APPWRITE_DB_ID, 'iku', [
-    Query.equal('kegiatan_id', kegiatanId)
-  ]);
-  return res.documents;
+export async function fetchIKU(kegiatanId: string | number) {
+  const kegiatan = await apiGetKegiatan(kegiatanId);
+  return kegiatan.iku || [];
 }
 
-export async function fetchRAB(kegiatanId: string) {
-  const res = await databases.listDocuments(APPWRITE_DB_ID, 'rab', [
-    Query.equal('kegiatan_id', kegiatanId)
-  ]);
-  return res.documents;
+export async function fetchRAB(kegiatanId: string | number) {
+  const kegiatan = await apiGetKegiatan(kegiatanId);
+  return kegiatan.rab || [];
 }
 
-export async function fetchUsers(queries: any[] = []) {
-  const res = await databases.listDocuments(APPWRITE_DB_ID, 'users', queries);
-  return res.documents;
+export async function fetchUsers(params: Record<string, string> = {}) {
+  const { apiListUsers } = await import('./api');
+  const res = await apiListUsers(params);
+  return res.data || res;
 }

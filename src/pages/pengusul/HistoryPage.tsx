@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Search, Eye, Clock, Loader2, Calendar, Building2, Archive } from 'lucide-react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { getUserId, formatDate, formatCurrency } from '@/lib/helpers';
 
 export function HistoryPage() {
@@ -62,13 +61,9 @@ export function HistoryPage() {
     (async () => {
       try {
         const userId = getUserId();
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.equal('pengusul_id', userId),
-          Query.orderDesc('$updatedAt'),
-          Query.limit(200),
-        ]);
+        const res = await apiListKegiatan();
         // Only show completed/finished items
-        const completed = res.documents.filter((d: any) =>
+        const completed = (res.data || res).filter((d: any) =>
           ['completed', 'selesai', 'lpj_done', 'lpj_approved', 'lpj_verified', 'rejected', 'ditolak'].includes(d.status?.toLowerCase())
         );
         setItems(completed);
@@ -107,19 +102,19 @@ export function HistoryPage() {
           ) : (
             <div className="divide-y divide-slate-100">
               {filtered.map(item => (
-                <div key={item.$id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 gap-4 hover:bg-slate-50/50 transition-colors">
+                <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 gap-4 hover:bg-slate-50/50 transition-colors">
                   <div className="flex-1 min-w-0 w-full sm:w-auto">
                     <div className="flex items-center gap-3 mb-1 flex-wrap">
                       <p className="font-semibold text-slate-900 truncate max-w-full">{item.nama_kegiatan}</p>
                       <StatusBadge status={item.status} />
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
-                      <span className="flex items-center gap-1"><Calendar className="size-3" />{formatDate(item.$createdAt)}</span>
+                      <span className="flex items-center gap-1"><Calendar className="size-3" />{formatDate(item.created_at)}</span>
                       {item.nama_jurusan && <span className="flex items-center gap-1"><Building2 className="size-3" />{item.nama_jurusan}</span>}
                       {item.total_anggaran && <span>{formatCurrency(item.total_anggaran)}</span>}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="w-full sm:w-auto text-emerald-700 border-emerald-200 hover:bg-emerald-50" onClick={() => navigate(`/dashboard/pengusul/history/${item.$id}`)}>
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto text-emerald-700 border-emerald-200 hover:bg-emerald-50" onClick={() => navigate(`/dashboard/pengusul/history/${item.id}`)}>
                     <Eye className="size-4 mr-1" /> Detail
                   </Button>
                 </div>

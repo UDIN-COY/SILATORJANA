@@ -1,10 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListIkuMaster, apiCreateIkuMaster, apiUpdateIkuMaster, apiDeleteIkuMaster } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Edit, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query, ID } from 'appwrite';
 
 export function IkuConfigPage() {
   const [ikuList, setIkuList] = useState<any[]>([]);
@@ -15,8 +14,8 @@ export function IkuConfigPage() {
 
   const load = async () => {
     try {
-      const res = await databases.listDocuments(APPWRITE_DB_ID, 'iku_master', [Query.orderAsc('$createdAt'), Query.limit(100)]);
-      setIkuList(res.documents);
+      const res = await apiListIkuMaster();
+      setIkuList((res.data || res));
     } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
 
@@ -25,7 +24,7 @@ export function IkuConfigPage() {
   const handleAdd = async () => {
     if (!newName.trim()) return;
     try {
-      await databases.createDocument(APPWRITE_DB_ID, 'iku_master', ID.unique(), { nama_indikator: newName.trim(), is_visible: true });
+      await apiCreateIkuMaster({ nama_indikator: newName.trim(), is_visible: true });
       setNewName('');
       load();
     } catch (e: any) { alert('Gagal: ' + e.message); }
@@ -34,7 +33,7 @@ export function IkuConfigPage() {
   const handleUpdate = async (id: string) => {
     if (!editName.trim()) return;
     try {
-      await databases.updateDocument(APPWRITE_DB_ID, 'iku_master', id, { nama_indikator: editName.trim() });
+      await apiUpdateIkuMaster(id, { nama_indikator: editName.trim() });
       setEditId(null);
       load();
     } catch (e: any) { alert('Gagal: ' + e.message); }
@@ -42,14 +41,14 @@ export function IkuConfigPage() {
 
   const handleToggle = async (id: string, current: boolean) => {
     try {
-      await databases.updateDocument(APPWRITE_DB_ID, 'iku_master', id, { is_visible: !current });
+      await apiUpdateIkuMaster(id, { is_visible: !current });
       load();
     } catch (e: any) { alert('Gagal: ' + e.message); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Yakin hapus indikator ini?')) return;
-    try { await databases.deleteDocument(APPWRITE_DB_ID, 'iku_master', id); load(); } catch (e: any) { alert('Gagal: ' + e.message); }
+    try { await apiDeleteIkuMaster(id); load(); } catch (e: any) { alert('Gagal: ' + e.message); }
   };
 
   return (
@@ -71,23 +70,23 @@ export function IkuConfigPage() {
           ikuList.length === 0 ? <div className="py-12 text-center text-slate-500">Belum ada indikator.</div> :
           <div className="divide-y divide-slate-100">
             {ikuList.map((iku, idx) => (
-              <div key={iku.$id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 sm:gap-4 hover:bg-slate-50/50">
+              <div key={iku.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 sm:gap-4 hover:bg-slate-50/50">
                 <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
                   <span className="text-sm font-medium text-slate-400 w-6 shrink-0">{idx + 1}.</span>
-                  {editId === iku.$id ? (
+                  {editId === iku.id ? (
                     <div className="flex flex-col sm:flex-row gap-2 flex-1 w-full"><Input value={editName} onChange={e => setEditName(e.target.value)} className="flex-1 w-full" />
-                    <div className="flex gap-2 shrink-0"><Button size="sm" onClick={() => handleUpdate(iku.$id)}>Simpan</Button><Button size="sm" variant="ghost" onClick={() => setEditId(null)}>Batal</Button></div></div>
+                    <div className="flex gap-2 shrink-0"><Button size="sm" onClick={() => handleUpdate(iku.id)}>Simpan</Button><Button size="sm" variant="ghost" onClick={() => setEditId(null)}>Batal</Button></div></div>
                   ) : (
                     <span className={`text-sm min-w-0 break-words ${iku.is_visible ? 'text-slate-800' : 'text-slate-400 line-through'}`}>{iku.nama_indikator}</span>
                   )}
                 </div>
-                {editId !== iku.$id && (
+                {editId !== iku.id && (
                   <div className="flex gap-1 shrink-0 ml-9 sm:ml-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggle(iku.$id, iku.is_visible)} title={iku.is_visible ? 'Sembunyikan' : 'Tampilkan'}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggle(iku.id, iku.is_visible)} title={iku.is_visible ? 'Sembunyikan' : 'Tampilkan'}>
                       {iku.is_visible ? <Eye className="size-4 text-emerald-600" /> : <EyeOff className="size-4 text-slate-400" />}
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(iku.$id); setEditName(iku.nama_indikator); }}><Edit className="size-4 text-emerald-700" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(iku.$id)}><Trash2 className="size-4 text-red-500" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditId(iku.id); setEditName(iku.nama_indikator); }}><Edit className="size-4 text-emerald-700" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(iku.id)}><Trash2 className="size-4 text-red-500" /></Button>
                   </div>
                 )}
               </div>

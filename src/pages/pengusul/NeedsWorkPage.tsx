@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Search, AlertTriangle, Edit, Eye, Loader2, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { getUserId, formatDate, timeAgo } from '@/lib/helpers';
 
 export function NeedsWorkPage() {
@@ -19,11 +18,8 @@ export function NeedsWorkPage() {
     (async () => {
       try {
         const userId = getUserId();
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.equal('pengusul_id', userId),
-          Query.orderDesc('$updatedAt'),
-        ]);
-        const needsWork = res.documents.filter((d: any) =>
+        const res = await apiListKegiatan();
+        const needsWork = (res.data || res).filter((d: any) =>
           ['revision_requested', 'revisi', 'revisi_done', 'lpj_revision'].includes(d.status?.toLowerCase())
         );
         setItems(needsWork);
@@ -73,7 +69,7 @@ export function NeedsWorkPage() {
           ) : (
             <div className="divide-y divide-slate-100">
               {filtered.map(item => (
-                <div key={item.$id} className="p-4 hover:bg-amber-50/30 transition-colors">
+                <div key={item.id} className="p-4 hover:bg-amber-50/30 transition-colors">
                   <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1 flex-wrap">
@@ -81,8 +77,8 @@ export function NeedsWorkPage() {
                         <StatusBadge status={item.status} />
                       </div>
                       <div className="flex items-center gap-4 text-xs text-slate-500 mt-1 flex-wrap">
-                        <span>Diperbarui {timeAgo(item.$updatedAt)}</span>
-                        <span>Dibuat {formatDate(item.$createdAt)}</span>
+                        <span>Diperbarui {timeAgo(item.updated_at)}</span>
+                        <span>Dibuat {formatDate(item.created_at)}</span>
                       </div>
                       {item.catatan_revisi && (
                         <div className="mt-2 p-3 bg-amber-50 border border-amber-100 rounded-md text-sm text-amber-800">
@@ -91,10 +87,10 @@ export function NeedsWorkPage() {
                       )}
                     </div>
                     <div className="flex w-full sm:w-auto justify-end gap-2 shrink-0">
-                      <Button variant="outline" size="sm" className="text-emerald-700 border-emerald-200 hover:bg-emerald-50" onClick={() => navigate(`/dashboard/pengusul/usulan/${item.$id}`)}>
+                      <Button variant="outline" size="sm" className="text-emerald-700 border-emerald-200 hover:bg-emerald-50" onClick={() => navigate(`/dashboard/pengusul/usulan/${item.id}`)}>
                         <Eye className="size-4 mr-1" /> Lihat
                       </Button>
-                      <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate(`/dashboard/pengusul/revisi/${item.$id}`)}>
+                      <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate(`/dashboard/pengusul/revisi/${item.id}`)}>
                         <Edit className="size-4 mr-1" /> Revisi
                       </Button>
                     </div>

@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { apiCreateKegiatan, apiGetKegiatan, apiGetUser, apiListUsers, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Check, X, AlertCircle, Loader2, User, FileText, DollarSign, Target, Info } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatCurrency, getUserId } from '@/lib/helpers';
 
@@ -27,33 +26,30 @@ export function BendaharaDetailPage() {
     const fetchData = async () => {
       try {
         if (!id) return;
-        const kegiatan = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const kegiatan = await apiGetKegiatan(id);
         setData(kegiatan);
 
         // Fetch KAK
-        const kakList = await databases.listDocuments(APPWRITE_DB_ID, 'kak', [Query.equal('kegiatan_id', id)]);
+        const kakList = await apiGetKegiatan(id).then((r: any) => ({documents: r.kak ? [r.kak] : []}));
         if (kakList.documents.length > 0) setKakData(kakList.documents[0]);
 
         // Fetch IKU (multiple)
-        const ikuList = await databases.listDocuments(APPWRITE_DB_ID, 'iku', [Query.equal('kegiatan_id', id)]);
+        const ikuList = await apiGetKegiatan(id).then((r: any) => ({documents: r.iku || []}));
         setIkuData(ikuList.documents);
 
         // Fetch RAB
-        const rabList = await databases.listDocuments(APPWRITE_DB_ID, 'rab', [Query.equal('kegiatan_id', id)]);
+        const rabList = await apiGetKegiatan(id).then((r: any) => ({documents: r.rab || []}));
         setRabData(rabList.documents);
 
         // Fetch Pengusul info
         if (kegiatan.pengusul_id) {
           try {
-            const userList = await databases.listDocuments(APPWRITE_DB_ID, 'users', [
-              Query.equal('user_id', kegiatan.pengusul_id),
-              Query.limit(1),
-            ]);
+            const userList = await apiListUsers();
             if (userList.documents.length > 0) setPengusulData(userList.documents[0]);
           } catch {
             // user_id might be Appwrite $id
             try {
-              const userDoc = await databases.getDocument(APPWRITE_DB_ID, 'users', String(kegiatan.pengusul_id));
+              const userDoc = await apiGetUser(String(kegiatan.pengusul_id));
               setPengusulData(userDoc);
             } catch { /* skip */ }
           }
@@ -76,10 +72,10 @@ export function BendaharaDetailPage() {
       if (catatanBaru) {
         updateData.catatan = catatanBaru; // Store generic catatan
       }
-      await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', id, updateData);
+      await apiUpdateKegiatan(id, updateData);
       
       // Optionally track status history
-      try { await databases.createDocument(APPWRITE_DB_ID, 'status_history', 'unique()', { ref_type: 'kegiatan', ref_id: id, status_lama: data.status, status_baru: status, catatan: catatanBaru || 'Diproses oleh Bendahara', user_id: getUserId() }); } catch {}
+      try { await Promise.resolve(/* status_history TODO */ { ref_type: 'kegiatan', ref_id: id, status_lama: data.status, status_baru: status, catatan: catatanBaru || 'Diproses oleh Bendahara', user_id: getUserId() }); } catch {}
 
       navigate('/dashboard/bendahara');
     } catch (error: any) {
@@ -195,8 +191,8 @@ export function BendaharaDetailPage() {
                   </div>
                 )}
                 <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
-                  <InfoRow label="Tanggal Dibuat" value={fmt(data.$createdAt)} />
-                  <InfoRow label="Terakhir Diperbarui" value={fmt(data.$updatedAt)} />
+                  <InfoRow label="Tanggal Dibuat" value={fmt(data.created_at)} />
+                  <InfoRow label="Terakhir Diperbarui" value={fmt(data.updated_at)} />
                 </div>
               </CardContent>
             </Card>
@@ -217,15 +213,15 @@ export function BendaharaDetailPage() {
                     <InfoRow label="Role" value={pengusulData.role} />
                     <InfoRow label="Jurusan" value={pengusulData.jurusan || data.nama_jurusan} />
                     <InfoRow label="Organisasi" value={data.pengusul_organisasi} />
-                    <InfoRow label="Tanggal Pengajuan" value={fmt(data.$createdAt)} />
-                    <InfoRow label="Terakhir Diupdate" value={fmt(data.$updatedAt)} />
+                    <InfoRow label="Tanggal Pengajuan" value={fmt(data.created_at)} />
+                    <InfoRow label="Terakhir Diupdate" value={fmt(data.updated_at)} />
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-4">
                     <InfoRow label="Nama Pengusul" value={data.pengusul_nama} />
                     <InfoRow label="Organisasi" value={data.pengusul_organisasi} />
                     <InfoRow label="Jurusan" value={data.nama_jurusan} />
-                    <InfoRow label="Tanggal Pengajuan" value={fmt(data.$createdAt)} />
+                    <InfoRow label="Tanggal Pengajuan" value={fmt(data.created_at)} />
                     <div className="col-span-2">
                       <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
                         ⚠️ Detail data user lengkap tidak ditemukan di database. Menampilkan data yang tersedia dari kegiatan.

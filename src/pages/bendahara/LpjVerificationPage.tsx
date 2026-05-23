@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle2, XCircle, FileText, Download, Loader2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
 
 export function LpjVerificationPage() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export function LpjVerificationPage() {
     const fetchData = async () => {
       try {
         if (!id) return;
-        const kegiatan = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const kegiatan = await apiGetKegiatan(id);
         setData(kegiatan);
       } catch (error) {
         console.error(error);
@@ -33,7 +33,7 @@ export function LpjVerificationPage() {
     if (!id) return;
     setIsSubmitting(true);
     try {
-      await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', id, {
+      await apiUpdateKegiatan(id, {
         status: status
       });
       navigate('/dashboard/bendahara');

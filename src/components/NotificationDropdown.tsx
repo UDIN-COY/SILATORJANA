@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
+import { apiListKegiatan } from '@/lib/api';
 import { Bell, Check, Info, AlertCircle, CheckCircle } from 'lucide-react';
-import { client, databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { getUserId, timeAgo } from '@/lib/helpers';
 import { useNavigate } from 'react-router-dom';
 
@@ -25,44 +24,35 @@ export function NotificationDropdown({ role }: NotificationDropdownProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Initial load
+  // Initial load + polling (replaces Appwrite realtime)
   useEffect(() => {
     loadNotifications();
-
-    // Subscribe to realtime updates on kegiatan
-    const unsubscribe = client.subscribe(
-      `databases.${APPWRITE_DB_ID}.collections.kegiatan.documents`,
-      (response: any) => {
-        if (response.events.includes('databases.*.collections.*.documents.*.update') ||
-            response.events.includes('databases.*.collections.*.documents.*.create')) {
-          handleRealtimeUpdate(response.payload, response.events);
-        }
-      }
-    );
-
-    return () => unsubscribe();
+    const interval = setInterval(loadNotifications, 30000); // Poll every 30s
+    return () => clearInterval(interval);
   }, [role]);
 
   const loadNotifications = async () => {
     try {
       const userId = getUserId();
-      let queries = [Query.orderDesc('$updatedAt'), Query.limit(10)];
-      
-      if (role === 'pengusul') {
-        queries.push(Query.equal('pengusul_id', parseInt(userId || '0', 10)));
-      } else if (role === 'verifikator') {
-        queries.push(Query.equal('status', 'submitted'));
-      } else if (role === 'ppk') {
-        queries.push(Query.equal('status', 'verified'));
-      } else if (role === 'wadir2') {
-        queries.push(Query.equal('status', 'approved_ppk'));
-      } else if (role === 'bendahara') {
-        queries.push(Query.equal('status', 'approved_wadir'));
-      }
+      const params: Record<string, string> = {};
 
-      const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', queries);
-      
-      const items = res.documents.map(doc => formatNotification(doc, role)).filter(Boolean) as NotificationItem[];
+      if (role === 'pengusul') {
+        params.pengusul_id = userId;
+      } else if (role === 'verifikator') {
+        params.status = 'submitted';
+      } else if (role === 'ppk') {
+        params.status = 'verified';
+      } else if (role === 'wadir2') {
+        params.status = 'approved_ppk';
+      } else if (role === 'bendahara') {
+        params.status = 'approved_wadir';
+      }
+      params.limit = '10';
+
+      const res = await apiListKegiatan(params);
+      const docs = res.data || res || [];
+
+      const items = (Array.isArray(docs) ? docs : []).map((doc: any) => formatNotification(doc, role)).filter(Boolean) as NotificationItem[];
       setNotifications(items);
       setUnreadCount(items.filter(i => !i.read).length);
     } catch (e) {
@@ -109,24 +99,24 @@ export function NotificationDropdown({ role }: NotificationDropdownProps) {
       else { msg = `Status diperbarui: ${doc.status}`; }
       
       return {
-        id: doc.$id + doc.status,
+        id: doc.id + doc.status,
         title: doc.nama_kegiatan,
         message: msg,
-        time: doc.$updatedAt,
+        time: doc.updated_at,
         read: !isNew,
         type,
-        link: `/dashboard/pengusul/usulan/${doc.$id}`
+        link: `/dashboard/pengusul/usulan/${doc.id}`
       };
     } else {
       // Approver roles
       return {
-        id: doc.$id + doc.status,
+        id: doc.id + doc.status,
         title: 'Usulan Baru Masuk',
         message: `${doc.nama_kegiatan} membutuhkan tinjauan Anda.`,
-        time: doc.$updatedAt,
+        time: doc.updated_at,
         read: !isNew,
         type: 'info',
-        link: `/dashboard/${userRole}/review/${doc.$id}` // Or usulan/:id for verifikator
+        link: `/dashboard/${userRole}/review/${doc.id}` // Or usulan/:id for verifikator
       };
     }
   };

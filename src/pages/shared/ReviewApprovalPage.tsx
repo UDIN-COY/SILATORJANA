@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ProgressTracker } from '@/components/ProgressTracker';
@@ -6,8 +7,6 @@ import { formatDate, formatCurrency, getUserId, formatDateLong } from '@/lib/hel
 import { ArrowLeft, CheckCircle, XCircle, Loader2, FileText, ClipboardList, BarChart3, Printer, Info } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query, ID } from 'appwrite';
 
 interface ReviewPageProps {
   role: 'ppk' | 'wadir2';
@@ -47,11 +46,11 @@ export function ReviewApprovalPage({ role, approveStatus, backPath }: ReviewPage
     if (!id) return;
     (async () => {
       try {
-        const kg = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const kg = await apiGetKegiatan(id);
         setKegiatan(kg);
-        try { const r = await databases.listDocuments(APPWRITE_DB_ID, 'kak', [Query.equal('kegiatan_id', id)]); setKak(r.documents[0]); } catch {}
-        try { const r = await databases.listDocuments(APPWRITE_DB_ID, 'rab', [Query.equal('kegiatan_id', id)]); setRabList(r.documents); } catch {}
-        try { const r = await databases.listDocuments(APPWRITE_DB_ID, 'iku', [Query.equal('kegiatan_id', id)]); setIkuList(r.documents); } catch {}
+        setKak(kg.kak || null);
+        setRabList(kg.rab || []);
+        setIkuList(kg.iku || []);
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();
   }, [id]);
@@ -61,9 +60,9 @@ export function ReviewApprovalPage({ role, approveStatus, backPath }: ReviewPage
     setIsSubmitting(true);
     try {
       const newStatus = action === 'approve' ? approveStatus : 'rejected';
-      await databases.updateDocument(APPWRITE_DB_ID, 'kegiatan', id, { status: newStatus });
+      await apiUpdateKegiatan(id, { status: newStatus });
       try {
-        await databases.createDocument(APPWRITE_DB_ID, 'status_history', ID.unique(), {
+        await Promise.resolve(/* status_history TODO */ {
           ref_type: 'kegiatan', ref_id: id, status_lama: kegiatan.status, status_baru: newStatus,
           catatan: catatan || (action === 'approve' ? `Disetujui oleh ${role.toUpperCase()}` : `Ditolak oleh ${role.toUpperCase()}`),
           user_id: getUserId(),
@@ -88,7 +87,7 @@ export function ReviewApprovalPage({ role, approveStatus, backPath }: ReviewPage
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-800">{kegiatan.nama_kegiatan}</h2>
           <div className="flex items-center gap-3 mt-2">
             <StatusBadge status={kegiatan.status} />
-            <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{formatDate(kegiatan.$createdAt)}</span>
+            <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{formatDate(kegiatan.created_at)}</span>
           </div>
         </div>
         <Button variant="outline" className="text-[#047857] border-emerald-200 hover:bg-emerald-50 rounded-xl"
@@ -186,7 +185,7 @@ export function ReviewApprovalPage({ role, approveStatus, backPath }: ReviewPage
                   </thead>
                   <tbody>
                     {rabList.map((r, idx) => (
-                      <tr key={r.$id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                      <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                         <td className="px-4 py-3 text-center text-slate-400">{idx + 1}</td>
                         <td className="px-4 py-3"><span className="capitalize text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{r.kategori || '-'}</span></td>
                         <td className="px-4 py-3 font-medium">{r.uraian || '-'}</td>
@@ -224,7 +223,7 @@ export function ReviewApprovalPage({ role, approveStatus, backPath }: ReviewPage
                 </thead>
                 <tbody>
                   {ikuList.map((iku, idx) => (
-                    <tr key={iku.$id || idx} className="border-b border-slate-100">
+                    <tr key={iku.id || idx} className="border-b border-slate-100">
                       <td className="px-4 py-3 text-center">{idx + 1}</td>
                       <td className="px-4 py-3">{iku.nama_iku || iku.indikator || '-'}</td>
                       <td className="px-4 py-3 text-right">{iku.target_persen != null ? `${iku.target_persen}%` : '-'}</td>

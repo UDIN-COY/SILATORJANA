@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Search, Eye, Filter, CheckCircle, Clock, Loader2 } from 'lucide-react';
@@ -6,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function VerifikatorDashboard() {
   const navigate = useNavigate();
@@ -17,12 +16,9 @@ export function VerifikatorDashboard() {
   useEffect(() => {
     const fetchUsulan = async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.equal('status', ['draft', 'diajukan', 'diverifikasi', 'revisi', 'ditolak']),
-          Query.orderDesc('$createdAt'),
-          Query.limit(50)
-        ]);
-        setUsulanList(res?.documents || []);
+        const res = await apiListKegiatan();
+        const docs = res.data || res || [];
+        setUsulanList(Array.isArray(docs) ? docs : []);
       } catch (error) {
         console.error(error);
       } finally {
@@ -104,10 +100,10 @@ export function VerifikatorDashboard() {
                      </TableCell>
                    </TableRow>
                 ) : usulanList.map((task) => (
-                  <TableRow key={task.$id} className="hover:bg-slate-50/50">
-                    <TableCell className="font-medium text-xs">{task.$id.slice(-8).toUpperCase()}</TableCell>
+                  <TableRow key={task.id} className="hover:bg-slate-50/50">
+                    <TableCell className="font-medium text-xs">{String(task.id).padStart(8, '0')}</TableCell>
                     <TableCell>{task.nama_kegiatan}</TableCell>
-                    <TableCell className="text-slate-600">{new Date(task.$createdAt).toLocaleDateString('id-ID')}</TableCell>
+                    <TableCell className="text-slate-600">{new Date(task.created_at).toLocaleDateString('id-ID')}</TableCell>
                     <TableCell>
                       {task.status === 'diverifikasi' ? (
                         <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Telah Diverifikasi</Badge>
@@ -122,7 +118,7 @@ export function VerifikatorDashboard() {
                         variant="outline" 
                         size="sm" 
                         className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                        onClick={() => navigate(`/dashboard/verifikator/usulan/${task.$id}`)}
+                        onClick={() => navigate(`/dashboard/verifikator/usulan/${task.id}`)}
                       >
                         <Eye className="size-4 mr-1.5" /> {(task.status === 'draft' || task.status === 'diajukan') ? 'Verifikasi' : 'Lihat'}
                       </Button>

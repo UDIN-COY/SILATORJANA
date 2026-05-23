@@ -1,10 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Users, FileText, CheckCircle, AlertTriangle, ArrowUpRight, Clock, Database, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function AdminDashboard() {
   const [usulanList, setUsulanList] = useState<any[]>([]);
@@ -19,12 +18,9 @@ export function AdminDashboard() {
   useEffect(() => {
     const fetchUsulan = async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.orderDesc('$createdAt'),
-          Query.limit(50)
-        ]);
+        const res = await apiListKegiatan();
 
-        const allDocs = res?.documents || [];
+        const allDocs = (res?.data || res) || [];
         setUsulanList(allDocs);
 
         let cTotal = allDocs.length;
@@ -127,10 +123,10 @@ export function AdminDashboard() {
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100/60">
                     {usulanList.slice(0, 10).map((usulan) => (
-                      <TableRow key={usulan.$id} className="hover:bg-slate-50/40 transition-colors border-none group">
-                        <TableCell className="px-6 py-4 font-mono text-[12px] font-medium text-slate-400">{usulan.$id.slice(-8).toUpperCase()}</TableCell>
+                      <TableRow key={usulan.id} className="hover:bg-slate-50/40 transition-colors border-none group">
+                        <TableCell className="px-6 py-4 font-mono text-[12px] font-medium text-slate-400">{String(usulan.id).padStart(8, '0')}</TableCell>
                         <TableCell className="px-6 py-4 font-semibold text-slate-700 text-[14px] group-hover:text-emerald-700 transition-colors">{usulan.nama_kegiatan}</TableCell>
-                        <TableCell className="px-6 py-4 text-slate-500 font-medium text-[13px]">{new Date(usulan.$createdAt).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year:'numeric'})}</TableCell>
+                        <TableCell className="px-6 py-4 text-slate-500 font-medium text-[13px]">{new Date(usulan.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year:'numeric'})}</TableCell>
                         <TableCell className="px-6 py-4">{getStatusBadge(usulan.status)}</TableCell>
                       </TableRow>
                     ))}

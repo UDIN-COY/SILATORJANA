@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Package, Clock, ShieldCheck, CheckCircle, Plus, FileText, Loader2 } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { account, databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function PengusulDashboard() {
   const navigate = useNavigate();
@@ -69,18 +68,15 @@ export function PengusulDashboard() {
           const userStr = localStorage.getItem('currentUser');
           if (userStr) {
             const user = JSON.parse(userStr);
-            userId = parseInt(user.$id || user.user_id || '1', 10);
+            userId = parseInt(user.id || user.user_id || '1', 10);
           }
         } catch (e) {
           console.log('Error reading auth session from localStorage', e);
         }
 
-        const allRes = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.equal('pengusul_id', userId),
-          Query.orderDesc('$createdAt'),
-        ]);
+        const allRes = await apiListKegiatan();
 
-        const allDocs = allRes.documents;
+        const allDocs = (allRes.data || allRes);
         setUsulanList(allDocs.slice(0, 5)); // Just take top 5 for the "Aktivitas Terakhir"
 
         let cTotal = allDocs.length;
@@ -198,14 +194,14 @@ export function PengusulDashboard() {
                   <div className="p-8 text-center text-slate-500">Anda belum membuat usulan kegiatan.</div>
                 ) : (
                   usulanList.map((item) => (
-                    <div key={item.$id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 sm:gap-4 hover:bg-slate-50 transition-colors">
+                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 sm:gap-4 hover:bg-slate-50 transition-colors">
                       <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
                         <div className="p-2.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
                           <FileText className="size-5" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p>
-                          <p className="text-sm text-slate-500">{new Date(item.$createdAt).toLocaleDateString('id-ID')}</p>
+                          <p className="text-sm text-slate-500">{new Date(item.created_at).toLocaleDateString('id-ID')}</p>
                         </div>
                       </div>
                       <div className="ml-12 sm:ml-0 shrink-0">

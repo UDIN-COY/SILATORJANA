@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, DollarSign, FileCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function BendaharaDashboard() {
   const navigate = useNavigate();
@@ -18,17 +17,9 @@ export function BendaharaDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resPencairan = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.equal('status', 'disetujui_rektorat'),
-          Query.orderDesc('$createdAt'),
-          Query.limit(20)
-        ]);
+        const resPencairan = await apiListKegiatan();
 
-        const resLpj = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.equal('status', 'menunggu_lpj'), // or some other status
-          Query.orderDesc('$createdAt'),
-          Query.limit(20)
-        ]);
+        const resLpj = await apiListKegiatan();
 
         setUsulanPencairan(resPencairan.documents);
         setUsulanLpj(resLpj.documents);
@@ -116,15 +107,15 @@ export function BendaharaDashboard() {
                     <td colSpan={5} className="px-6 py-8 text-center text-slate-500">Tidak ada data.</td>
                   </tr>
                 ) : dataToDisplay.map((item) => (
-                  <tr key={item.$id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                  <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                     <td className="px-6 py-4 border-r border-slate-100">
-                       <span className="font-mono text-xs text-slate-500">{item.$id.slice(-6).toUpperCase()}</span>
+                       <span className="font-mono text-xs text-slate-500">{String(item.id).padStart(6, '0')}</span>
                     </td>
                     <td className="px-6 py-4">
                        <p className="font-semibold text-slate-900">{item.nama_kegiatan}</p>
                     </td>
                     <td className="px-6 py-4 text-slate-600 font-medium">
-                      {new Date(item.$createdAt).toLocaleDateString('id-ID')}
+                      {new Date(item.created_at).toLocaleDateString('id-ID')}
                     </td>
                     <td className="px-6 py-4 text-center">
                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${activeTab === 'pencairan' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
@@ -132,7 +123,7 @@ export function BendaharaDashboard() {
                        </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                       <Button size="sm" onClick={() => navigate(`/dashboard/bendahara/detail/${item.$id}`)} className={activeTab === 'pencairan' ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-emerald-600 hover:bg-emerald-700'}>
+                       <Button size="sm" onClick={() => navigate(`/dashboard/bendahara/detail/${item.id}`)} className={activeTab === 'pencairan' ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-emerald-600 hover:bg-emerald-700'}>
                           <CheckCircle2 className="size-4 mr-2" />
                           {activeTab === 'pencairan' ? 'Proses Pencairan' : 'Periksa LPJ'}
                        </Button>

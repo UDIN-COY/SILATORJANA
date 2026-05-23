@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
@@ -7,8 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { account, databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 
 export function UsulanPage() {
   const navigate = useNavigate();
@@ -78,16 +77,13 @@ export function UsulanPage() {
            const userStr = localStorage.getItem('currentUser');
            if (userStr) {
              const user = JSON.parse(userStr);
-             userId = parseInt(user.$id || user.user_id || '1', 10);
+             userId = parseInt(user.id || user.user_id || '1', 10);
            }
         } catch(e) {
            console.log('Error reading auth session from localStorage', e);
         }
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.equal('pengusul_id', userId),
-          Query.orderDesc('$createdAt')
-        ]);
-        setUsulanList(res?.documents || []);
+        const res = await apiListKegiatan();
+        setUsulanList((res?.data || res) || []);
       } catch (error) {
         console.error(error);
       } finally {
@@ -151,13 +147,13 @@ export function UsulanPage() {
                     </TableCell>
                   </TableRow>
                 ) : usulanList.map((item) => (
-                  <TableRow key={item.$id} className="hover:bg-slate-50/80 transition-colors border-b-slate-100/60">
-                    <TableCell className="px-6 py-4 font-mono text-sm font-medium text-slate-500">{item.$id.slice(-8).toUpperCase()}</TableCell>
+                  <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors border-b-slate-100/60">
+                    <TableCell className="px-6 py-4 font-mono text-sm font-medium text-slate-500">{String(item.id).padStart(8, '0')}</TableCell>
                     <TableCell className="px-6 py-4 font-semibold text-slate-800 min-w-[200px]">{item.nama_kegiatan}</TableCell>
-                    <TableCell className="px-6 py-4 text-slate-600 whitespace-nowrap font-medium text-sm">{new Date(item.$createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
+                    <TableCell className="px-6 py-4 text-slate-600 whitespace-nowrap font-medium text-sm">{new Date(item.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
                     <TableCell className="px-6 py-4 min-w-[150px]"><StatusBadge status={item.status} /></TableCell>
                     <TableCell className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                      <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-emerald-700 border-emerald-200/60 bg-emerald-50/50 hover:bg-emerald-100 shadow-sm transition-all" onClick={() => navigate(`/dashboard/pengusul/usulan/${item.$id}`)} title="Lihat Detail">
+                      <Button variant="outline" size="sm" className="h-9 w-9 p-0 text-emerald-700 border-emerald-200/60 bg-emerald-50/50 hover:bg-emerald-100 shadow-sm transition-all" onClick={() => navigate(`/dashboard/pengusul/usulan/${item.id}`)} title="Lihat Detail">
                          <Eye className="size-4" />
                       </Button>
                       <Button disabled={!(item.status === 'draft' || item.status === 'revisi')} variant="outline" size="sm" className="h-9 w-9 p-0 text-amber-600 border-amber-200/60 bg-amber-50/50 hover:bg-amber-100 shadow-sm transition-all disabled:opacity-40" title="Edit">

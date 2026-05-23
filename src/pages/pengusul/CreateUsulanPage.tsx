@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiCreateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,8 +7,6 @@ import { ArrowLeft, Save, Send, Plus, Loader2, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { ID, Query } from 'appwrite';
 import { formatCurrency, getCurrentUser } from '@/lib/helpers';
 
 export function CreateUsulanPage() {
@@ -22,13 +21,21 @@ export function CreateUsulanPage() {
     if (!user) { navigate('/login'); return; }
     setCurrentUser(user);
 
-    // Load jurusan list
-    (async () => {
-      try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'jurusan', [Query.orderAsc('nama_jurusan'), Query.limit(100)]);
-        setJurusanList(res.documents);
-      } catch {}
-    })();
+    // Fetch jurusan list from API
+    api.get('/api/jurusan').then(res => {
+      setJurusanList(Array.isArray(res.data) ? res.data : res.data?.data || []);
+    }).catch(() => {
+      // Fallback if API fails
+      setJurusanList([
+        { id: '1', nama_jurusan: 'Teknik Informatika & Komputer' },
+        { id: '2', nama_jurusan: 'Teknik Elektro' },
+        { id: '3', nama_jurusan: 'Teknik Mesin' },
+        { id: '4', nama_jurusan: 'Teknik Sipil' },
+        { id: '5', nama_jurusan: 'Teknik Grafika & Penerbitan' },
+        { id: '6', nama_jurusan: 'Akuntansi' },
+        { id: '7', nama_jurusan: 'Administrasi Niaga' },
+      ]);
+    });
   }, [navigate]);
 
   const [formData, setFormData] = useState({
@@ -59,55 +66,38 @@ export function CreateUsulanPage() {
     if (!currentUser) return;
     setIsSubmitting(true);
     try {
-      // 1. Create kegiatan
-      const kegiatanData: Record<string, any> = {
+      // Laravel API accepts nested kak + rab in single request
+      const payload: Record<string, any> = {
         nama_kegiatan: formData.nama_kegiatan,
-        deskripsi: formData.deskripsi || null,
         jenis_kegiatan: formData.jenis_kegiatan || null,
         tempat: formData.tempat || null,
-        pengusul_id: parseInt(currentUser.$id || currentUser.user_id || '1', 10),
         status: 'submitted',
       };
-      if (formData.tanggal_kegiatan) kegiatanData.tanggal_kegiatan = formData.tanggal_kegiatan;
-      if (formData.pengusul_organisasi) kegiatanData.pengusul_organisasi = formData.pengusul_organisasi;
-      if (formData.jurusan_id) kegiatanData.jurusan_id = parseInt(formData.jurusan_id, 10);
-      if (formData.verifikator_target) kegiatanData.verifikator_target = formData.verifikator_target;
+      if (formData.tanggal_kegiatan) payload.tanggal_kegiatan = formData.tanggal_kegiatan;
 
-      const kegiatanRes = await databases.createDocument(APPWRITE_DB_ID, 'kegiatan', ID.unique(), kegiatanData);
-      const kegiatanId = kegiatanRes.$id;
-
-      // 2. Create KAK
-      const kakData: Record<string, any> = {
-        kegiatan_id: kegiatanId,
+      // KAK data (nested)
+      payload.kak = {
+        gambaran_umum: formData.gambaran_umum || null,
+        penerima_manfaat: formData.penerima_manfaat || null,
+        strategi_pencapaian: formData.strategi_pencapaian || null,
+        metode_pelaksanaan: formData.metode_pelaksanaan || null,
+        tahapan_pelaksanaan: formData.tahapan_pelaksanaan || null,
+        kurun_waktu_mulai: formData.kurun_waktu_mulai || null,
+        kurun_waktu_selesai: formData.kurun_waktu_selesai || null,
       };
-      if (formData.gambaran_umum) kakData.gambaran_umum = formData.gambaran_umum;
-      if (formData.penerima_manfaat) kakData.penerima_manfaat = formData.penerima_manfaat;
-      if (formData.strategi_pencapaian) kakData.strategi_pencapaian = formData.strategi_pencapaian;
-      if (formData.metode_pelaksanaan) kakData.metode_pelaksanaan = formData.metode_pelaksanaan;
-      if (formData.tahapan_pelaksanaan) kakData.tahapan_pelaksanaan = formData.tahapan_pelaksanaan;
-      if (formData.indikator_kinerja) kakData.indikator_kinerja = formData.indikator_kinerja;
-      if (formData.kurun_waktu_mulai) kakData.kurun_waktu_mulai = formData.kurun_waktu_mulai;
-      if (formData.kurun_waktu_selesai) kakData.kurun_waktu_selesai = formData.kurun_waktu_selesai;
 
-      await databases.createDocument(APPWRITE_DB_ID, 'kak', ID.unique(), kakData);
+      // RAB items (nested array)
+      payload.rab = formData.item_rab.map(item => ({
+        kategori: item.kategori || 'barang',
+        uraian: item.uraian,
+        harga_satuan: item.harga_satuan,
+        qty1: item.qty1,
+        satuan1: item.satuan1 || '',
+        qty2: item.qty2 || 1,
+        qty3: item.qty3 || 0,
+      }));
 
-      // 3. Create RAB items
-      for (const item of formData.item_rab) {
-        const q1 = item.qty1 || 0, q2 = item.qty2 || 1, q3 = item.qty3 || 0, h = item.harga_satuan || 0;
-        const total = q3 > 0 ? q1 * q2 * q3 * h : q1 * q2 * h;
-        await databases.createDocument(APPWRITE_DB_ID, 'rab', ID.unique(), {
-          kegiatan_id: kegiatanId,
-          kategori: item.kategori || 'barang',
-          uraian: item.uraian,
-          qty1: item.qty1,
-          satuan1: item.satuan1 || '',
-          qty2: item.qty2 || 1,
-          qty3: item.qty3 || 0,
-          harga_satuan: item.harga_satuan,
-          total: total,
-        });
-      }
-
+      await apiCreateKegiatan(payload);
       navigate('/dashboard/pengusul/usulan');
     } catch (error: any) {
       console.error(error);
@@ -237,7 +227,7 @@ export function CreateUsulanPage() {
                   <SelectTrigger className="h-12 rounded-xl bg-white focus:ring-blue-500/20"><SelectValue placeholder="Pilih entitas jurusan..." /></SelectTrigger>
                   <SelectContent>
                     {jurusanList.length > 0 ? jurusanList.map(j => (
-                      <SelectItem key={j.$id} value={j.jurusan_id ? j.jurusan_id.toString() : j.$id}>{j.nama_jurusan}</SelectItem>
+                      <SelectItem key={j.id} value={j.jurusan_id ? j.jurusan_id.toString() : j.id}>{j.nama_jurusan}</SelectItem>
                     )) : (
                       <SelectItem value="default" disabled>Memuat daftar...</SelectItem>
                     )}

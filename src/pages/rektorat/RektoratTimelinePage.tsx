@@ -1,11 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { apiGetKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ArrowLeft, Clock, User, MessageSquare, Loader2, GitBranch } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { formatDate, getStatusLabel } from '@/lib/helpers';
 
 export function RektoratTimelinePage() {
@@ -19,23 +18,29 @@ export function RektoratTimelinePage() {
     if (!id) return;
     (async () => {
       try {
-        const doc = await databases.getDocument(APPWRITE_DB_ID, 'kegiatan', id);
+        const doc = await apiGetKegiatan(id);
         setKegiatan(doc);
-        // Try to load status_history collection if it exists
-        try {
-          const res = await databases.listDocuments(APPWRITE_DB_ID, 'status_history', [
-            Query.equal('kegiatan_id', id),
-            Query.orderDesc('$createdAt'),
-          ]);
-          setTimeline(res.documents);
-        } catch {
-          // If status_history collection doesn't exist, create a simple timeline from kegiatan status
+        // Load status_history from API
+        const { default: api } = await import('@/lib/api');
+        const histRes = await api.get(`/api/status-history/kegiatan/${id}`);
+        const history = Array.isArray(histRes.data) ? histRes.data : [];
+        if (history.length > 0) {
+          setTimeline(history.map((h: any) => ({
+            id: h.id,
+            status: h.status_baru,
+            catatan: h.catatan,
+            actor_name: h.user_nama || '-',
+            actor_role: h.user_role,
+            created_at: h.created_at,
+          })));
+        } else {
+          // Fallback: show basic entry from kegiatan itself
           setTimeline([{
-            $id: '1',
+            id: '1',
             status: doc.status,
             catatan: '',
             actor_name: doc.pengusul_nama || '-',
-            $createdAt: doc.$updatedAt || doc.$createdAt,
+            created_at: doc.updated_at || doc.created_at,
           }]);
         }
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
@@ -74,7 +79,7 @@ export function RektoratTimelinePage() {
             {timeline.map((entry: any, idx: number) => {
               const status = entry.new_status || entry.status || 'unknown';
               return (
-                <div key={entry.$id || idx} className="relative">
+                <div key={entry.id || idx} className="relative">
                   <div className="absolute -left-5 top-3 size-4 rounded-full border-2 border-white shadow-md bg-blue-500" />
                   <Card className="ml-4 shadow-sm hover:shadow-md transition-shadow">
                     <CardContent className="p-4 space-y-2">
@@ -82,7 +87,7 @@ export function RektoratTimelinePage() {
                         <StatusBadge status={status} />
                         <span className="text-xs text-slate-400 flex items-center gap-1">
                           <Clock className="size-3" />
-                          {formatDate(entry.$createdAt || entry.created_at)}
+                          {formatDate(entry.created_at || entry.created_at)}
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-slate-600">

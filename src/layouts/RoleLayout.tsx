@@ -159,12 +159,16 @@ export function RoleLayout() {
 
   const handleLogout = async () => {
     try {
-      const { account } = await import('@/lib/appwrite');
-      await account.deleteSession('current');
-    } catch (e) {
-      console.error('Failed to clear appwrite session', e);
-    }
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        await fetch('/api/logout', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        }).catch(() => {});
+      }
+    } catch {}
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('auth_token');
     navigate('/login');
   };
 

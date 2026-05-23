@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { AppLogo } from '@/components/AppLogo';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
-import { hashPassword } from '@/lib/helpers';
+import { apiLogin } from '@/lib/api';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -20,17 +18,8 @@ export function LoginPage() {
     setError('');
     setIsLoading(true);
     try {
-      const data = await databases.listDocuments(APPWRITE_DB_ID, 'users', [Query.equal('email', email)]);
-      if (!data.documents || data.documents.length === 0) throw new Error('Email tidak ditemukan di sistem.');
-      const userDoc = data.documents[0];
-
-      const hashedInput = await hashPassword(password);
-      if (userDoc.password !== password && userDoc.password !== hashedInput) {
-        throw new Error('Password salah.');
-      }
-
-      localStorage.setItem('currentUser', JSON.stringify(userDoc));
-      const r = userDoc.role;
+      const { user } = await apiLogin(email, password);
+      const r = user.role;
       navigate(r === 'admin' ? '/dashboard/admin' : r === 'verifikator' ? '/dashboard/verifikator' : r === 'ppk' ? '/dashboard/ppk' : r === 'bendahara' ? '/dashboard/bendahara' : r === 'wadir2' ? '/dashboard/wadir2' : r === 'rektorat' ? '/dashboard/rektorat' : '/dashboard/pengusul');
     } catch (err: any) {
       setError(err.message || 'Login gagal. Silakan cek kembali kredensial Anda.');

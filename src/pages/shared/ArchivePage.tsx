@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Search, Eye, Archive, Loader2, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { databases, APPWRITE_DB_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
 import { formatDate, formatCurrency, timeAgo } from '@/lib/helpers';
 
 const ARCHIVE_STATUSES = [
@@ -30,10 +29,8 @@ export function ArchivePage({ role, detailPath }: ArchivePageProps) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await databases.listDocuments(APPWRITE_DB_ID, 'kegiatan', [
-          Query.orderDesc('$updatedAt'), Query.limit(200),
-        ]);
-        const archived = res.documents.filter((d: any) =>
+        const res = await apiListKegiatan();
+        const archived = (res.data || res).filter((d: any) =>
           ARCHIVE_STATUSES.includes(d.status?.toLowerCase())
         );
         setItems(archived);
@@ -109,7 +106,7 @@ export function ArchivePage({ role, detailPath }: ArchivePageProps) {
           ) : (
             <div className="divide-y divide-slate-100">
               {filtered.map(item => (
-                <div key={item.$id} className="p-4 hover:bg-slate-50/50 transition-colors">
+                <div key={item.id} className="p-4 hover:bg-slate-50/50 transition-colors">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1 min-w-0">
@@ -117,13 +114,13 @@ export function ArchivePage({ role, detailPath }: ArchivePageProps) {
                         <StatusBadge status={item.status} />
                       </div>
                       <div className="flex items-center gap-4 text-xs text-slate-500">
-                        <span className="flex items-center gap-1"><Calendar className="size-3" /> {formatDate(item.$createdAt)}</span>
+                        <span className="flex items-center gap-1"><Calendar className="size-3" /> {formatDate(item.created_at)}</span>
                         <span>{item.nama_jurusan || '-'}</span>
                         {item.total_anggaran && <span className="font-medium text-slate-700">{formatCurrency(item.total_anggaran)}</span>}
-                        <span>Diperbarui {timeAgo(item.$updatedAt)}</span>
+                        <span>Diperbarui {timeAgo(item.updated_at)}</span>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate(detailPath.replace(':id', item.$id))}>
+                    <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate(detailPath.replace(':id', item.id))}>
                       <Eye className="size-4 mr-1" /> Detail
                     </Button>
                   </div>
