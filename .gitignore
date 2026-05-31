@@ -47,7 +47,7 @@ Thumbs.db
 *.log
 
 # component
-test_sqa_anggota1.sh
+# test_sqa_anggota1.sh
 
 #linux desktop
 /etc
