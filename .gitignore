@@ -45,3 +45,11 @@ backend/bootstrap/cache/*
 .DS_Store
 Thumbs.db
 *.log
+
+# component
+test_sqa_anggota1.sh
+
+#linux desktop
+/etc
+/
+/etc/home

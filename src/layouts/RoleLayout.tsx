@@ -89,8 +89,11 @@ const CustomBeacon = React.forwardRef<HTMLDivElement, any>((props, ref) => {
 export function RoleLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const role = location.pathname.split('/')[2] || 'user';
+  const urlRole = location.pathname.split('/')[2];
+  const actualRole = getUserRole();
+  const role = actualRole || urlRole || 'user'; // Gunakan actualRole dari localStorage
   const userName = getUserName();
+  
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -102,6 +105,14 @@ export function RoleLayout() {
     // Check initial dark mode state
     setIsDarkMode(document.documentElement.classList.contains('dark'));
   }, []);
+
+  // FRONTEND ROLE GUARD: Cegah ganti URL manual
+  useEffect(() => {
+    if (actualRole && urlRole && urlRole !== actualRole) {
+      // Jika mencoba akses dashboard role lain, kembalikan ke dashboard aslinya
+      navigate(`/dashboard/${actualRole}`, { replace: true });
+    }
+  }, [actualRole, urlRole, navigate]);
 
   const toggleDarkMode = (e: React.MouseEvent) => {
     const nextDark = !isDarkMode;

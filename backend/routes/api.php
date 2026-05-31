@@ -27,14 +27,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
-    // Kegiatan (Proposals) — full CRUD
-    Route::apiResource('kegiatan', KegiatanController::class);
+    // Kegiatan (Proposals) — read access for all authenticated users
+    Route::apiResource('kegiatan', KegiatanController::class)->only(['index', 'show']);
 
-    // Users — admin management
-    Route::apiResource('users', UserController::class);
+    // Kegiatan — write access limited to pengusul & admin
+    Route::middleware('role:pengusul,admin')->group(function () {
+        Route::apiResource('kegiatan', KegiatanController::class)->only(['store', 'update', 'destroy']);
+    });
 
-    // IKU Master — admin config
-    Route::apiResource('iku-master', IkuMasterController::class);
+    // Users — admin only
+    Route::middleware('role:admin')->group(function () {
+        Route::apiResource('users', UserController::class);
+    });
+
+    // IKU Master — admin only
+    Route::middleware('role:admin')->group(function () {
+        Route::apiResource('iku-master', IkuMasterController::class);
+    });
 
     // Quick stats for dashboards
     Route::get('/stats', function (Request $request) {

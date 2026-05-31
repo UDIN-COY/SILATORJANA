@@ -19,6 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Prevent Sanctum from redirecting to login page
         $middleware->redirectGuestsTo(fn () => null);
+
+        // Register named middleware aliases
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
