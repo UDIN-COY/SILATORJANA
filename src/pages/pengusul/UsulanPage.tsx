@@ -83,7 +83,7 @@ export function UsulanPage() {
         } catch(e) {
            console.log('Error reading auth session from localStorage', e);
         }
-        const res = await apiListKegiatan({ pengusul_id: userId });
+        const res = await apiListKegiatan({ pengusul_id: String(userId) });
         setUsulanList((res?.data || res) || []);
       } catch (error) {
         console.error(error);
