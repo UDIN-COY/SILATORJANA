@@ -109,7 +109,9 @@ DB_PASSWORD=123
 ```
 id, nama_kegiatan, deskripsi, jenis_kegiatan, status, pengusul_id, pengusul_nama,
 pengusul_organisasi, nama_jurusan, tanggal_kegiatan, tempat, total_anggaran,
-catatan_revisi, surat_pengantar, verifikator_target, created_at, updated_at
+catatan_revisi, surat_pengantar, verifikator_target, kode_mak, penanggung_jawab (JSON),
+surat_pengantar_filename, surat_pengantar_path, surat_pengantar_uploaded_at,
+uang_muka_diambil, deadline_lpj, approved_by, created_at, updated_at
 ```
 
 **Tabel `kaks`** (1:1 ke kegiatan):
@@ -144,13 +146,31 @@ id, ref_type, ref_id, status_lama, status_baru, catatan, user_id, user_nama, use
 ```
 > Auto-created oleh `Kegiatan` model saat field `status` berubah (via `booted()` observer).
 
-**Tabel `lpjs`**: `id, kegiatan_id, catatan_pengusul, ...`
+**Tabel `lpjs`**:
+```
+id, kegiatan_id, catatan_pengusul, file_lpj, tanggal_pengajuan, deadline, verified_by, catatan_bendahara, catatan_lama, ...
+```
+
+**Tabel `lpj_files`**:
+```
+file_id, lpj_id, kegiatan_id, kategori, rab_id, filename, original_name, file_size, uploaded_at
+```
+
+**Tabel `rab_realisasi`**:
+```
+realisasi_id, kegiatan_id, rab_id, qty1, satuan1, qty2, satuan2, qty3, satuan3, harga_satuan, total, created_at, updated_at
+```
+
+**Tabel `pencairan_dana`**:
+```
+id, kegiatan_id, persentase, nominal, tanggal_pencairan, tanggal_pengambilan, is_taken, catatan, created_by, created_at, updated_at
+```
 
 **Tabel `jurusans`**: `id, nama_jurusan, kode_jurusan, ...`
 
 ### Status Workflow
 ```
-draft → submitted → verified → approved_ppk → approved_wadir
+draft → submitted → verified → pending_ppk → approved_ppk → approved_wadir
       → accepted_funds → funds_disbursed
       → lpj_submitted → lpj_approved → lpj_done / completed
 
@@ -167,10 +187,13 @@ Cabang: revision_requested / revisi  (dikembalikan revisi)
 | `/api/health` | GET | ❌ | — | Health check |
 | `/api/logout` | POST | ✅ | any | Logout, hapus token |
 | `/api/me` | GET | ✅ | any | Get current user |
-| `/api/kegiatan` | GET | ✅ | any | List (auto-filter by role). Params: `?status=`, `?jurusan=`, `?search=`, `?limit=`, `?pengusul_id=` |
-| `/api/kegiatan/{id}` | GET | ✅ | any | Detail + relasi eager: `kak`, `iku`, `rab`, `pengusul` |
+| `/api/kegiatan` | GET | ✅ | any | List (auto-filter by role). Params: `?status=`, `?jurusan=`, `?search=`, `?limit=`, `?pengusul_id=`, `?archive=` |
+| `/api/kegiatan/{id}` | GET | ✅ | any | Detail + relasi eager: `kak`, `iku`, `rab`, `pengusul`, `pencairanDana` |
 | `/api/kegiatan` | POST | ✅ | pengusul,admin | Buat kegiatan (nested KAK+IKU+RAB sekaligus) |
 | `/api/kegiatan/{id}` | PUT/PATCH | ✅ | semua role workflow | Update kegiatan/status |
+| `/api/kegiatan/{id}/submit-ppk` | POST | ✅ | pengusul | Meneruskan usulan ke PPK (surat pengantar + penanggung jawab) |
+| `/api/kegiatan/{id}/pencairan` | POST | ✅ | bendahara | Tambah riwayat pencairan dana bertahap |
+| `/api/kegiatan/{id}/ambil-uang-muka` | POST | ✅ | pengusul | Konfirmasi penarikan uang muka oleh pengusul |
 | `/api/kegiatan/{id}` | DELETE | ✅ | pengusul,admin | Hapus kegiatan |
 | `/api/users` | GET/POST/PUT/DELETE | ✅ | admin | CRUD users |
 | `/api/users/{id}` | GET | ✅ | any | View user |
@@ -178,13 +201,17 @@ Cabang: revision_requested / revisi  (dikembalikan revisi)
 | `/api/stats` | GET | ✅ | any | Stats dashboard (filtered by role) |
 | `/api/status-history/{type}/{id}` | GET | ✅ | any | Timeline status |
 | `/api/jurusan` | GET | ✅ | any | List jurusan |
-| `/api/lpj` | POST | ✅ | any | Submit LPJ |
-| `/api/lpj/{kegiatan_id}` | GET | ✅ | any | Get LPJ |
+| `/api/lpj/detail/{kegiatan_id}` | GET | ✅ | any | Get LPJ detail dengan RAB realisasi & kuitansi |
+| `/api/lpj/submit` | POST | ✅ | pengusul | Submit LPJ dengan realisasi RAB & multi-upload berkas |
+| `/api/lpj/file/{file_id}` | DELETE | ✅ | pengusul | Hapus file kuitansi LPJ |
+| `/api/lpj` | POST | ✅ | any | (Legacy) Submit LPJ record |
+| `/api/lpj/{kegiatan_id}` | GET | ✅ | any | (Legacy) Get LPJ |
 | `/api/change-password` | POST | ✅ | any | Ganti password |
 | `/api/upload` | POST | ✅ | any | Upload file (max 10MB: surat_pengantar, file_kak, lpj_file) |
 | `/api/notifications` | GET | ✅ | any | Recent notifications (filtered by role) |
 | `/api/system-health` | GET | ✅ | any | DB + storage health check |
 | `/api/chat` | POST | ❌ | — | Jana AI chatbot (OpenRouter → `google/gemini-2.0-flash-001`) |
+
 
 ---
 
@@ -594,3 +621,33 @@ Setiap kategori punya subtotal. Grand total di bawah.
 | Server-side role validation | ✅ `CheckRole` middleware |
 | Client-side role (UI only) | ⚠️ localStorage bisa dimanipulasi UI, tapi server tetap validate |
 | File upload validation | ✅ Max 10MB, type whitelist |
+
+---
+
+## 15. Riwayat Integrasi & Migrasi Terkini (Walkthrough & Implementation Plan)
+
+### Integrasi Frontend-Backend untuk Workflow Kegiatan
+Pada tanggal 3 Juni 2026, fungsionalitas workflow usulan kegiatan disinkronisasikan penuh dengan backend Laravel.
+
+#### A. Alur Pencairan Bertahap (Bendahara)
+- Bendahara melakukan pencairan secara bertahap pada halaman `/dashboard/bendahara/pencairan/:id` (`PencairanPage.tsx`).
+- Setiap tahap pencairan dihitung persentasenya terhadap target 100%. Nominal rupiah dihitung dinamis: `(persentase / 100) * total_anggaran`.
+- Ketika total pencairan mencapai 100%, sistem otomatis mengubah status kegiatan menjadi `funds_disbursed` dan menghitung deadline LPJ (14 hari kerja, melewati hari Sabtu & Minggu).
+
+#### B. Pengambilan Uang Muka (Pengusul)
+- Setelah status usulan menjadi `accepted_funds` atau `funds_disbursed`, pengusul dapat mengonfirmasi pengambilan dana tunai pada halaman detail usulan (`DetailUsulanPage.tsx`) melalui tombol **"Konfirmasi Pengambilan Dana"**.
+- Ini akan memicu `POST /api/kegiatan/{id}/ambil-uang-muka` yang menandai status `uang_muka_diambil` menjadi true dan mencatat tanggal pengambilan pada riwayat pencairan.
+
+#### C. Meneruskan Usulan ke PPK (Pengusul)
+- Apabila usulan berstatus `verified` / `diverifikasi`, pengusul harus melengkapi:
+  1. Daftar Penanggung Jawab Kegiatan (input list dinamis).
+  2. Mengunggah Surat Pengantar (PDF/Gambar).
+- Pengusul kemudian menekan tombol **"Kirim Usulan ke PPK"** yang memicu upload berkas dan mengirimkan payload ke `/api/kegiatan/{id}/submit-ppk`. Status usulan akan berubah menjadi `pending_ppk`.
+
+#### D. Verifikasi LPJ (Bendahara)
+- Halaman verifikasi LPJ (`LpjVerificationPage.tsx`) menampilkan tabel komparasi detail pengeluaran per RAB item (Rencana KAK vs Realisasi LPJ) beserta selisih anggarannya.
+- Seluruh nota/kuitansi bukti pembayaran yang diunggah pengusul ditampilkan dengan tautan download/view dinamis ke file fisik di `/storage/lpj/{filename}`.
+- Bendahara dapat memberikan catatan temuan/verifikasi dan memutuskan:
+  - **LPJ Disetujui**: Mengubah status menjadi `lpj_approved`.
+  - **Minta Revisi LPJ**: Mengubah status menjadi `lpj_revision` (pengusul akan melihat catatan revisi dari bendahara di halaman pengisian LPJ).
+

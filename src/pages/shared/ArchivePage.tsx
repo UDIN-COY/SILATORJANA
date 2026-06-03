@@ -29,7 +29,7 @@ export function ArchivePage({ role, detailPath }: ArchivePageProps) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await apiListKegiatan();
+        const res = await apiListKegiatan({ archive: 'true' });
         const archived = (res.data || res).filter((d: any) =>
           ARCHIVE_STATUSES.includes(d.status?.toLowerCase())
         );

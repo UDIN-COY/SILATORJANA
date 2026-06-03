@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
+import { apiGetKegiatan, apiUpdateKegiatan, apiSubmitPpk, apiAmbilUangMuka, apiUploadFile } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ProgressTracker } from '@/components/ProgressTracker';
 import { formatDate, formatCurrency, getUserId, fetchKegiatan } from '@/lib/helpers';
-import { ArrowLeft, FileText, Clock, MapPin, User, Loader2, Printer, CheckCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Clock, MapPin, User, Loader2, Printer, CheckCircle, Plus, Trash, Upload, DollarSign, CheckCircle2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
@@ -18,6 +20,14 @@ export function DetailUsulanPage() {
   const [rabList, setRabList] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // PPK Submit & Advance Cash states
+  const [penanggungJawab, setPenanggungJawab] = useState<string[]>(['']);
+  const [suratPengantarPath, setSuratPengantarPath] = useState<string>('');
+  const [suratPengantarFilename, setSuratPengantarFilename] = useState<string>('');
+  const [isUploadingFile, setIsUploadingFile] = useState<boolean>(false);
+  const [isSubmittingPpk, setIsSubmittingPpk] = useState<boolean>(false);
+  const [isTakingAdvance, setIsTakingAdvance] = useState<boolean>(false);
 
   useEffect(() => {
     if (!id) return;
@@ -61,6 +71,80 @@ export function DetailUsulanPage() {
     };
     load();
   }, [id]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingFile(true);
+    try {
+      const res = await apiUploadFile(file, 'surat_pengantar');
+      setSuratPengantarPath(res.path);
+      setSuratPengantarFilename(res.original_name || file.name);
+    } catch (err: any) {
+      alert('Gagal mengunggah file: ' + err.message);
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  const addPenanggungJawab = () => {
+    setPenanggungJawab(prev => [...prev, '']);
+  };
+
+  const removePenanggungJawab = (index: number) => {
+    setPenanggungJawab(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updatePenanggungJawab = (index: number, value: string) => {
+    setPenanggungJawab(prev => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const handleSubmitPpk = async () => {
+    if (!id) return;
+    const names = penanggungJawab.map(n => n.trim()).filter(Boolean);
+    if (names.length === 0) {
+      alert('Mohon masukkan minimal 1 penanggung jawab.');
+      return;
+    }
+    if (!suratPengantarPath) {
+      alert('Mohon unggah surat pengantar terlebih dahulu.');
+      return;
+    }
+
+    setIsSubmittingPpk(true);
+    try {
+      await apiSubmitPpk(id, {
+        surat_pengantar_path: suratPengantarPath,
+        surat_pengantar_filename: suratPengantarFilename,
+        penanggung_jawab: names,
+      });
+      alert('Usulan berhasil diteruskan ke PPK!');
+      window.location.reload();
+    } catch (err: any) {
+      alert('Gagal mengirim ke PPK: ' + err.message);
+    } finally {
+      setIsSubmittingPpk(false);
+    }
+  };
+
+  const handleAmbilUangMuka = async () => {
+    if (!id) return;
+    if (!confirm('Apakah Anda yakin ingin melakukan konfirmasi penarikan uang muka?')) return;
+    setIsTakingAdvance(true);
+    try {
+      await apiAmbilUangMuka(id);
+      alert('Konfirmasi penarikan uang muka berhasil dicatat!');
+      window.location.reload();
+    } catch (err: any) {
+      alert('Gagal: ' + err.message);
+    } finally {
+      setIsTakingAdvance(false);
+    }
+  };
 
   if (isLoading) return <div className="py-12 flex justify-center"><Loader2 className="animate-spin text-blue-600 size-8" /></div>;
   if (!kegiatan) return <div className="py-12 text-center text-slate-500">Data kegiatan tidak ditemukan.</div>;
@@ -200,32 +284,195 @@ export function DetailUsulanPage() {
         </Card>
       )}
 
-      {/* Aksi submit ulang untuk Pengusul setelah diverifikasi */}
+      {/* Aksi submit ke PPK untuk Pengusul setelah diverifikasi */}
       {(kegiatan.status === 'diverifikasi' || kegiatan.status === 'verified') && (
-        <Card className="shadow-lg border-emerald-200/60 bg-gradient-to-br from-emerald-50 relative overflow-hidden to-white">
-          <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-          <CardHeader className="md:flex md:items-center md:justify-between py-6 px-8">
-            <div className="mb-4 md:mb-0 space-y-1.5">
-              <CardTitle className="text-lg text-emerald-900 flex items-center gap-2">
-                 <CheckCircle className="size-5 text-emerald-600" /> Usulan Telah Berhasil Diverifikasi
-              </CardTitle>
-              <p className="text-sm font-medium text-emerald-700/80 max-w-xl">Dokumen usulan ini telah lulus verifikasi tingkat pertama dan siap untuk diproses ke level Pejabat Pembuat Komitmen (PPK). Silakan tekan tombol di samping untuk meneruskan.</p>
+        <Card className="shadow-lg border-emerald-200/60 bg-white overflow-hidden">
+          <div className="bg-gradient-to-r from-emerald-700 to-emerald-800 p-6 text-white">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CheckCircle className="size-5 text-emerald-300" /> Usulan Telah Berhasil Diverifikasi
+            </CardTitle>
+            <p className="text-sm text-emerald-100/90 mt-1">
+              Dokumen usulan ini telah lulus verifikasi tingkat pertama. Untuk meneruskan ke Pejabat Pembuat Komitmen (PPK), silakan lengkapi berkas pengantar dan daftar penanggung jawab kegiatan di bawah ini.
+            </p>
+          </div>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Penanggung Jawab */}
+              <div className="space-y-4">
+                <Label className="text-sm font-bold text-slate-800">Daftar Penanggung Jawab Kegiatan</Label>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  {penanggungJawab.map((name, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        placeholder={`Nama Penanggung Jawab #${index + 1}`}
+                        value={name}
+                        onChange={e => updatePenanggungJawab(index, e.target.value)}
+                        className="bg-white border-slate-200 focus-visible:ring-emerald-500/20"
+                      />
+                      {penanggungJawab.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePenanggungJawab(index)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash className="size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addPenanggungJawab}
+                  className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                >
+                  <Plus className="size-4 mr-1.5" /> Tambah Baris
+                </Button>
+              </div>
+
+              {/* Right Column: Upload Surat Pengantar */}
+              <div className="space-y-4">
+                <Label className="text-sm font-bold text-slate-800">Unggah Surat Pengantar (PDF/Gambar)</Label>
+                <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50 hover:bg-slate-100/50 transition-all relative">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    disabled={isUploadingFile}
+                  />
+                  {isUploadingFile ? (
+                    <div className="space-y-2">
+                      <Loader2 className="animate-spin text-emerald-600 size-8 mx-auto" />
+                      <p className="text-xs text-slate-500">Mengunggah file...</p>
+                    </div>
+                  ) : suratPengantarPath ? (
+                    <div className="space-y-2">
+                      <CheckCircle2 className="text-emerald-600 size-8 mx-auto" />
+                      <p className="text-sm font-medium text-slate-700 truncate max-w-xs mx-auto">{suratPengantarFilename}</p>
+                      <p className="text-xs text-emerald-600 font-semibold">File berhasil diunggah</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="text-slate-400 size-8 mx-auto" />
+                      <p className="text-sm font-medium text-slate-600">Klik atau seret file ke sini</p>
+                      <p className="text-xs text-slate-400">PDF, JPG, PNG hingga 10MB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <Button
-              className="w-full md:w-auto bg-[#047857] hover:bg-[#065F46] text-white shadow-lg shadow-emerald-700/20 px-8 py-5 rounded-xl transition-all font-semibold h-12 border-none cursor-pointer"
-              onClick={async () => {
-                try {
-                  await apiUpdateKegiatan(kegiatan.id, { status: 'pending_ppk' });
-                  alert('Berhasil diteruskan ke PPK');
-                  window.location.reload();
-                } catch (e: any) {
-                  alert('Gagal: ' + e.message);
-                }
-              }}
-            >
-              Teruskan ke PPK
-            </Button>
+
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <Button
+                onClick={handleSubmitPpk}
+                disabled={isSubmittingPpk || isUploadingFile || !suratPengantarPath || penanggungJawab.filter(Boolean).length === 0}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-md px-6 py-5 rounded-xl h-11"
+              >
+                {isSubmittingPpk ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Upload className="size-4 mr-2" />}
+                Kirim Usulan ke PPK
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tampilan Riwayat Pencairan Dana & Ambil Uang Muka */}
+      {((kegiatan.pencairan_dana && kegiatan.pencairan_dana.length > 0) ||
+        (kegiatan.pencairanDana && kegiatan.pencairanDana.length > 0) ||
+        ['accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_rejected', 'lpj_done', 'completed'].includes(kegiatan.status?.toLowerCase())) && (
+        <Card className="shadow-sm border-slate-200 bg-white">
+          <CardHeader className="bg-slate-50/30 border-b border-slate-100/60 py-4">
+            <CardTitle className="text-base text-slate-800 flex items-center gap-2">
+              <DollarSign className="size-4.5 text-emerald-600" /> Riwayat Pencairan Dana
+            </CardTitle>
           </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            {/* Table/List of disbursements */}
+            {(() => {
+              const list = kegiatan.pencairan_dana || kegiatan.pencairanDana || [];
+              if (list.length === 0) {
+                return <p className="text-sm text-slate-500 italic">Belum ada riwayat pencairan dana tercatat.</p>;
+              }
+              return (
+                <div className="overflow-x-auto border border-slate-100 rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50">
+                        <TableHead className="px-4 py-3 text-xs font-bold text-slate-500">Tahap</TableHead>
+                        <TableHead className="px-4 py-3 text-xs font-bold text-slate-500">Tanggal Pencairan</TableHead>
+                        <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 text-center">Persentase</TableHead>
+                        <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 text-right">Nominal</TableHead>
+                        <TableHead className="px-4 py-3 text-xs font-bold text-slate-500">Catatan</TableHead>
+                        <TableHead className="px-4 py-3 text-xs font-bold text-slate-500 text-center">Status Diambil</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {list.map((p: any, idx: number) => (
+                        <TableRow key={p.pencairan_id || p.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                          <TableCell className="px-4 py-3 font-medium text-slate-800">Tahap {idx + 1}</TableCell>
+                          <TableCell className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(p.tanggal_pencairan || p.created_at)}</TableCell>
+                          <TableCell className="px-4 py-3 text-slate-800 font-bold text-center bg-slate-50/30">{parseFloat(p.persentase)}%</TableCell>
+                          <TableCell className="px-4 py-3 text-right font-semibold text-emerald-700 whitespace-nowrap">{formatCurrency(p.nominal)}</TableCell>
+                          <TableCell className="px-4 py-3 text-slate-500 text-sm max-w-xs truncate" title={p.catatan}>{p.catatan || '-'}</TableCell>
+                          <TableCell className="px-4 py-3 text-center whitespace-nowrap">
+                            {p.is_taken || p.tanggal_pengambilan ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                Sudah Diambil
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                Menunggu
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              );
+            })()}
+
+            {/* Ambil Uang Muka button for pengusul */}
+            {['accepted_funds', 'funds_disbursed'].includes(kegiatan.status?.toLowerCase()) && !kegiatan.uang_muka_diambil && (
+              <div className="p-5 bg-amber-50 border border-amber-100 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-amber-900 flex items-center gap-1.5">
+                    <AlertCircle className="size-4 text-amber-600" /> Penarikan Dana / Uang Muka Tersedia
+                  </h4>
+                  <p className="text-xs text-amber-700 max-w-xl leading-relaxed">
+                    Dana kegiatan telah dicairkan oleh Bendahara. Silakan kunjungi ruang Bendahara untuk mengambil dana tunai/transfer fisik. Setelah mengambil dana, konfirmasikan penarikan dana Anda di bawah ini agar tenggat waktu pengerjaan laporan LPJ terdata secara valid di sistem.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleAmbilUangMuka}
+                  disabled={isTakingAdvance}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-md px-6 rounded-xl shrink-0 h-10 border-none"
+                >
+                  {isTakingAdvance ? <Loader2 className="size-4 mr-2 animate-spin" /> : <DollarSign className="size-4 mr-2" />}
+                  Konfirmasi Pengambilan Dana
+                </Button>
+              </div>
+            )}
+
+            {kegiatan.uang_muka_diambil && (
+              <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3">
+                <CheckCircle2 className="size-5 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide">Dana Telah Diambil</p>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    Anda telah mengonfirmasi penarikan seluruh dana/uang muka kegiatan ini.
+                    {kegiatan.deadline_lpj && (
+                      <span> Batas waktu akhir penyerahan Laporan LPJ Anda adalah: <strong>{formatDate(kegiatan.deadline_lpj)}</strong> (14 Hari Kerja setelah pencairan selesai).</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
       )}
     </div>

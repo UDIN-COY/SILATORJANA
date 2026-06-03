@@ -76,15 +76,43 @@ class DatabaseSeeder extends Seeder
             'nip' => '198810202012011002',
         ]);
 
-        // Verifikator
-        $verifikator = User::create([
-            'nama' => 'Dra. Lestari Dewi, M.Si.',
-            'email' => 'lestari@pnj.ac.id',
+        // Verifikators for each Wadir unit
+        $verifikator1 = User::create([
+            'nama' => 'Verifikator Wadir I (Akademik)',
+            'email' => 'verifikator.wadir1@si-latorjana.com',
             'password' => $password,
             'role' => 'verifikator',
-            'jurusan' => 'Administrasi Niaga',
+            'verifikator_unit' => 'wadir1',
             'nip' => '197503011999032001',
         ]);
+
+        $verifikator2 = User::create([
+            'nama' => 'Verifikator Wadir II (Keuangan)',
+            'email' => 'verifikator.wadir2@si-latorjana.com',
+            'password' => $password,
+            'role' => 'verifikator',
+            'verifikator_unit' => 'wadir2',
+            'nip' => '197503011999032002',
+        ]);
+
+        $verifikator3 = User::create([
+            'nama' => 'Verifikator Wadir III (Kemahasiswaan)',
+            'email' => 'verifikator.wadir3@si-latorjana.com',
+            'password' => $password,
+            'role' => 'verifikator',
+            'verifikator_unit' => 'wadir3',
+            'nip' => '197503011999032003',
+        ]);
+
+        $verifikator4 = User::create([
+            'nama' => 'Verifikator Wadir IV (Kerjasama)',
+            'email' => 'verifikator.wadir4@si-latorjana.com',
+            'password' => $password,
+            'role' => 'verifikator',
+            'verifikator_unit' => 'wadir4',
+            'nip' => '197503011999032004',
+        ]);
+
 
         // PPK
         $ppk = User::create([
@@ -192,7 +220,7 @@ class DatabaseSeeder extends Seeder
         Rab::create(['kegiatan_id' => $k2->id, 'uraian' => 'Sewa sound system & dekorasi', 'kategori' => 'jasa', 'harga_satuan' => 10000000, 'qty1' => 1, 'satuan1' => 'paket', 'total' => 10000000]);
 
         StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k2->id, 'status_lama' => 'draft', 'status_baru' => 'submitted', 'user_id' => $pengusul2->id, 'user_nama' => $pengusul2->nama, 'user_role' => 'pengusul']);
-        StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k2->id, 'status_lama' => 'submitted', 'status_baru' => 'verified', 'catatan' => 'Proposal sudah lengkap dan layak.', 'user_id' => $verifikator->id, 'user_nama' => $verifikator->nama, 'user_role' => 'verifikator']);
+        StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k2->id, 'status_lama' => 'submitted', 'status_baru' => 'verified', 'catatan' => 'Proposal sudah lengkap dan layak.', 'user_id' => $verifikator2->id, 'user_nama' => $verifikator2->nama, 'user_role' => 'verifikator']);
 
         // --- Kegiatan 3: APPROVED_PPK (menunggu Wadir) ---
         $k3 = Kegiatan::create([
@@ -216,7 +244,7 @@ class DatabaseSeeder extends Seeder
         Rab::create(['kegiatan_id' => $k3->id, 'uraian' => 'Instalasi & kalibrasi', 'kategori' => 'jasa', 'harga_satuan' => 10000000, 'qty1' => 1, 'satuan1' => 'paket', 'total' => 10000000]);
 
         StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k3->id, 'status_lama' => 'draft', 'status_baru' => 'submitted', 'user_id' => $pengusul3->id, 'user_nama' => $pengusul3->nama, 'user_role' => 'pengusul']);
-        StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k3->id, 'status_lama' => 'submitted', 'status_baru' => 'verified', 'user_id' => $verifikator->id, 'user_nama' => $verifikator->nama, 'user_role' => 'verifikator']);
+        StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k3->id, 'status_lama' => 'submitted', 'status_baru' => 'verified', 'user_id' => $verifikator2->id, 'user_nama' => $verifikator2->nama, 'user_role' => 'verifikator']);
         StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k3->id, 'status_lama' => 'verified', 'status_baru' => 'approved_ppk', 'catatan' => 'Disetujui. Sesuai kebutuhan laboratorium.', 'user_id' => $ppk->id, 'user_nama' => $ppk->nama, 'user_role' => 'ppk']);
 
         // --- Kegiatan 4: APPROVED_WADIR (menunggu Bendahara) ---
@@ -248,7 +276,8 @@ class DatabaseSeeder extends Seeder
         Rab::create(['kegiatan_id' => $k5->id, 'uraian' => 'Transportasi PP Jakarta-Malang', 'kategori' => 'transport', 'harga_satuan' => 2500000, 'qty1' => 30, 'satuan1' => 'orang', 'total' => 75000000]);
         Rab::create(['kegiatan_id' => $k5->id, 'uraian' => 'Akomodasi 2 malam', 'kategori' => 'jasa', 'harga_satuan' => 350000, 'qty1' => 15, 'qty2' => 2, 'satuan1' => 'kamar', 'total' => 10500000]);
 
-        StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k5->id, 'status_lama' => 'submitted', 'status_baru' => 'revision_requested', 'catatan' => 'Mohon revisi RAB dan KAK sesuai catatan.', 'user_id' => $verifikator->id, 'user_nama' => $verifikator->nama, 'user_role' => 'verifikator']);
+        StatusHistory::create(['ref_type' => 'kegiatan', 'ref_id' => $k5->id, 'status_lama' => 'submitted', 'status_baru' => 'revision_requested', 'catatan' => 'Mohon revisi RAB dan KAK sesuai catatan.', 'user_id' => $verifikator2->id, 'user_nama' => $verifikator2->nama, 'user_role' => 'verifikator']);
+
 
         // --- Kegiatan 6: COMPLETED (selesai) ---
         $k6 = Kegiatan::create([

@@ -18,7 +18,7 @@ export function VerifikatorProposalList() {
     (async () => {
       try {
         const res = await apiListKegiatan();
-        setItems((res.data || res).filter((d: any) => ['submitted','revision_requested','revisi_done','verified'].includes(d.status?.toLowerCase())));
+        setItems(res.data || res);
       } catch (e) { console.error(e); }
       finally { setIsLoading(false); }
     })();

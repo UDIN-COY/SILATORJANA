@@ -26,6 +26,14 @@ class Kegiatan extends Model
         'catatan_revisi',
         'surat_pengantar',
         'verifikator_target',
+        'kode_mak',
+        'penanggung_jawab',
+        'surat_pengantar_filename',
+        'surat_pengantar_path',
+        'surat_pengantar_uploaded_at',
+        'uang_muka_diambil',
+        'deadline_lpj',
+        'approved_by',
     ];
 
     protected function casts(): array
@@ -33,6 +41,10 @@ class Kegiatan extends Model
         return [
             'tanggal_kegiatan' => 'date',
             'total_anggaran' => 'decimal:2',
+            'penanggung_jawab' => 'array',
+            'uang_muka_diambil' => 'boolean',
+            'deadline_lpj' => 'date',
+            'surat_pengantar_uploaded_at' => 'datetime',
         ];
     }
 
@@ -89,5 +101,11 @@ class Kegiatan extends Model
     {
         return $this->hasOne(Lpj::class);
     }
+
+    public function pencairanDana()
+    {
+        return $this->hasMany(PencairanDana::class, 'kegiatan_id');
+    }
 }
+
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Jurusan;
 use App\Models\Kegiatan;
+use App\Models\PencairanDana;
 use Illuminate\Http\Request;
 
 class KegiatanController extends Controller
@@ -15,21 +16,53 @@ class KegiatanController extends Controller
     public function index(Request $request)
     {
         $query = Kegiatan::with(['pengusul', 'kak', 'iku', 'rab']);
+        $user = $request->user();
 
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if ($user) {
+            $isArchive = $request->get('archive') === 'true';
+
+            if ($user->role === 'pengusul') {
+                $query->where(function ($q) use ($user) {
+                    $q->where('pengusul_id', $user->id);
+                    if ($user->jurusan) {
+                        $q->orWhere('nama_jurusan', $user->jurusan);
+                    }
+                });
+            } elseif ($user->role === 'verifikator') {
+                if (!empty($user->verifikator_unit)) {
+                    $query->where(function($q) use ($user) {
+                        $q->where('verifikator_target', $user->verifikator_unit)
+                          ->orWhereNull('verifikator_target');
+                    });
+                }
+                
+                if ($isArchive) {
+                    $query->whereNotIn('status', ['draft', 'submitted', 'revision_requested', 'revisi_done']);
+                } else {
+                    $query->whereIn('status', ['submitted', 'revision_requested', 'revisi_done']);
+                }
+            } elseif ($user->role === 'ppk') {
+                if ($isArchive) {
+                    $query->whereIn('status', ['approved_ppk', 'approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_rejected', 'lpj_done', 'completed', 'rejected']);
+                } else {
+                    $query->where('status', 'pending_ppk');
+                }
+            } elseif (str_starts_with($user->role, 'wadir')) {
+                if ($isArchive) {
+                    $query->whereIn('status', ['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_rejected', 'lpj_done', 'completed', 'rejected']);
+                } else {
+                    $query->where('status', 'approved_ppk');
+                }
+            } elseif ($user->role === 'bendahara') {
+                $query->whereIn('status', ['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted']);
+            } elseif ($user->role === 'rektorat') {
+                $query->whereNotIn('status', ['draft']);
+            }
         }
 
-        $user = $request->user();
-        if ($user && $user->role === 'pengusul') {
-            $query->where('pengusul_id', $user->id);
-        } elseif ($user && $user->role === 'verifikator') {
-            if (!empty($user->verifikator_unit)) {
-                $query->where('verifikator_target', $user->verifikator_unit);
-            }
-        } elseif ($request->has('pengusul_id')) {
-            $query->where('pengusul_id', $request->pengusul_id);
+        // Filter by status if explicitly requested
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
         }
 
         // Filter by jurusan
@@ -42,6 +75,10 @@ class KegiatanController extends Controller
             $query->where('nama_kegiatan', 'like', '%' . $request->search . '%');
         }
 
+        if ($request->has('pengusul_id')) {
+            $query->where('pengusul_id', $request->pengusul_id);
+        }
+
         $kegiatan = $query->orderBy('created_at', 'desc')->paginate($request->get('limit', 25));
 
         return response()->json($kegiatan);
@@ -52,7 +89,7 @@ class KegiatanController extends Controller
      */
     public function show(string $id)
     {
-        $kegiatan = Kegiatan::with(['pengusul', 'kak', 'iku', 'rab'])->findOrFail($id);
+        $kegiatan = Kegiatan::with(['pengusul', 'kak', 'iku', 'rab', 'pencairanDana'])->findOrFail($id);
         return response()->json($kegiatan);
     }
 
@@ -192,6 +229,18 @@ class KegiatanController extends Controller
         // Update kegiatan fields
         $kegiatan->update(collect($validated)->except(['kak', 'iku', 'rab'])->toArray());
 
+        // Update corresponding LPJ records if status is related to LPJ verification
+        if (in_array($kegiatan->status, ['lpj_approved', 'lpj_revision', 'lpj_rejected'])) {
+            $lpj = \App\Models\Lpj::where('kegiatan_id', $kegiatan->id)->first();
+            if ($lpj) {
+                $lpj->update([
+                    'catatan_bendahara' => $kegiatan->catatan_revisi,
+                    'catatan_verifikasi' => $kegiatan->catatan_revisi,
+                    'verified_by' => $request->user()?->nama,
+                ]);
+            }
+        }
+
         // Update KAK
         if (isset($validated['kak'])) {
             $kegiatan->kak()->updateOrCreate(
@@ -233,5 +282,126 @@ class KegiatanController extends Controller
         $kegiatan->delete();
 
         return response()->json(['message' => 'Kegiatan berhasil dihapus.']);
+    }
+
+    /**
+     * Submit proposal to PPK (uploads surat pengantar & penanggung jawab)
+     */
+    public function submitPpk(Request $request, string $id)
+    {
+        $kegiatan = Kegiatan::findOrFail($id);
+
+        $validated = $request->validate([
+            'surat_pengantar_path' => 'nullable|string',
+            'surat_pengantar_filename' => 'nullable|string',
+            'penanggung_jawab' => 'nullable|array',
+            'penanggung_jawab.*' => 'string',
+        ]);
+
+        $updateData = [
+            'status' => 'pending_ppk',
+        ];
+
+        if (!empty($validated['surat_pengantar_path'])) {
+            $updateData['surat_pengantar_path'] = $validated['surat_pengantar_path'];
+            $updateData['surat_pengantar'] = $validated['surat_pengantar_path']; // compatibility
+            $updateData['surat_pengantar_filename'] = $validated['surat_pengantar_filename'] ?? basename($validated['surat_pengantar_path']);
+            $updateData['surat_pengantar_uploaded_at'] = now();
+        }
+
+        if (isset($validated['penanggung_jawab'])) {
+            $updateData['penanggung_jawab'] = $validated['penanggung_jawab'];
+        }
+
+        $kegiatan->update($updateData);
+
+        return response()->json($kegiatan->fresh()->load(['kak', 'iku', 'rab']));
+    }
+
+    /**
+     * Record partial disbursement of funds (Bendahara)
+     */
+    public function tambahPencairan(Request $request, string $id)
+    {
+        $kegiatan = Kegiatan::findOrFail($id);
+
+        $validated = $request->validate([
+            'persentase' => 'required|numeric|min:0.01|max:100',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $totalDisbursed = $kegiatan->pencairanDana()->sum('persentase');
+
+        if ($totalDisbursed + $validated['persentase'] > 100) {
+            return response()->json([
+                'message' => 'Total pencairan tidak boleh melebihi 100%. Sisa yang tersedia: ' . (100 - $totalDisbursed) . '%',
+            ], 422);
+        }
+
+        $nominal = ($validated['persentase'] / 100) * $kegiatan->total_anggaran;
+
+        $pencairan = PencairanDana::create([
+            'kegiatan_id' => $kegiatan->id,
+            'persentase' => $validated['persentase'],
+            'nominal' => $nominal,
+            'catatan' => $validated['catatan'] ?? null,
+            'created_by' => $request->user()->id,
+        ]);
+
+        // Update status and deadline_lpj if reaching 100%
+        if ($totalDisbursed + $validated['persentase'] >= 100) {
+            $kegiatan->update([
+                'status' => 'funds_disbursed',
+                'deadline_lpj' => $this->calculateDeadlineLPJ(),
+            ]);
+        } else {
+            $kegiatan->update([
+                'status' => 'accepted_funds',
+            ]);
+        }
+
+        return response()->json($kegiatan->fresh()->load(['kak', 'iku', 'rab', 'pencairanDana']));
+    }
+
+    /**
+     * Mark disbursements as taken by the pengusul
+     */
+    public function ambilUangMuka(Request $request, string $id)
+    {
+        $kegiatan = Kegiatan::findOrFail($id);
+
+        if ($kegiatan->pengusul_id !== $request->user()->id) {
+            return response()->json([
+                'message' => 'Akses ditolak. Anda bukan pengusul kegiatan ini.',
+            ], 403);
+        }
+
+        $kegiatan->update([
+            'uang_muka_diambil' => true,
+        ]);
+
+        $kegiatan->pencairanDana()->where('is_taken', false)->update([
+            'is_taken' => true,
+            'tanggal_pengambilan' => now(),
+        ]);
+
+        return response()->json($kegiatan->fresh()->load(['kak', 'iku', 'rab', 'pencairanDana']));
+    }
+
+    /**
+     * Calculate LPJ deadline skipping weekends (14 working days)
+     */
+    private function calculateDeadlineLPJ()
+    {
+        $deadline = new \DateTime();
+        $daysAdded = 0;
+        while ($daysAdded < 14) {
+            $deadline->modify('+1 day');
+            $dayOfWeek = $deadline->format('N'); // 1 = Senin, 7 = Minggu
+            if ($dayOfWeek < 6) { // Jika bukan Sabtu (6) atau Minggu (7)
+                $daysAdded++;
+            }
+        }
+        return $deadline->format('Y-m-d');
     }
 }

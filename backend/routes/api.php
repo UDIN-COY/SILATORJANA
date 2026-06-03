@@ -109,6 +109,10 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(\App\Models\Jurusan::orderBy('nama_jurusan')->get());
     });
 
+    Route::post('kegiatan/{kegiatan}/submit-ppk', [KegiatanController::class, 'submitPpk']);
+    Route::post('kegiatan/{kegiatan}/pencairan', [KegiatanController::class, 'tambahPencairan']);
+    Route::post('kegiatan/{kegiatan}/ambil-uang-muka', [KegiatanController::class, 'ambilUangMuka']);
+
     // LPJ
     Route::get('/lpj/detail/{kegiatan_id}', [LpjController::class, 'detail']);
     Route::post('/lpj/submit', [LpjController::class, 'submit']);

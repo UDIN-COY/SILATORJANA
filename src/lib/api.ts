@@ -236,6 +236,49 @@ export async function apiGetLpj(kegiatanId: string | number) {
   return apiFetch(`/lpj/${kegiatanId}`);
 }
 
+/** Submit proposal to PPK (uploads surat pengantar & penanggung jawab) */
+export async function apiSubmitPpk(id: string | number, data: {
+  surat_pengantar_path?: string;
+  surat_pengantar_filename?: string;
+  penanggung_jawab?: string[];
+}) {
+  return apiFetch(`/kegiatan/${id}/submit-ppk`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/** Record partial/full disbursement of funds */
+export async function apiTambahPencairan(id: string | number, data: {
+  persentase: number;
+  catatan?: string;
+}) {
+  return apiFetch(`/kegiatan/${id}/pencairan`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/** Mark disbursements as taken by the pengusul (Ambil Uang Muka) */
+export async function apiAmbilUangMuka(id: string | number) {
+  return apiFetch(`/kegiatan/${id}/ambil-uang-muka`, {
+    method: 'POST',
+  });
+}
+
+/** Upload a file (surat_pengantar, file_kak, or lpj_file) */
+export async function apiUploadFile(file: File, type: 'surat_pengantar' | 'file_kak' | 'lpj_file') {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', type);
+  return apiFetch('/upload', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+
+
 // ============================================================
 // Health Check
 // ============================================================
