@@ -15,10 +15,10 @@ export function AdminMonitoringPage() {
     })();
   }, []);
 
-  const handleIntervene = async (id: string, newStatus: string) => {
+  const handleIntervene = async (id: string | number, newStatus: string) => {
     try {
-      await apiUpdateKegiatan(id, { status: newStatus });
-      setItems(prev => prev.map(item => item.id === id ? { ...item, status: newStatus, $updatedAt: new Date().toISOString() } : item));
+      await apiUpdateKegiatan(String(id), { status: newStatus });
+      setItems(prev => prev.map(item => String(item.id) === String(id) ? { ...item, status: newStatus, updated_at: new Date().toISOString() } : item));
       alert(`Status berhasil diubah menjadi ${newStatus}`);
     } catch (e: any) {
       alert(`Gagal merubah status: ${e.message}`);

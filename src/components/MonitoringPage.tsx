@@ -10,7 +10,8 @@ import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface MonitoringItem {
-  $id: string;
+  id?: string | number;
+  $id?: string;
   nama_kegiatan: string;
   status: string;
   pengusul_nama?: string;
@@ -27,7 +28,7 @@ interface MonitoringPageProps {
   isLoading: boolean;
   title?: string;
   showJurusan?: boolean;
-  onIntervene?: (id: string, newStatus: string) => Promise<void>;
+  onIntervene?: (id: string | number, newStatus: string) => Promise<void>;
 }
 
 const STATUS_FILTERS = [
@@ -41,7 +42,7 @@ const STATUS_FILTERS = [
 export function MonitoringPage({ items, isLoading, title = 'Monitoring Kegiatan', showJurusan = true, onIntervene }: MonitoringPageProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | number | null>(null);
   const [interveneStatus, setInterveneStatus] = useState<string>('');
   const [isIntervening, setIsIntervening] = useState(false);
 
@@ -88,72 +89,75 @@ export function MonitoringPage({ items, isLoading, title = 'Monitoring Kegiatan'
             <div className="py-12 text-center text-slate-500">Tidak ada data ditemukan.</div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {filtered.map(item => (
-                <div key={item.$id}>
-                  <div className="flex items-center justify-between p-4 hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => setExpandedId(expandedId === item.$id ? null : item.$id)}>
-                    <div className="flex-1 min-w-0 pr-4">
-                      <div className="flex items-center gap-3 mb-1 flex-wrap">
-                        <p className="font-semibold text-slate-900 truncate max-w-full">{item.nama_kegiatan}</p>
-                        <StatusBadge status={item.status} />
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
-                        {item.pengusul_nama && <span>Pengusul: {item.pengusul_nama}</span>}
-                        {showJurusan && item.nama_jurusan && <span>Jurusan: {item.nama_jurusan}</span>}
-                        <span>{formatDate(item.$createdAt || item.created_at)}</span>
-                      </div>
-                    </div>
-                    <ChevronDown className={`size-5 text-slate-400 transition-transform ${expandedId === item.$id ? 'rotate-180' : ''}`} />
-                  </div>
-                  {expandedId === item.$id && (
-                    <div className="px-6 pb-6 pt-2 bg-slate-50/50 border-t border-slate-100">
-                      <p className="text-sm font-medium text-slate-600 mb-3">Progress Workflow</p>
-                      <ProgressTracker status={item.status} />
-                      <div className="mt-4 flex gap-3 text-xs text-slate-500">
-                        <span>Update terakhir: {timeAgo(item.$updatedAt || item.updated_at)}</span>
-                        {item.jenis_kegiatan && <span>Jenis: {item.jenis_kegiatan}</span>}
-                      </div>
-
-                      {onIntervene && (
-                        <div className="mt-6 p-4 border border-red-200 bg-red-50 rounded-lg">
-                          <p className="text-sm font-semibold text-red-800 mb-2">Intervensi Status (Admin Only)</p>
-                          <div className="flex gap-3 items-center">
-                            <Select value={interveneStatus} onValueChange={setInterveneStatus}>
-                              <SelectTrigger className="w-[200px] bg-white border-red-200">
-                                <SelectValue placeholder="Pilih status baru..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="submitted">Submitted (Draft)</SelectItem>
-                                <SelectItem value="revision_requested">Revision Requested</SelectItem>
-                                <SelectItem value="verified">Verified (Verifikator)</SelectItem>
-                                <SelectItem value="approved_ppk">Approved (PPK)</SelectItem>
-                                <SelectItem value="approved_wadir">Approved (Wadir)</SelectItem>
-                                <SelectItem value="funds_disbursed">Funds Disbursed (Bendahara)</SelectItem>
-                                <SelectItem value="rejected">Rejected</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button 
-                              variant="destructive" 
-                              disabled={!interveneStatus || isIntervening}
-                              onClick={async () => {
-                                setIsIntervening(true);
-                                try {
-                                  await onIntervene(item.$id, interveneStatus);
-                                } finally {
-                                  setIsIntervening(false);
-                                  setInterveneStatus('');
-                                }
-                              }}
-                            >
-                              Force Update
-                            </Button>
-                          </div>
-                          <p className="text-xs text-red-600 mt-2">Peringatan: Mengubah status secara paksa dapat mem-bypass alur persetujuan normal.</p>
+              {filtered.map(item => {
+                const itemId = item.id || item.$id || '';
+                return (
+                  <div key={itemId}>
+                    <div className="flex items-center justify-between p-4 hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => setExpandedId(expandedId === itemId ? null : itemId)}>
+                      <div className="flex-1 min-w-0 pr-4">
+                        <div className="flex items-center gap-3 mb-1 flex-wrap">
+                          <p className="font-semibold text-slate-900 truncate max-w-full">{item.nama_kegiatan}</p>
+                          <StatusBadge status={item.status} />
                         </div>
-                      )}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+                          {item.pengusul_nama && <span>Pengusul: {item.pengusul_nama}</span>}
+                          {showJurusan && item.nama_jurusan && <span>Jurusan: {item.nama_jurusan}</span>}
+                          <span>{formatDate(item.$createdAt || item.created_at)}</span>
+                        </div>
+                      </div>
+                      <ChevronDown className={`size-5 text-slate-400 transition-transform ${expandedId === itemId ? 'rotate-180' : ''}`} />
                     </div>
-                  )}
-                </div>
-              ))}
+                    {expandedId === itemId && (
+                      <div className="px-6 pb-6 pt-2 bg-slate-50/50 border-t border-slate-100">
+                        <p className="text-sm font-medium text-slate-600 mb-3">Progress Workflow</p>
+                        <ProgressTracker status={item.status} />
+                        <div className="mt-4 flex gap-3 text-xs text-slate-500">
+                          <span>Update terakhir: {timeAgo(item.$updatedAt || item.updated_at)}</span>
+                          {item.jenis_kegiatan && <span>Jenis: {item.jenis_kegiatan}</span>}
+                        </div>
+
+                        {onIntervene && (
+                          <div className="mt-6 p-4 border border-red-200 bg-red-50 rounded-lg">
+                            <p className="text-sm font-semibold text-red-800 mb-2">Intervensi Status (Admin Only)</p>
+                            <div className="flex gap-3 items-center">
+                              <Select value={interveneStatus} onValueChange={setInterveneStatus}>
+                                <SelectTrigger className="w-[200px] bg-white border-red-200">
+                                  <SelectValue placeholder="Pilih status baru..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="submitted">Submitted (Draft)</SelectItem>
+                                  <SelectItem value="revision_requested">Revision Requested</SelectItem>
+                                  <SelectItem value="verified">Verified (Verifikator)</SelectItem>
+                                  <SelectItem value="approved_ppk">Approved (PPK)</SelectItem>
+                                  <SelectItem value="approved_wadir">Approved (Wadir)</SelectItem>
+                                  <SelectItem value="funds_disbursed">Funds Disbursed (Bendahara)</SelectItem>
+                                  <SelectItem value="rejected">Rejected</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button 
+                                variant="destructive" 
+                                disabled={!interveneStatus || isIntervening}
+                                onClick={async () => {
+                                  setIsIntervening(true);
+                                  try {
+                                    await onIntervene(itemId, interveneStatus);
+                                  } finally {
+                                    setIsIntervening(false);
+                                    setInterveneStatus('');
+                                  }
+                                }}
+                              >
+                                Force Update
+                              </Button>
+                            </div>
+                            <p className="text-xs text-red-600 mt-2">Peringatan: Mengubah status secara paksa dapat mem-bypass alur persetujuan normal.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

@@ -8,6 +8,25 @@ import { useState, useEffect } from 'react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { formatCurrency } from '@/lib/helpers';
 
+function parseIndikatorKinerja(rawValue: string | undefined | null): any[] {
+  if (!rawValue) return [];
+  try {
+    const parsed = JSON.parse(rawValue);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item: any) => ({
+        bulan: item.bulan || '',
+        indikator: item.indikator || '',
+        target: item.target !== undefined && item.target !== null ? Number(item.target) : null,
+      }));
+    }
+  } catch {
+    if (rawValue && rawValue.trim()) {
+      return [{ bulan: '', indikator: rawValue, target: null }];
+    }
+  }
+  return [];
+}
+
 export function VerifikasiDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -249,6 +268,43 @@ export function VerifikasiDetailPage() {
                     <KakField label="Rencana Strategi Pencapaian" value={kakData.strategi_pencapaian} color="blue" />
                     <KakField label="Arahan Metode Pelaksanaan" value={kakData.metode_pelaksanaan} color="sky" />
                     <KakField label="Alur Tahapan Pelaksanaan (Timeline)" value={kakData.tahapan_pelaksanaan} color="cyan" />
+                    {kakData.indikator_kinerja && (
+                      <div className="border-t border-slate-100/80 pt-6">
+                        <Label className="text-slate-500 text-xs uppercase tracking-wider mb-2 block font-semibold">Tahapan Indikator Kinerja</Label>
+                        {(() => {
+                          const indicators = parseIndikatorKinerja(kakData.indikator_kinerja);
+                          if (indicators.length === 0) return <p className="text-sm text-slate-500">-</p>;
+                          const isTabular = indicators.some(i => i.bulan || i.target);
+                          if (!isTabular) {
+                            return <p className="text-sm text-slate-850 leading-relaxed bg-slate-50/80 p-4 rounded-xl border border-slate-200/60">{indicators[0]?.indikator || '-'}</p>;
+                          }
+                          return (
+                            <div className="border border-slate-200/85 rounded-xl overflow-hidden shadow-sm max-w-2xl mt-1.5">
+                              <table className="w-full text-xs text-left">
+                                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                                  <tr>
+                                    <th className="px-3 py-2 w-12 text-center">No</th>
+                                    <th className="px-3 py-2 w-32">Bulan</th>
+                                    <th className="px-3 py-2">Indikator Keberhasilan</th>
+                                    <th className="px-3 py-2 w-28 text-center">Target Kumulatif</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                  {indicators.map((item: any, idx: number) => (
+                                    <tr key={idx} className="bg-white hover:bg-slate-50/50 transition-colors">
+                                      <td className="px-3 py-2 text-center font-medium text-slate-500">{idx + 1}</td>
+                                      <td className="px-3 py-2 font-medium text-slate-800 capitalize">{item.bulan || '-'}</td>
+                                      <td className="px-3 py-2 text-slate-600">{item.indikator || '-'}</td>
+                                      <td className="px-3 py-2 text-center font-semibold text-emerald-600 bg-emerald-50/30">{item.target ? `${item.target}%` : '-'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                     {(kakData.kurun_waktu_mulai || kakData.kurun_waktu_selesai) && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-slate-100/80 bg-slate-50/50 p-6 rounded-2xl">
                         <InfoRow label="Perkiraan Tanggal Mulai Pelaksanaan" value={fmt(kakData.kurun_waktu_mulai)} />

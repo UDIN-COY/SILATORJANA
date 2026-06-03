@@ -659,6 +659,13 @@ Pada tanggal 3 Juni 2026, fungsionalitas workflow usulan kegiatan disinkronisasi
   - Halaman `UserDetailPage.tsx` diperbarui untuk menampilkan label dan warna badge yang tepat bagi seluruh sub-role Wadir.
   - Halaman `ArchivePage.tsx` diperbarui untuk melabeli judul arsip secara dinamis sesuai role Wadir yang sedang aktif.
   - Endpoint index kegiatan di `KegiatanController.php` diperbarui sehingga setiap role Wadir hanya melihat dan menyetujui kegiatan yang ditujukan untuk unit mereka (`verifikator_target`), dengan Wadir II sebagai unit default.
-  - Database seeder (`DatabaseSeeder.php`) diperbarui untuk menyertakan user test untuk Wadir I, III, dan IV, serta memperbarui output credentials.
+- Database seeder (`DatabaseSeeder.php`) diperbarui untuk menyertakan user test untuk Wadir I, III, dan IV, serta memperbarui output credentials.
+
+#### F. Perbaikan Verifikator Detail & Monitoring Bug Fixes (Batch 3)
+- **Visualisasi KAK Indikator di Verifikator Detail (`VerifikasiDetailPage.tsx`)**: Ditambahkan fungsi parsing `parseIndikatorKinerja` dan visualisasi tabel Indikator Kinerja pada tab KAK agar Verifikator dapat memeriksa data indikator sebelum memberikan persetujuan.
+- **Bug Ekspansi List & Intervensi Status Admin (`MonitoringPage.tsx` & `AdminMonitoringPage.tsx`)**: 
+  - Memperbaiki properti key dan pengecekan expanded state pada list monitoring dengan memetakan `item.id || item.$id` untuk mengatasi properti `$id` Appwrite yang bernilai `undefined` pada data Laravel.
+  - Memperbarui parameter `onIntervene` untuk mendukung tipe `string | number` dan melakukan perbandingan string coercion (`String(item.id) === String(id)`) guna menyukseskan perubahan status paksa oleh Administrator secara real-time pada interface monitoring.
+
 
 
