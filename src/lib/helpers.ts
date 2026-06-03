@@ -87,24 +87,26 @@ export function getProgressSteps(status: string): ProgressStep[] {
 
   const s = status?.toLowerCase() || '';
 
-  if (s === 'submitted' || s === 'revisi_done' || s === 'diajukan') {
+  if (s === 'draft') {
+    steps[0].status = 'pending';
+  } else if (s === 'submitted' || s === 'revisi_done') {
     steps[0].status = 'success'; steps[1].status = 'pending';
   } else if (s === 'revision_requested' || s === 'revisi') {
+    // Bisa dari verifikator atau PPK — tampilkan di step verifikator sebagai revisi
     steps[0].status = 'success'; steps[1].status = 'revisi';
-  } else if (s === 'diverifikasi') {
-    steps[0].status = 'pending'; steps[1].status = 'success';
-  } else if (s === 'verified' || s === 'pending_ppk') {
+  } else if (s === 'diverifikasi' || s === 'verified') {
+    // Verifikator sudah setujui, pengusul perlu teruskan ke PPK
     steps[0].status = 'success'; steps[1].status = 'success'; steps[2].status = 'pending';
-  } else if (s === 'approved_ppk' || s === 'pending_wadir') {
+  } else if (s === 'pending_ppk') {
+    // Diteruskan ke PPK, menunggu review
+    steps[0].status = 'success'; steps[1].status = 'success'; steps[2].status = 'pending';
+  } else if (s === 'approved_ppk') {
     steps[0].status = steps[1].status = steps[2].status = 'success'; steps[3].status = 'pending';
   } else if (s === 'approved_wadir') {
     steps[0].status = steps[1].status = steps[2].status = steps[3].status = 'success'; steps[4].status = 'pending';
-  } else if (['accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_verified', 'lpj_done', 'selesai', 'completed'].includes(s)) {
+  } else if (['accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_pending', 'lpj_revision', 'lpj_approved', 'lpj_verified', 'lpj_done', 'selesai', 'completed'].includes(s)) {
     steps.forEach(st => st.status = 'success');
   } else if (s === 'rejected' || s === 'ditolak') {
-    // Determine where it got stuck
-    // Need a way to know, but let's assume it's stuck at the current step if we can't tell,
-    // By default just put stuck at step 1 for now or don't modify it.
     steps[0].status = 'success'; steps[1].status = 'stuck';
   }
 

@@ -90,8 +90,13 @@ export function RoleLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const urlRole = location.pathname.split('/')[2];
-  const actualRole = getUserRole();
-  const role = actualRole || urlRole || 'user'; // Gunakan actualRole dari localStorage
+  const actualRole = getUserRole() || '';
+  
+  // Normalize wadir roles (wadir1, wadir2, wadir3, wadir4) to wadir2
+  const normalizedActualRole = actualRole.startsWith('wadir') ? 'wadir2' : actualRole;
+  const normalizedUrlRole = (urlRole || '').startsWith('wadir') ? 'wadir2' : urlRole;
+  
+  const role = normalizedActualRole || normalizedUrlRole || 'user';
   const userName = getUserName();
   
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
@@ -108,11 +113,11 @@ export function RoleLayout() {
 
   // FRONTEND ROLE GUARD: Cegah ganti URL manual
   useEffect(() => {
-    if (actualRole && urlRole && urlRole !== actualRole) {
+    if (normalizedActualRole && normalizedUrlRole && normalizedUrlRole !== normalizedActualRole) {
       // Jika mencoba akses dashboard role lain, kembalikan ke dashboard aslinya
-      navigate(`/dashboard/${actualRole}`, { replace: true });
+      navigate(`/dashboard/${normalizedActualRole}`, { replace: true });
     }
-  }, [actualRole, urlRole, navigate]);
+  }, [normalizedActualRole, normalizedUrlRole, navigate]);
 
   const toggleDarkMode = (e: React.MouseEvent) => {
     const nextDark = !isDarkMode;

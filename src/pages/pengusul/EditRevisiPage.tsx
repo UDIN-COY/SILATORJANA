@@ -3,11 +3,18 @@ import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Send, Plus, Loader2, Trash2, MessageSquare, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Send, Plus, Loader2, Trash2, MessageSquare, AlertTriangle, ShoppingCart, Wrench, Plane } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import { fetchKAK, fetchIKU, fetchRAB, formatCurrency } from '@/lib/helpers';
+import { fetchKAK, fetchRAB, formatCurrency, getCurrentUser } from '@/lib/helpers';
+
+const BULAN_INDONESIA = [
+  'Januari','Februari','Maret','April','Mei','Juni',
+  'Juli','Agustus','September','Oktober','November','Desember'
+];
+const SATUAN_BARANG    = ['', 'OK', 'LS', 'PCS', 'PACK', 'SET', 'UNIT', 'BOX'];
+const SATUAN_JASA      = ['', 'ORG', 'JAM', 'KALI', 'LS'];
+const SATUAN_PERJALANAN = ['', 'PP', 'ORG', 'KALI', 'LS'];
 
 interface RabItem {
   id?: number;
@@ -17,8 +24,15 @@ interface RabItem {
   satuan1: string;
   qty2: number;
   satuan2: string;
-  qty3: number;
+  qty3: number | null;
+  satuan3: string;
   harga_satuan: number;
+}
+
+interface IndikatorRow {
+  bulan: string;
+  indikator: string;
+  target: number | null;
 }
 
 function calcTotal(r: RabItem): number {
@@ -39,24 +53,180 @@ function parseRevisiComments(catatan: string): Record<string, string> {
   return result;
 }
 
+// Parse indikator_kinerja string (JSON or plain text) to rows
+function parseIndikatorKinerja(rawValue: string | undefined | null): IndikatorRow[] {
+  if (!rawValue) return [];
+  try {
+    const parsed = JSON.parse(rawValue);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item: any) => ({
+        bulan: item.bulan || '',
+        indikator: item.indikator || '',
+        target: item.target !== undefined ? Number(item.target) : null,
+      }));
+    }
+  } catch {
+    // Not JSON – treat as plain text indikator
+    if (rawValue.trim()) {
+      return [{ bulan: '', indikator: rawValue, target: null }];
+    }
+  }
+  return [];
+}
+
+// Split RAB items by category
+function splitRabByKategori(items: RabItem[]) {
+  const barang = items.filter(i => i.kategori === 'barang');
+  const jasa   = items.filter(i => i.kategori === 'jasa');
+  const perjalanan = items.filter(i => i.kategori === 'perjalanan');
+  return { barang, jasa, perjalanan };
+}
+
+// ──────────────── RAB Table for edit ────────────────
+function EditRabTable({
+  title, icon, items, onAdd, onRemove, onUpdate, satuanOptions
+}: {
+  title: string;
+  icon: React.ReactNode;
+  items: RabItem[];
+  onAdd: () => void;
+  onRemove: (i: number) => void;
+  onUpdate: (i: number, field: keyof RabItem, val: any) => void;
+  satuanOptions: string[];
+}) {
+  const subtotal = items.reduce((s, it) => s + calcTotal(it), 0);
+
+  return (
+    <Card className="shadow-sm border-slate-200/60 bg-white">
+      <CardHeader className="bg-slate-50/30 border-b border-slate-100 py-4 px-6 flex flex-row items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center size-8 rounded-lg bg-emerald-100 text-emerald-700">
+            {icon}
+          </div>
+          <CardTitle className="text-base text-emerald-900">{title} ({items.length} item)</CardTitle>
+        </div>
+        <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={onAdd}>
+          <Plus className="size-3.5 mr-1" /> Tambah Item
+        </Button>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left min-w-[860px]">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+              <tr>
+                <th className="px-3 py-3 w-8">No</th>
+                <th className="px-3 py-3">Uraian</th>
+                <th className="px-3 py-3 w-14 text-center">Jml 1 *</th>
+                <th className="px-3 py-3 w-24">Satuan 1 *</th>
+                <th className="px-3 py-3 w-14 text-center">Jml 2 *</th>
+                <th className="px-3 py-3 w-24">Satuan 2 *</th>
+                <th className="px-3 py-3 w-14 text-center">Jml 3</th>
+                <th className="px-3 py-3 w-24">Satuan 3</th>
+                <th className="px-3 py-3 w-28 text-right">Harga (Rp) *</th>
+                <th className="px-3 py-3 w-28 text-right">Total (Rp)</th>
+                <th className="px-3 py-3 w-10"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {items.length === 0 && (
+                <tr><td colSpan={11} className="py-6 text-center text-slate-400">Belum ada item.</td></tr>
+              )}
+              {items.map((item, idx) => (
+                <tr key={idx} className="bg-white hover:bg-slate-50/50 transition-colors">
+                  <td className="px-3 py-2 text-slate-500">{idx + 1}</td>
+                  <td className="p-1.5">
+                    <Input value={item.uraian} onChange={e => onUpdate(idx, 'uraian', e.target.value)} className="h-8 rounded-lg text-xs" />
+                  </td>
+                  <td className="p-1.5">
+                    <Input type="number" min={1} value={item.qty1} onChange={e => onUpdate(idx, 'qty1', parseInt(e.target.value) || 1)} className="h-8 rounded-lg text-xs text-center px-1" />
+                  </td>
+                  <td className="p-1.5">
+                    <select value={item.satuan1} onChange={e => onUpdate(idx, 'satuan1', e.target.value)}
+                      className="w-full h-8 rounded-lg border border-slate-200 text-xs px-2 bg-white focus:border-emerald-500 focus:outline-none">
+                      {satuanOptions.map(s => <option key={s} value={s}>{s || 'Pilih'}</option>)}
+                    </select>
+                  </td>
+                  <td className="p-1.5">
+                    <Input type="number" min={1} value={item.qty2} onChange={e => onUpdate(idx, 'qty2', parseInt(e.target.value) || 1)} className="h-8 rounded-lg text-xs text-center px-1" />
+                  </td>
+                  <td className="p-1.5">
+                    <select value={item.satuan2} onChange={e => onUpdate(idx, 'satuan2', e.target.value)}
+                      className="w-full h-8 rounded-lg border border-slate-200 text-xs px-2 bg-white focus:border-emerald-500 focus:outline-none">
+                      {satuanOptions.map(s => <option key={s} value={s}>{s || 'Pilih'}</option>)}
+                    </select>
+                  </td>
+                  <td className="p-1.5">
+                    <Input type="number" min={0} value={item.qty3 ?? ''} placeholder="Opsional" onChange={e => onUpdate(idx, 'qty3', e.target.value ? parseInt(e.target.value) : null)} className="h-8 rounded-lg text-xs text-center px-1" />
+                  </td>
+                  <td className="p-1.5">
+                    <select value={item.satuan3} onChange={e => onUpdate(idx, 'satuan3', e.target.value)}
+                      className="w-full h-8 rounded-lg border border-slate-200 text-xs px-2 bg-white focus:border-emerald-500 focus:outline-none">
+                      {satuanOptions.map(s => <option key={s} value={s}>{s || 'Pilih'}</option>)}
+                    </select>
+                  </td>
+                  <td className="p-1.5">
+                    <Input type="number" min={0} value={item.harga_satuan || ''} placeholder="0" onChange={e => onUpdate(idx, 'harga_satuan', parseInt(e.target.value) || 0)} className="h-8 rounded-lg text-xs text-right px-2" />
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold text-slate-800 bg-slate-50/50 whitespace-nowrap">
+                    {formatCurrency(calcTotal(item))}
+                  </td>
+                  <td className="p-1.5 text-center">
+                    <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg h-8 w-8" onClick={() => onRemove(idx)}>
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            {items.length > 0 && (
+              <tfoot>
+                <tr className="bg-emerald-50 border-t border-emerald-100">
+                  <td colSpan={9} className="px-4 py-3 text-right font-bold text-emerald-900 text-xs uppercase tracking-wider">Subtotal {title}:</td>
+                  <td className="px-3 py-3 text-right font-black text-emerald-700">{formatCurrency(subtotal)}</td>
+                  <td />
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ──────────────── Main Page ────────────────
 export function EditRevisiPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [kegiatan, setKegiatan] = useState<any>(null);
-  const [kakId, setKakId] = useState<string | null>(null);
   const [revisiComments, setRevisiComments] = useState<Record<string, string>>({});
+  const [currentUser] = useState<any>(getCurrentUser());
 
   const [form, setForm] = useState({
-    nama_kegiatan: '', deskripsi: '', jenis_kegiatan: '', tanggal_kegiatan: '',
-    tempat: '', pengusul_organisasi: '',
-    gambaran_umum: '', penerima_manfaat: '', strategi_pencapaian: '',
-    metode_pelaksanaan: '', tahapan_pelaksanaan: '', indikator_kinerja: '',
-    kurun_waktu_mulai: '', kurun_waktu_selesai: '',
+    nama_kegiatan: '',
+    jenis_kegiatan: '',
+    tanggal_kegiatan: '',
+    tempat: '',
+    pengusul_organisasi: '',
+    gambaran_umum: '',
+    penerima_manfaat: '',
+    strategi_pencapaian: '',
+    metode_pelaksanaan: '',
+    tahapan_pelaksanaan: '',
+    kurun_waktu_mulai: '',
+    kurun_waktu_selesai: '',
   });
-  const [rabItems, setRabItems] = useState<RabItem[]>([]);
-  const [deletedRabIds, setDeletedRabIds] = useState<(string | number)[]>([]);
+
+  const [indikatorRows, setIndikatorRows] = useState<IndikatorRow[]>([]);
+  const [rabBarang, setRabBarang] = useState<RabItem[]>([]);
+  const [rabJasa, setRabJasa] = useState<RabItem[]>([]);
+  const [rabPerjalanan, setRabPerjalanan] = useState<RabItem[]>([]);
+
+  function emptyRab(kategori: string): RabItem {
+    return { kategori, uraian: '', qty1: 1, satuan1: '', qty2: 1, satuan2: '', qty3: null, satuan3: '', harga_satuan: 0 };
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -68,7 +238,6 @@ export function EditRevisiPage() {
         setForm(prev => ({
           ...prev,
           nama_kegiatan: doc.nama_kegiatan || '',
-          deskripsi: doc.deskripsi || '',
           jenis_kegiatan: doc.jenis_kegiatan || '',
           tanggal_kegiatan: doc.tanggal_kegiatan || '',
           tempat: doc.tempat || '',
@@ -77,7 +246,6 @@ export function EditRevisiPage() {
 
         const kak = await fetchKAK(id);
         if (kak) {
-          setKakId(kak.id);
           setForm(prev => ({
             ...prev,
             gambaran_umum: kak.gambaran_umum || '',
@@ -85,50 +253,72 @@ export function EditRevisiPage() {
             strategi_pencapaian: kak.strategi_pencapaian || '',
             metode_pelaksanaan: kak.metode_pelaksanaan || '',
             tahapan_pelaksanaan: kak.tahapan_pelaksanaan || '',
-            indikator_kinerja: kak.indikator_kinerja || '',
             kurun_waktu_mulai: kak.kurun_waktu_mulai || '',
             kurun_waktu_selesai: kak.kurun_waktu_selesai || '',
           }));
+          setIndikatorRows(parseIndikatorKinerja(kak.indikator_kinerja));
         }
 
         const rabDocs = await fetchRAB(id);
-        setRabItems(rabDocs.map((r: any) => ({
-          id: r.id, kategori: r.kategori || 'barang', uraian: r.uraian || '',
-          qty1: r.qty1 || r.volume || 1, satuan1: r.satuan1 || '', qty2: r.qty2 || 1,
-          satuan2: r.satuan2 || '', qty3: r.qty3 || 0, harga_satuan: r.harga_satuan || 0,
-        })));
-      } catch (e) { console.error(e); }
-      finally { setIsLoading(false); }
+        const mapped: RabItem[] = rabDocs.map((r: any) => ({
+          id: r.id,
+          kategori: r.kategori || 'barang',
+          uraian: r.uraian || '',
+          qty1: r.qty1 || 1,
+          satuan1: r.satuan1 || '',
+          qty2: r.qty2 || 1,
+          satuan2: r.satuan2 || '',
+          qty3: r.qty3 !== undefined && r.qty3 !== null ? r.qty3 : null,
+          satuan3: r.satuan3 || '',
+          harga_satuan: r.harga_satuan || 0,
+        }));
+        const { barang, jasa, perjalanan } = splitRabByKategori(mapped);
+        setRabBarang(barang.length ? barang : [emptyRab('barang')]);
+        setRabJasa(jasa.length ? jasa : [emptyRab('jasa')]);
+        setRabPerjalanan(perjalanan.length ? perjalanan : [emptyRab('perjalanan')]);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
     })();
   }, [id]);
 
-  const updateForm = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
+  const updateForm = (field: string, value: string) =>
+    setForm(prev => ({ ...prev, [field]: value }));
 
-  const addRab = () => setRabItems(prev => [...prev, {
-    kategori: 'barang', uraian: '', qty1: 1, satuan1: '', qty2: 1, satuan2: '', qty3: 0, harga_satuan: 0,
-  }]);
+  // Indikator helpers
+  const addIndikatorRow = () =>
+    setIndikatorRows(prev => [...prev, { bulan: '', indikator: '', target: null }]);
+  const removeIndikatorRow = (i: number) =>
+    setIndikatorRows(prev => prev.filter((_, idx) => idx !== i));
+  const updateIndikator = (i: number, field: keyof IndikatorRow, val: any) =>
+    setIndikatorRows(prev => { const n = [...prev]; (n[i] as any)[field] = val; return n; });
 
-  const removeRab = (idx: number) => {
-    const item = rabItems[idx];
-    if (item.id) setDeletedRabIds(prev => [...prev, item.id!]);
-    setRabItems(prev => prev.filter((_, i) => i !== idx));
-  };
+  // RAB helpers per kategori
+  const makeRabUpdater = (setter: React.Dispatch<React.SetStateAction<RabItem[]>>) =>
+    (i: number, field: keyof RabItem, val: any) =>
+      setter(prev => { const n = [...prev]; (n[i] as any)[field] = val; return n; });
 
-  const updateRab = (idx: number, field: string, value: any) => {
-    setRabItems(prev => { const n = [...prev]; (n[idx] as any)[field] = value; return n; });
-  };
-
-  const grandTotal = rabItems.reduce((s, r) => s + calcTotal(r), 0);
+  const grandTotal = [...rabBarang, ...rabJasa, ...rabPerjalanan].reduce((s, r) => s + calcTotal(r), 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id || !kegiatan) return;
     setIsSubmitting(true);
     try {
-      // Update kegiatan
+      const toRabPayload = (items: RabItem[], kategori: string) =>
+        items.filter(it => it.uraian.trim()).map(it => ({
+          kategori,
+          uraian: it.uraian,
+          qty1: it.qty1, satuan1: it.satuan1,
+          qty2: it.qty2, satuan2: it.satuan2,
+          qty3: it.qty3 ?? null, satuan3: it.satuan3,
+          harga_satuan: it.harga_satuan,
+        }));
+
       await apiUpdateKegiatan(id, {
         nama_kegiatan: form.nama_kegiatan,
-        deskripsi: form.deskripsi || null,
         jenis_kegiatan: form.jenis_kegiatan || null,
         tanggal_kegiatan: form.tanggal_kegiatan || null,
         tempat: form.tempat || null,
@@ -136,30 +326,31 @@ export function EditRevisiPage() {
         status: 'revisi_done',
         catatan_revisi: null,
         total_anggaran: grandTotal,
-      });
-
-      // Update KAK + RAB via nested update
-      const kakData: Record<string, any> = {};
-      for (const key of ['gambaran_umum','penerima_manfaat','strategi_pencapaian','metode_pelaksanaan','tahapan_pelaksanaan','indikator_kinerja','kurun_waktu_mulai','kurun_waktu_selesai'] as const) {
-        if ((form as any)[key]) kakData[key] = (form as any)[key];
-      }
-
-      // Send nested KAK + RAB to Laravel
-      await apiUpdateKegiatan(id, {
-        kak: kakData,
-        rab: rabItems.map(item => ({
-          kategori: item.kategori, uraian: item.uraian,
-          qty1: item.qty1, satuan1: item.satuan1, qty2: item.qty2, satuan2: item.satuan2,
-          qty3: item.qty3, harga_satuan: item.harga_satuan,
-        })),
+        kak: {
+          gambaran_umum: form.gambaran_umum || null,
+          penerima_manfaat: form.penerima_manfaat || null,
+          strategi_pencapaian: form.strategi_pencapaian || null,
+          metode_pelaksanaan: form.metode_pelaksanaan || null,
+          tahapan_pelaksanaan: form.tahapan_pelaksanaan || null,
+          kurun_waktu_mulai: form.kurun_waktu_mulai || null,
+          kurun_waktu_selesai: form.kurun_waktu_selesai || null,
+          indikator_kinerja: indikatorRows.length > 0 ? JSON.stringify(indikatorRows) : null,
+        },
+        rab: [
+          ...toRabPayload(rabBarang, 'barang'),
+          ...toRabPayload(rabJasa, 'jasa'),
+          ...toRabPayload(rabPerjalanan, 'perjalanan'),
+        ],
       });
 
       alert('Revisi berhasil dikirim!');
       navigate('/dashboard/pengusul/needs-work');
     } catch (error: any) {
       console.error(error);
-      alert('Gagal menyimpan revisi: ' + error.message);
-    } finally { setIsSubmitting(false); }
+      alert('Gagal menyimpan revisi: ' + (error?.response?.data?.message || error.message));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) return <div className="py-12 text-center"><Loader2 className="animate-spin text-emerald-700 mx-auto size-8" /></div>;
@@ -168,9 +359,9 @@ export function EditRevisiPage() {
   const hasComments = Object.keys(revisiComments).length > 0;
 
   const getMatchedComments = (fields: string[]) => {
-    const matched = fields.flatMap(f => {
-      return Object.entries(revisiComments).filter(([k]) => k.toLowerCase().includes(f.toLowerCase()));
-    });
+    const matched = fields.flatMap(f =>
+      Object.entries(revisiComments).filter(([k]) => k.toLowerCase().includes(f.toLowerCase()))
+    );
     const unique = new Map();
     matched.forEach(([k, v]) => unique.set(k, v));
     return Array.from(unique.entries());
@@ -192,8 +383,11 @@ export function EditRevisiPage() {
     );
   };
 
-  const inputClass = (fields: string[]) => getMatchedComments(fields).length > 0 ? 'border-amber-400 bg-amber-50/50 focus-visible:ring-amber-500' : '';
-  const taClass = (fields: string[]) => "flex min-h-[80px] w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-700 " + inputClass(fields);
+  const inputHighlight = (fields: string[]) =>
+    getMatchedComments(fields).length > 0 ? 'border-amber-400 bg-amber-50/50' : '';
+
+  const taClass = (fields: string[]) =>
+    `flex min-h-[80px] w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-700 ${inputHighlight(fields)}`;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -218,7 +412,7 @@ export function EditRevisiPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Info Kegiatan */}
+        {/* ── Info Kegiatan ── */}
         <Card className="shadow-sm border-slate-200">
           <CardHeader className="bg-slate-50/50 border-b border-slate-100">
             <CardTitle>1. Informasi Kegiatan</CardTitle>
@@ -226,140 +420,199 @@ export function EditRevisiPage() {
           <CardContent className="space-y-5 pt-6">
             <div className="space-y-2">
               <Label>Nama Kegiatan *</Label>
-              <Input className={inputClass(['nama', 'info - nama'])} value={form.nama_kegiatan} onChange={e => updateForm('nama_kegiatan', e.target.value)} required />
+              <Input className={inputHighlight(['nama', 'info - nama'])} value={form.nama_kegiatan} onChange={e => updateForm('nama_kegiatan', e.target.value)} required />
               <RevisiNote fields={['nama', 'info - nama']} />
             </div>
-            <div className="space-y-2">
-              <Label>Deskripsi</Label>
-              <textarea className={taClass(['deskripsi'])} value={form.deskripsi} onChange={e => updateForm('deskripsi', e.target.value)} />
-              <RevisiNote fields={['deskripsi']} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Jurusan - readonly */}
+              <div className="space-y-2">
+                <Label>Jurusan</Label>
+                <Input
+                  value={currentUser?.jurusan || currentUser?.nama_jurusan || kegiatan?.nama_jurusan || ''}
+                  readOnly
+                  className="bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed"
+                />
+                <p className="text-xs text-slate-500">Jurusan otomatis sesuai akun Anda</p>
+              </div>
+              {/* Pengusul / Organisasi */}
+              <div className="space-y-2">
+                <Label>Pengusul / Organisasi</Label>
+                <Input
+                  value={form.pengusul_organisasi}
+                  onChange={e => updateForm('pengusul_organisasi', e.target.value)}
+                  placeholder="Cth: Himpunan Mahasiswa TIK"
+                  className={inputHighlight(['pengusul', 'organisasi'])}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="space-y-2">
                 <Label>Jenis Kegiatan</Label>
-                <div className={inputClass(['jenis'])}>
-                  <Select value={form.jenis_kegiatan} onValueChange={v => updateForm('jenis_kegiatan', v)}>
-                    <SelectTrigger className={inputClass(['jenis'])}><SelectValue placeholder="Pilih" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pengadaan">Pengadaan</SelectItem>
-                      <SelectItem value="acara">Acara / Event</SelectItem>
-                      <SelectItem value="riset">Penelitian</SelectItem>
-                      <SelectItem value="pelatihan">Pelatihan</SelectItem>
-                      <SelectItem value="lainnya">Lainnya</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Input
+                  value={form.jenis_kegiatan}
+                  onChange={e => updateForm('jenis_kegiatan', e.target.value)}
+                  placeholder="Cth: Seminar / Workshop"
+                  className={inputHighlight(['jenis'])}
+                />
                 <RevisiNote fields={['jenis']} />
               </div>
               <div className="space-y-2">
                 <Label>Tanggal</Label>
-                <Input type="date" className={inputClass(['tanggal'])} value={form.tanggal_kegiatan} onChange={e => updateForm('tanggal_kegiatan', e.target.value)} />
+                <Input type="date" className={inputHighlight(['tanggal'])} value={form.tanggal_kegiatan} onChange={e => updateForm('tanggal_kegiatan', e.target.value)} />
                 <RevisiNote fields={['tanggal']} />
               </div>
               <div className="space-y-2">
                 <Label>Tempat</Label>
-                <Input className={inputClass(['tempat'])} value={form.tempat} onChange={e => updateForm('tempat', e.target.value)} />
+                <Input className={inputHighlight(['tempat'])} value={form.tempat} onChange={e => updateForm('tempat', e.target.value)} />
                 <RevisiNote fields={['tempat']} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* KAK */}
+        {/* ── KAK ── */}
         <Card className="shadow-sm border-slate-200">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100"><CardTitle>2. KAK (Kerangka Acuan Kerja)</CardTitle></CardHeader>
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+            <CardTitle>2. KAK (Kerangka Acuan Kerja)</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-5 pt-6">
-            {(['gambaran_umum','penerima_manfaat','strategi_pencapaian','metode_pelaksanaan','tahapan_pelaksanaan','indikator_kinerja'] as const).map(key => (
+            {(
+              [
+                ['gambaran_umum', 'Gambaran Umum Acara', ['gambaran', 'umum']],
+                ['penerima_manfaat', 'Penerima Manfaat', ['penerima', 'manfaat']],
+                ['metode_pelaksanaan', 'Metode Pelaksanaan', ['metode']],
+                ['tahapan_pelaksanaan', 'Tahapan Pelaksanaan', ['tahapan']],
+                ['strategi_pencapaian', 'Strategi Pencapaian Keluaran', ['strategi']],
+              ] as [string, string, string[]][]
+            ).map(([key, label, fields]) => (
               <div key={key} className="space-y-2">
-                <Label className="capitalize">{key.replace(/_/g, ' ')}</Label>
-                <textarea className={taClass([`kak - ${key.replace(/_/g, ' ')}`, key.replace(/_/g, ' ')])} value={(form as any)[key]} onChange={e => updateForm(key, e.target.value)} />
-                <RevisiNote fields={[`kak - ${key.replace(/_/g, ' ')}`, key.replace(/_/g, ' ')]} />
+                <Label>{label}</Label>
+                <textarea className={taClass(fields)} value={(form as any)[key]} onChange={e => updateForm(key, e.target.value)} />
+                <RevisiNote fields={fields} />
               </div>
             ))}
+
+            {/* Indikator Kinerja Table */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Indikator Kinerja</Label>
+                <Button type="button" variant="secondary" size="sm" className="h-8 rounded-xl" onClick={addIndikatorRow}>
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Tambah Baris
+                </Button>
+              </div>
+              <div className="border border-slate-200 rounded-xl overflow-x-auto">
+                <table className="w-full text-sm text-left min-w-[600px]">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase">
+                    <tr>
+                      <th className="px-3 py-3 w-8 text-center">No</th>
+                      <th className="px-3 py-3 w-36">Bulan</th>
+                      <th className="px-3 py-3">Indikator Keberhasilan</th>
+                      <th className="px-3 py-3 w-24 text-center">Target</th>
+                      <th className="px-3 py-3 w-10 text-center">%</th>
+                      <th className="px-3 py-3 w-12 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {indikatorRows.length === 0 && (
+                      <tr><td colSpan={6} className="py-5 text-center text-slate-400 text-sm">Belum ada indikator.</td></tr>
+                    )}
+                    {indikatorRows.map((row, idx) => (
+                      <tr key={idx} className="bg-white hover:bg-slate-50/50">
+                        <td className="px-3 py-2 text-center text-slate-500">{idx + 1}</td>
+                        <td className="p-1.5">
+                          <select
+                            value={row.bulan}
+                            onChange={e => updateIndikator(idx, 'bulan', e.target.value)}
+                            className="w-full h-9 rounded-lg border border-slate-200 text-sm px-2 bg-white focus:border-indigo-500 focus:outline-none"
+                          >
+                            <option value="">Pilih Bulan</option>
+                            {BULAN_INDONESIA.map(b => (
+                              <option key={b} value={b}>{b}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-1.5">
+                          <Input
+                            placeholder="Contoh: Tersusunnya dokumen RPKL"
+                            value={row.indikator}
+                            onChange={e => updateIndikator(idx, 'indikator', e.target.value)}
+                            className="h-9 rounded-lg text-sm"
+                          />
+                        </td>
+                        <td className="p-1.5">
+                          <Input
+                            type="number" min={0} placeholder="0"
+                            value={row.target ?? ''}
+                            onChange={e => updateIndikator(idx, 'target', e.target.value ? Number(e.target.value) : null)}
+                            className="h-9 rounded-lg text-sm text-center"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-slate-500 font-semibold">%</td>
+                        <td className="p-1.5 text-center">
+                          <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg h-8 w-8" onClick={() => removeIndikatorRow(idx)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <RevisiNote fields={['indikator']} />
+            </div>
+
+            {/* Kurun Waktu */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
               <div className="space-y-2">
-                <Label>Kurun Waktu Mulai</Label>
-                <Input type="date" className={inputClass(['waktu', 'kurun'])} value={form.kurun_waktu_mulai} onChange={e => updateForm('kurun_waktu_mulai', e.target.value)} />
+                <Label>Kurun Waktu Pelaksanaan (Dari)</Label>
+                <Input type="date" className={inputHighlight(['waktu', 'kurun'])} value={form.kurun_waktu_mulai} onChange={e => updateForm('kurun_waktu_mulai', e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Kurun Waktu Selesai</Label>
-                <Input type="date" className={inputClass(['waktu', 'kurun'])} value={form.kurun_waktu_selesai} onChange={e => updateForm('kurun_waktu_selesai', e.target.value)} />
+                <Label>Kurun Waktu Pelaksanaan (Sampai)</Label>
+                <Input type="date" className={inputHighlight(['waktu', 'kurun'])} value={form.kurun_waktu_selesai} onChange={e => updateForm('kurun_waktu_selesai', e.target.value)} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* RAB */}
-        <Card className="shadow-sm border-slate-200">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100 flex flex-row items-center justify-between">
-            <CardTitle>3. RAB (Rincian Anggaran Biaya)</CardTitle>
-            <Button type="button" variant="outline" size="sm" onClick={addRab}><Plus className="size-4 mr-1" /> Tambah</Button>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <RevisiNote fields={['rab']} />
-            <div className="border border-slate-200 rounded-lg overflow-x-auto mt-3">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                  <tr>
-                    <th className="px-2 py-2.5 font-medium w-24">Kategori</th>
-                    <th className="px-2 py-2.5 font-medium">Uraian</th>
-                    <th className="px-2 py-2.5 font-medium w-16 text-center">Qty1</th>
-                    <th className="px-2 py-2.5 font-medium w-16 text-center">Qty2</th>
-                    <th className="px-2 py-2.5 font-medium w-16 text-center">Qty3</th>
-                    <th className="px-2 py-2.5 font-medium w-28 text-right">Harga Satuan</th>
-                    <th className="px-2 py-2.5 font-medium w-32 text-right">Total</th>
-                    <th className="px-2 py-2.5 w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rabItems.map((item, idx) => {
-                    const rowFields = [`rab item #${idx + 1}`, `rab #${idx + 1}`];
-                    if (item.uraian) rowFields.push(`rab item #${idx + 1} (${item.uraian})`);
-                    const hasRowNote = getMatchedComments(rowFields).length > 0;
-                    return (
-                      <React.Fragment key={idx}>
-                        <tr className={`border-b border-slate-100 ${hasRowNote ? 'bg-amber-50/30' : ''}`}>
-                          <td className="p-1.5 align-top">
-                            <Select value={item.kategori} onValueChange={v => updateRab(idx, 'kategori', v)}>
-                              <SelectTrigger className={`h-8 text-xs ${inputClass(rowFields)}`}><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {['barang','jasa','honor','transport','konsumsi','perjalanan','lainnya'].map(k => (
-                                  <SelectItem key={k} value={k} className="capitalize">{k}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="p-1.5 align-top">
-                            <Input className={`h-8 ${inputClass(rowFields)}`} value={item.uraian} onChange={e => updateRab(idx, 'uraian', e.target.value)} />
-                            <div className="mt-1"><RevisiNote fields={rowFields} /></div>
-                          </td>
-                          <td className="p-1.5 align-top"><Input type="number" min="0" className={`h-8 text-center ${inputClass(rowFields)}`} value={item.qty1} onChange={e => updateRab(idx, 'qty1', parseInt(e.target.value) || 0)} /></td>
-                          <td className="p-1.5 align-top"><Input type="number" min="0" className={`h-8 text-center ${inputClass(rowFields)}`} value={item.qty2} onChange={e => updateRab(idx, 'qty2', parseInt(e.target.value) || 0)} /></td>
-                          <td className="p-1.5 align-top"><Input type="number" min="0" className={`h-8 text-center ${inputClass(rowFields)}`} value={item.qty3} onChange={e => updateRab(idx, 'qty3', parseInt(e.target.value) || 0)} /></td>
-                          <td className="p-1.5 align-top"><Input type="number" min="0" className={`h-8 text-right ${inputClass(rowFields)}`} value={item.harga_satuan} onChange={e => updateRab(idx, 'harga_satuan', parseInt(e.target.value) || 0)} /></td>
-                          <td className={`px-2 py-2 text-right font-medium align-top ${hasRowNote ? '' : 'bg-slate-50'}`}>{formatCurrency(calcTotal(item))}</td>
-                          <td className="p-1.5 text-center align-top">
-                            <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8" onClick={() => removeRab(idx)}>
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      </React.Fragment>
-                    );
-                  })}
-                  {rabItems.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-slate-500">Belum ada item RAB.</td></tr>
-                  )}
-                  <tr className="bg-slate-50">
-                    <td colSpan={6} className="px-4 py-3 font-semibold text-right">Total Anggaran</td>
-                    <td className="px-4 py-3 font-bold text-right text-emerald-700 text-lg">{formatCurrency(grandTotal)}</td>
-                    <td></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        {/* ── RAB per kategori ── */}
+        <RevisiNote fields={['rab']} />
+
+        <EditRabTable
+          title="Belanja Barang"
+          icon={<ShoppingCart className="size-4" />}
+          items={rabBarang}
+          onAdd={() => setRabBarang(prev => [...prev, emptyRab('barang')])}
+          onRemove={i => setRabBarang(prev => prev.filter((_, idx) => idx !== i))}
+          onUpdate={makeRabUpdater(setRabBarang)}
+          satuanOptions={SATUAN_BARANG}
+        />
+
+        <EditRabTable
+          title="Belanja Jasa"
+          icon={<Wrench className="size-4" />}
+          items={rabJasa}
+          onAdd={() => setRabJasa(prev => [...prev, emptyRab('jasa')])}
+          onRemove={i => setRabJasa(prev => prev.filter((_, idx) => idx !== i))}
+          onUpdate={makeRabUpdater(setRabJasa)}
+          satuanOptions={SATUAN_JASA}
+        />
+
+        <EditRabTable
+          title="Belanja Perjalanan"
+          icon={<Plane className="size-4" />}
+          items={rabPerjalanan}
+          onAdd={() => setRabPerjalanan(prev => [...prev, emptyRab('perjalanan')])}
+          onRemove={i => setRabPerjalanan(prev => prev.filter((_, idx) => idx !== i))}
+          onUpdate={makeRabUpdater(setRabPerjalanan)}
+          satuanOptions={SATUAN_PERJALANAN}
+        />
+
+        {/* Grand Total */}
+        <div className="rounded-2xl bg-gradient-to-r from-[#0B6B4A] to-[#047857] p-5 flex items-center justify-between shadow-xl">
+          <p className="text-white font-bold text-base uppercase tracking-wider">Total Anggaran Keseluruhan</p>
+          <div className="text-2xl font-black text-emerald-300">{formatCurrency(grandTotal)}</div>
+        </div>
 
         <div className="flex justify-end gap-4 pt-4">
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>Batal</Button>

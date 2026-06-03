@@ -18,6 +18,7 @@ class Kak extends Model
         'strategi_pencapaian',
         'metode_pelaksanaan',
         'tahapan_pelaksanaan',
+        'indikator_kinerja',
         'kurun_waktu_mulai',
         'kurun_waktu_selesai',
         'file_kak',

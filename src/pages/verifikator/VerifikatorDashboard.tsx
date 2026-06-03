@@ -28,8 +28,8 @@ export function VerifikatorDashboard() {
     fetchUsulan();
   }, []);
 
-  const menunggu = usulanList.filter(u => u.status === 'draft' || u.status === 'diajukan');
-  const diverifikasi = usulanList.filter(u => u.status === 'diverifikasi');
+  const menunggu = usulanList.filter(u => ['submitted', 'revisi_done'].includes(u.status?.toLowerCase()));
+  const diverifikasi = usulanList.filter(u => ['verified', 'diverifikasi', 'pending_ppk', 'approved_ppk', 'approved_wadir', 'accepted_funds', 'funds_disbursed', 'completed', 'lpj_done'].includes(u.status?.toLowerCase()));
 
   return (
     <div className="space-y-6">
@@ -120,7 +120,7 @@ export function VerifikatorDashboard() {
                         className="text-emerald-700 border-emerald-200 hover:bg-emerald-50"
                         onClick={() => navigate(`/dashboard/verifikator/usulan/${task.id}`)}
                       >
-                        <Eye className="size-4 mr-1.5" /> {(task.status === 'draft' || task.status === 'diajukan') ? 'Verifikasi' : 'Lihat'}
+                        <Eye className="size-4 mr-1.5" /> {['submitted', 'revisi_done'].includes(task.status?.toLowerCase()) ? 'Verifikasi' : 'Lihat'}
                       </Button>
                     </TableCell>
                   </TableRow>

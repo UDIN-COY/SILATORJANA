@@ -70,12 +70,9 @@ export function BendaharaDetailPage() {
     try {
       const updateData: Record<string, any> = { status };
       if (catatanBaru) {
-        updateData.catatan = catatanBaru; // Store generic catatan
+        updateData.catatan_revisi = catatanBaru; // Store to database
       }
       await apiUpdateKegiatan(id, updateData);
-      
-      // Optionally track status history
-      try { await Promise.resolve(/* status_history TODO */ { ref_type: 'kegiatan', ref_id: id, status_lama: data.status, status_baru: status, catatan: catatanBaru || 'Diproses oleh Bendahara', user_id: getUserId() }); } catch {}
 
       navigate('/dashboard/bendahara');
     } catch (error: any) {

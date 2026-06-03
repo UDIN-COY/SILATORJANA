@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiListKegiatan } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/StatusBadge';
 import { formatDate } from '@/lib/helpers';
-import { Eye, CheckCircle, XCircle, Clock, FileText, Loader2 } from 'lucide-react';
+import { Eye, CheckCircle, Clock, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
@@ -21,8 +20,11 @@ export function WadirDashboard() {
     })();
   }, []);
 
-  const pending = items.filter(i => i.status === 'approved_ppk');
-  const approved = items.filter(i => ['approved_wadir','accepted_funds','funds_disbursed','completed','lpj_done'].includes(i.status));
+  // Menunggu persetujuan Wadir: setelah PPK menyetujui
+  const pendingReview = items.filter(i => i.status === 'approved_ppk');
+  // Proposal yang dikembalikan untuk revisi oleh Wadir
+  const inRevision = items.filter(i => i.status === 'revision_requested');
+  const approved = items.filter(i => ['approved_wadir', 'accepted_funds', 'funds_disbursed', 'completed', 'lpj_done', 'lpj_approved'].includes(i.status));
 
   if (isLoading) return <div className="py-12 flex justify-center"><Loader2 className="animate-spin text-blue-600 size-8" /></div>;
 
@@ -38,7 +40,7 @@ export function WadirDashboard() {
               <div className="p-1.5 sm:p-3 rounded-xl bg-amber-100 shrink-0"><Clock className="size-3.5 sm:size-5 text-amber-600" /></div>
             </div>
             <div className="flex items-baseline gap-2 mt-auto">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{pending.length}</p>
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{pendingReview.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -66,14 +68,48 @@ export function WadirDashboard() {
         </Card>
       </div>
 
-      {pending.length > 0 && (
+      {/* Menunggu Persetujuan Wadir */}
+      {pendingReview.length > 0 && (
         <Card className="shadow-sm border-amber-200 bg-amber-50/30">
-          <CardHeader className="border-b border-amber-100"><CardTitle className="text-base text-amber-800">Menunggu Persetujuan ({pending.length})</CardTitle></CardHeader>
+          <CardHeader className="border-b border-amber-100">
+            <CardTitle className="text-base text-amber-800">Menunggu Persetujuan Wadir ({pendingReview.length})</CardTitle>
+          </CardHeader>
           <CardContent className="p-0"><div className="divide-y divide-amber-100">
-            {pending.map(item => (
+            {pendingReview.map(item => (
               <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 sm:gap-4 hover:bg-amber-50/50">
-                <div className="min-w-0"><p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p><p className="text-xs text-slate-500 mt-1">{formatDate(item.created_at)}</p></div>
-                <div className="shrink-0"><Button size="sm" onClick={() => navigate(`/dashboard/wadir2/review/${item.id}`)} className="bg-emerald-700 hover:bg-emerald-800"><Eye className="size-4 mr-1" />Review</Button></div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p>
+                  <p className="text-xs text-slate-500 mt-1">{formatDate(item.created_at)} · Disetujui PPK</p>
+                </div>
+                <div className="shrink-0">
+                  <Button size="sm" onClick={() => navigate(`/dashboard/wadir2/review/${item.id}`)} className="bg-emerald-700 hover:bg-emerald-800">
+                    <Eye className="size-4 mr-1" />Review
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div></CardContent>
+        </Card>
+      )}
+
+      {/* Proposal yang dikembalikan untuk revisi */}
+      {inRevision.length > 0 && (
+        <Card className="shadow-sm border-rose-200 bg-rose-50/20">
+          <CardHeader className="border-b border-rose-100">
+            <CardTitle className="text-base text-rose-700">Dikembalikan untuk Revisi ({inRevision.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0"><div className="divide-y divide-rose-100">
+            {inRevision.map(item => (
+              <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 sm:gap-4 hover:bg-rose-50/30">
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p>
+                  <p className="text-xs text-slate-500 mt-1">{formatDate(item.created_at)} · Menunggu perbaikan dari pengusul</p>
+                </div>
+                <div className="shrink-0">
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/wadir2/review/${item.id}`)} className="text-rose-600 border-rose-200 hover:bg-rose-50">
+                    <Eye className="size-4 mr-1" />Lihat
+                  </Button>
+                </div>
               </div>
             ))}
           </div></CardContent>

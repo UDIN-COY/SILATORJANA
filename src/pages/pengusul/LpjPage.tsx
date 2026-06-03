@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiGetKegiatan, apiUpdateKegiatan } from '@/lib/api';
+import { apiGetKegiatan, apiUpdateKegiatan, apiCreateLpj } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,11 @@ export function LpjPage() {
     setIsSubmitting(true);
     try {
       await apiUpdateKegiatan(id, { status: 'lpj_submitted' });
-      try { await Promise.resolve(/* lpj TODO */ { kegiatan_id: id, catatan_pengusul: catatan, status_verifikasi: 'pending' }); } catch {}
+      try {
+        await apiCreateLpj({ kegiatan_id: Number(id), catatan_pengusul: catatan });
+      } catch (err) {
+        console.error('LPJ record creation failed, but status was updated', err);
+      }
       setSuccess(true);
       setTimeout(() => navigate('/dashboard/pengusul/usulan'), 2000);
     } catch (e: any) { alert('Gagal: ' + e.message); }

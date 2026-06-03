@@ -17,12 +17,21 @@ export function BendaharaDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resPencairan = await apiListKegiatan();
+        const res = await apiListKegiatan();
+        const rawItems = Array.isArray(res) ? res : (res.data || []);
+        
+        // Filter for disbursement requests: approved by Wadir or Rektorat
+        const pencairan = rawItems.filter((item: any) => 
+          ['approved_wadir', 'accepted_funds', 'disetujui_rektorat'].includes(item.status?.toLowerCase())
+        );
 
-        const resLpj = await apiListKegiatan();
+        // Filter for LPJ verification requests: LPJ submitted
+        const lpj = rawItems.filter((item: any) => 
+          ['lpj_submitted', 'menunggu_lpj'].includes(item.status?.toLowerCase())
+        );
 
-        setUsulanPencairan(resPencairan.documents);
-        setUsulanLpj(resLpj.documents);
+        setUsulanPencairan(pencairan);
+        setUsulanLpj(lpj);
       } catch (error) {
         console.error(error);
       } finally {
@@ -123,7 +132,7 @@ export function BendaharaDashboard() {
                        </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                       <Button size="sm" onClick={() => navigate(`/dashboard/bendahara/detail/${item.id}`)} className={activeTab === 'pencairan' ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-emerald-600 hover:bg-emerald-700'}>
+                       <Button size="sm" onClick={() => navigate(activeTab === 'pencairan' ? `/dashboard/bendahara/detail/${item.id}` : `/dashboard/bendahara/lpj/${item.id}`)} className={activeTab === 'pencairan' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}>
                           <CheckCircle2 className="size-4 mr-2" />
                           {activeTab === 'pencairan' ? 'Proses Pencairan' : 'Periksa LPJ'}
                        </Button>

@@ -18,12 +18,14 @@ class Kegiatan extends Model
         'status',
         'pengusul_id',
         'pengusul_nama',
+        'pengusul_organisasi',
         'nama_jurusan',
         'tanggal_kegiatan',
         'tempat',
         'total_anggaran',
         'catatan_revisi',
         'surat_pengantar',
+        'verifikator_target',
     ];
 
     protected function casts(): array

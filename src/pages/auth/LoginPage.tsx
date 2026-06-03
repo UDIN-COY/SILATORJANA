@@ -19,8 +19,21 @@ export function LoginPage() {
     setIsLoading(true);
     try {
       const { user } = await apiLogin(email, password);
-      const r = user.role;
-      navigate(r === 'admin' ? '/dashboard/admin' : r === 'verifikator' ? '/dashboard/verifikator' : r === 'ppk' ? '/dashboard/ppk' : r === 'bendahara' ? '/dashboard/bendahara' : r === 'wadir2' ? '/dashboard/wadir2' : r === 'rektorat' ? '/dashboard/rektorat' : '/dashboard/pengusul');
+      const r = user.role || '';
+      const targetPath = r === 'admin'
+        ? '/dashboard/admin'
+        : r === 'verifikator'
+        ? '/dashboard/verifikator'
+        : r === 'ppk'
+        ? '/dashboard/ppk'
+        : r === 'bendahara'
+        ? '/dashboard/bendahara'
+        : r.startsWith('wadir')
+        ? '/dashboard/wadir2'
+        : r === 'rektorat'
+        ? '/dashboard/rektorat'
+        : '/dashboard/pengusul';
+      navigate(targetPath);
     } catch (err: any) {
       setError(err.message || 'Login gagal. Silakan cek kembali kredensial Anda.');
     } finally { setIsLoading(false); }

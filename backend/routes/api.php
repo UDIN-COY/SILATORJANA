@@ -32,7 +32,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Kegiatan — write access limited to pengusul & admin
     Route::middleware('role:pengusul,admin')->group(function () {
-        Route::apiResource('kegiatan', KegiatanController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('kegiatan', KegiatanController::class)->only(['store', 'destroy']);
+    });
+
+    // Kegiatan Update — all roles involved in approval/LPJ workflow can update status/metadata
+    Route::middleware('role:pengusul,admin,verifikator,ppk,wadir1,wadir2,wadir3,wadir4,bendahara,rektorat')->group(function () {
+        Route::put('kegiatan/{kegiatan}', [KegiatanController::class, 'update']);
+        Route::patch('kegiatan/{kegiatan}', [KegiatanController::class, 'update']);
     });
 
     // Users — admin only

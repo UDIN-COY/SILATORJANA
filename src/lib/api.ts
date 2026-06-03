@@ -201,6 +201,20 @@ export async function apiGetStats() {
 }
 
 // ============================================================
+// LPJ API
+// ============================================================
+export async function apiCreateLpj(data: any) {
+  return apiFetch('/lpj', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function apiGetLpj(kegiatanId: string | number) {
+  return apiFetch(`/lpj/${kegiatanId}`);
+}
+
+// ============================================================
 // Health Check
 // ============================================================
 export async function apiHealthCheck() {

@@ -42,8 +42,16 @@ export function DetailUsulanPage() {
         } catch {}
 
         try {
-          const histRes = await Promise.resolve({documents: []});
-          setHistory(histRes.documents);
+          const histRes = await fetch(`/api/status-history/kegiatan/${id}`, {
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+            },
+          });
+          if (histRes.ok) {
+            const histData = await histRes.json();
+            setHistory(Array.isArray(histData) ? histData : []);
+          }
         } catch {}
       } catch (err) {
         console.error(err);
@@ -193,7 +201,7 @@ export function DetailUsulanPage() {
       )}
 
       {/* Aksi submit ulang untuk Pengusul setelah diverifikasi */}
-      {kegiatan.status === 'diverifikasi' && (
+      {(kegiatan.status === 'diverifikasi' || kegiatan.status === 'verified') && (
         <Card className="shadow-lg border-emerald-200/60 bg-gradient-to-br from-emerald-50 relative overflow-hidden to-white">
           <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
           <CardHeader className="md:flex md:items-center md:justify-between py-6 px-8">

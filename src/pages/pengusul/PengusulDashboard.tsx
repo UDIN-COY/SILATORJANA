@@ -87,9 +87,9 @@ export function PengusulDashboard() {
         allDocs.forEach((doc: any) => {
           if (doc.status === 'selesai' || doc.status === 'completed' || doc.status === 'lpj_done') {
             cSelesai++;
-          } else if (doc.status.startsWith('menunggu') || doc.status.startsWith('disetujui') || doc.status === 'pending_ppk' || doc.status === 'approved_ppk' || doc.status === 'approved_wadir') {
+          } else if (doc.status.startsWith('menunggu') || doc.status.startsWith('disetujui') || ['pending_ppk', 'approved_ppk', 'approved_wadir', 'accepted_funds', 'funds_disbursed'].includes(doc.status?.toLowerCase())) {
             cBerjalan++;
-          } else if (doc.status === 'draft' || doc.status === 'diajukan' || doc.status === 'revisi' || doc.status === 'submitted' || doc.status === 'diverifikasi') {
+          } else if (['draft', 'diajukan', 'revisi', 'submitted', 'revisi_done', 'diverifikasi', 'verified'].includes(doc.status?.toLowerCase())) {
             cMenunggu++;
           }
         });
@@ -183,6 +183,58 @@ export function PengusulDashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Perlu Revisi Alert */}
+          {usulanList.filter((i: any) => i.status === 'revision_requested').length > 0 && (
+            <Card className="shadow-sm border-rose-200 bg-rose-50/30">
+              <CardHeader className="border-b border-rose-100 bg-rose-50/50">
+                <CardTitle className="text-base text-rose-800 flex items-center gap-2">
+                  ⚠️ Usulan Perlu Direvisi ({usulanList.filter((i: any) => i.status === 'revision_requested').length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-rose-100">
+                  {usulanList.filter((i: any) => i.status === 'revision_requested').map((item: any) => (
+                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 hover:bg-rose-50/50">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p>
+                        {item.catatan_revisi && <p className="text-xs text-rose-700 mt-1 italic">Catatan: {item.catatan_revisi}</p>}
+                      </div>
+                      <Button size="sm" onClick={() => navigate(`/dashboard/pengusul/revisi/${item.id}`)} className="bg-rose-600 hover:bg-rose-700 shrink-0">
+                        Perbaiki Sekarang
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Verified — siap diteruskan ke PPK */}
+          {usulanList.filter((i: any) => i.status === 'verified' || i.status === 'diverifikasi').length > 0 && (
+            <Card className="shadow-sm border-emerald-200 bg-emerald-50/20">
+              <CardHeader className="border-b border-emerald-100 bg-emerald-50/30">
+                <CardTitle className="text-base text-emerald-800 flex items-center gap-2">
+                  ✅ Terverifikasi – Siap Diteruskan ke PPK ({usulanList.filter((i: any) => i.status === 'verified' || i.status === 'diverifikasi').length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-emerald-100">
+                  {usulanList.filter((i: any) => i.status === 'verified' || i.status === 'diverifikasi').map((item: any) => (
+                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 hover:bg-emerald-50/50">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p>
+                        <p className="text-xs text-emerald-700 mt-1">Diverifikasi · Klik "Teruskan ke PPK" di halaman detail</p>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/pengusul/usulan/${item.id}`)} className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 shrink-0">
+                        Teruskan ke PPK
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="shadow-sm border-slate-200">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50">

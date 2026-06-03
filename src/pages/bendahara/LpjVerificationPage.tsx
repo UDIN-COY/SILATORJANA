@@ -132,11 +132,11 @@ export function LpjVerificationPage() {
                  </div>
                  
                  <div className="flex flex-col gap-2 pt-2">
-                    <Button disabled={isSubmitting} onClick={() => handleVerifikasiLPJ('selesai')} className="w-full bg-emerald-600 hover:bg-emerald-700 h-10">
+                    <Button disabled={isSubmitting} onClick={() => handleVerifikasiLPJ('lpj_approved')} className="w-full bg-emerald-600 hover:bg-emerald-700 h-10">
                        {isSubmitting ? <Loader2 className="size-4 mr-2 animate-spin" /> : <CheckCircle2 className="size-4 mr-2" />} 
-                       LPJ Selesai & Sesuai
+                       LPJ Disetujui & Selesai
                     </Button>
-                    <Button disabled={isSubmitting} onClick={() => handleVerifikasiLPJ('revisi_lpj')} variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 h-10">
+                    <Button disabled={isSubmitting} onClick={() => handleVerifikasiLPJ('lpj_revision')} variant="outline" className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 h-10">
                        {isSubmitting ? <Loader2 className="size-4 mr-2 animate-spin" /> : <XCircle className="size-4 mr-2" />} 
                        Minta Revisi LPJ
                     </Button>

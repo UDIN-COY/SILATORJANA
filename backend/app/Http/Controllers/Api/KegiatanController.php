@@ -56,37 +56,41 @@ class KegiatanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_kegiatan' => 'required|string|max:255',
-            'jenis_kegiatan' => 'nullable|string',
-            'tanggal_kegiatan' => 'nullable|date',
-            'tempat' => 'nullable|string',
-            'status' => 'nullable|string',
-            'deskripsi' => 'nullable|string',
-            'jurusan_id' => 'nullable|integer',
+            'nama_kegiatan'          => 'required|string|max:255',
+            'jenis_kegiatan'         => 'nullable|string',
+            'tanggal_kegiatan'       => 'nullable|date',
+            'tempat'                 => 'nullable|string',
+            'status'                 => 'nullable|string',
+            'deskripsi'              => 'nullable|string',
+            'pengusul_organisasi'    => 'nullable|string|max:255',
+            'jurusan_id'             => 'nullable|integer',
+            'verifikator_target'     => 'nullable|string|in:wadir1,wadir2,wadir3,wadir4',
             // KAK
-            'kak' => 'nullable|array',
-            'kak.gambaran_umum' => 'nullable|string',
-            'kak.penerima_manfaat' => 'nullable|string',
-            'kak.strategi_pencapaian' => 'nullable|string',
-            'kak.metode_pelaksanaan' => 'nullable|string',
-            'kak.tahapan_pelaksanaan' => 'nullable|string',
-            'kak.kurun_waktu_mulai' => 'nullable|date',
-            'kak.kurun_waktu_selesai' => 'nullable|date',
+            'kak'                        => 'nullable|array',
+            'kak.gambaran_umum'          => 'nullable|string',
+            'kak.penerima_manfaat'       => 'nullable|string',
+            'kak.strategi_pencapaian'    => 'nullable|string',
+            'kak.metode_pelaksanaan'     => 'nullable|string',
+            'kak.tahapan_pelaksanaan'    => 'nullable|string',
+            'kak.indikator_kinerja'      => 'nullable|string',
+            'kak.indikator'              => 'nullable|array',
+            'kak.kurun_waktu_mulai'      => 'nullable|date',
+            'kak.kurun_waktu_selesai'    => 'nullable|date',
             // IKU
-            'iku' => 'nullable|array',
-            'iku.*.nama_iku' => 'required|string',
-            'iku.*.target_persen' => 'nullable|numeric',
+            'iku'                  => 'nullable|array',
+            'iku.*.nama_iku'       => 'required|string',
+            'iku.*.target_persen'  => 'nullable|numeric',
             // RAB
-            'rab' => 'nullable|array',
-            'rab.*.uraian' => 'required|string',
-            'rab.*.kategori' => 'nullable|string',
-            'rab.*.harga_satuan' => 'required|numeric',
-            'rab.*.qty1' => 'nullable|integer',
-            'rab.*.satuan1' => 'nullable|string',
-            'rab.*.qty2' => 'nullable|integer',
-            'rab.*.satuan2' => 'nullable|string',
-            'rab.*.qty3' => 'nullable|integer',
-            'rab.*.satuan3' => 'nullable|string',
+            'rab'                  => 'nullable|array',
+            'rab.*.uraian'         => 'required|string',
+            'rab.*.kategori'       => 'nullable|string',
+            'rab.*.harga_satuan'   => 'required|numeric',
+            'rab.*.qty1'           => 'nullable|integer',
+            'rab.*.satuan1'        => 'nullable|string',
+            'rab.*.qty2'           => 'nullable|integer',
+            'rab.*.satuan2'        => 'nullable|string',
+            'rab.*.qty3'           => 'nullable|integer',
+            'rab.*.satuan3'        => 'nullable|string',
         ]);
 
         $user = $request->user();
@@ -96,21 +100,28 @@ class KegiatanController extends Controller
         }
 
         $kegiatan = Kegiatan::create([
-            'nama_kegiatan' => $validated['nama_kegiatan'],
-            'jenis_kegiatan' => $validated['jenis_kegiatan'] ?? null,
-            'deskripsi' => $validated['deskripsi'] ?? null,
-            'status' => $validated['status'] ?? 'draft',
-            'pengusul_id' => $user->id,
-            'pengusul_nama' => $user->nama,
-            'nama_jurusan' => $jurusan?->nama_jurusan ?? $user->jurusan,
-            'tanggal_kegiatan' => $validated['tanggal_kegiatan'] ?? null,
-            'tempat' => $validated['tempat'] ?? null,
-            'total_anggaran' => 0,
+            'nama_kegiatan'       => $validated['nama_kegiatan'],
+            'jenis_kegiatan'      => $validated['jenis_kegiatan'] ?? null,
+            'deskripsi'           => $validated['deskripsi'] ?? null,
+            'status'              => $validated['status'] ?? 'draft',
+            'pengusul_id'         => $user->id,
+            'pengusul_nama'       => $user->nama,
+            'pengusul_organisasi' => $validated['pengusul_organisasi'] ?? null,
+            'nama_jurusan'        => $jurusan?->nama_jurusan ?? $user->jurusan,
+            'tanggal_kegiatan'    => $validated['tanggal_kegiatan'] ?? null,
+            'tempat'              => $validated['tempat'] ?? null,
+            'verifikator_target'  => $validated['verifikator_target'] ?? null,
+            'total_anggaran'      => 0,
         ]);
 
-        // Create KAK
+        // Create KAK – convert indikator array to JSON string for storage
         if (isset($validated['kak'])) {
-            $kegiatan->kak()->create($validated['kak']);
+            $kakData = $validated['kak'];
+            if (isset($kakData['indikator']) && is_array($kakData['indikator'])) {
+                $kakData['indikator_kinerja'] = json_encode($kakData['indikator']);
+                unset($kakData['indikator']);
+            }
+            $kegiatan->kak()->create($kakData);
         }
 
         // Create IKU items
@@ -152,6 +163,7 @@ class KegiatanController extends Controller
             'status' => 'sometimes|string',
             'tanggal_kegiatan' => 'nullable|date',
             'tempat' => 'nullable|string',
+            'pengusul_organisasi' => 'nullable|string|max:255',
             'catatan_revisi' => 'nullable|string',
             'total_anggaran' => 'nullable|numeric',
             'jurusan_id' => 'nullable|integer',

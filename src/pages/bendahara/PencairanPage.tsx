@@ -45,7 +45,7 @@ export function PencairanPage() {
     setIsSubmitting(true);
     try {
       await apiUpdateKegiatan(id, {
-        status: 'menunggu_lpj'
+        status: 'funds_disbursed'
       });
       // In a real app we would store the pencairan data into a specific collection as well.
       navigate('/dashboard/bendahara');
