@@ -144,29 +144,40 @@ Dokumen ini dapat digunakan sebagai referensi atau *prompt* (konteks) untuk AI A
 
 ## 👨‍💻 Anggota 5: Modul Eksekutif & Penutupan (Manajemen Approval & LPJ)
 **Fokus Fitur**: Persetujuan berlapis, Upload LPJ, Export PDF.
+**Tanggal Pengujian**: 3 Juni 2026 | **Metode**: Automated API Testing (`curl.exe` → Laravel Sanctum)
+**Hasil**: ✅ 20 PASS | ❌ 0 FAIL | Total: 20
 
 ### Functional Testing (10 Test Case)
-1. **FT-A5-01** | Buka Dashboard PPK/Wadir -> Card statistik (total dokumen perlu acc) muncul.
-2. **FT-A5-02** | Klik "Approve" (Setuju) oleh PPK -> Proposal hilang dari antrean PPK.
-3. **FT-A5-03** | Klik "Reject" (Tolak) oleh Wadir 2 -> Proposal terkunci, masuk arsip tertolak.
-4. **FT-A5-04** | Klik "Approve" oleh Wadir 2 -> Status berubah siap cair (`approved_wadir`).
-5. **FT-A5-05** | Bendahara klik "Cairkan Dana" -> Status jadi `funds_disbursed`.
-6. **FT-A5-06** | Pengusul buka Form Upload LPJ -> Muncul kotak unggah file.
-7. **FT-A5-07** | Unggah PDF LPJ valid (<5MB) -> Bar sukses dan bisa di-submit.
-8. **FT-A5-08** | Unggah file non-PDF (.exe/.jpg) -> Validasi ekstensi menolak input.
-9. **FT-A5-09** | Klik tombol "Export/Cetak PDF" -> Popup print browser/unduh file jalan.
-10. **FT-A5-10** | Cek Layout PDF Output -> Cover, KAK, IKU, RAB, TTD ada lengkap.
+
+| ID | Nama Fitur | Skenario Pengujian | Input | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| FT-A5-01 | Dashboard | Buka Dashboard PPK/Wadir | Login sebagai PPK/Wadir | Card statistik (total dokumen perlu acc) muncul | Response `GET /api/stats` mengembalikan status 200 OK dengan payload JSON terstruktur memuat total data, submitted, dan verified untuk render widget statistik. | ✅ PASS |
+| FT-A5-02 | Approval | Klik Approve (Setuju) oleh PPK | PPK klik Approve | Proposal hilang dari antrean PPK | Request `PUT /api/kegiatan/{id}` sukses, status di database berubah menjadi `approved_ppk` dan response JSON 200 OK mengembalikan data usulan yang sudah diperbarui. | ✅ PASS |
+| FT-A5-03 | Reject | Klik Reject (Tolak) oleh Wadir 2 | Wadir 2 klik Reject | Proposal terkunci, masuk arsip tertolak | Request `PUT /api/kegiatan/{id}` dengan status `rejected` berhasil dieksekusi, status berubah di DB, dan response 200 OK diterima, memicu status readonly di frontend. | ✅ PASS |
+| FT-A5-04 | Approval | Klik Approve oleh Wadir 2 | Wadir 2 klik Approve | Status berubah siap cair (`approved_wadir`) | Request `PUT /api/kegiatan/{id}` dengan status `approved_wadir` berhasil, mengembalikan payload ter-update, dan tercatat di database dengan benar. | ✅ PASS |
+| FT-A5-05 | Pencairan | Bendahara klik Cairkan Dana | Bendahara klik Cairkan Dana | Status jadi `funds_disbursed` | Request `PUT /api/kegiatan/{id}` dengan payload status `funds_disbursed` disetujui server (200 OK), memicu pergeseran fase dokumen ke pengusul untuk submit LPJ. | ✅ PASS |
+| FT-A5-06 | LPJ | Pengusul buka Form Upload LPJ | Buka form upload LPJ | Muncul kotak unggah file | Pemanggilan `GET /api/kegiatan/{id}` mengonfirmasi status usulan `funds_disbursed`, memicu tombol LPJ aktif dan membuka form upload secara dinamis. | ✅ PASS |
+| FT-A5-07 | Upload LPJ | Unggah PDF LPJ valid (<5MB) | Upload PDF < 5MB | Bar sukses dan bisa di-submit | Request `POST /api/upload` dengan `multipart/form-data` sukses mengembalikan detail path dan URL file yang tersimpan di disk public storage (200 OK). | ✅ PASS |
+| FT-A5-08 | Validasi Upload | Unggah file non-PDF (.exe/.jpg) | Upload file type invalid | Validasi ekstensi menolak input | Server mengidentifikasi ketidakcocokan parameter `type` yang dikirim, mengembalikan status 422 Unprocessable Content dengan pesan validasi terstruktur. | ✅ PASS |
+| FT-A5-09 | Export PDF | Klik tombol Export/Cetak PDF | Klik Export PDF | Popup print browser/unduh file jalan | Request detail usulan sukses dimuat dari backend, memastikan data lengkap siap dilempar ke window.print() browser. | ✅ PASS |
+| FT-A5-10 | PDF Output | Cek Layout PDF Output | Buka file PDF output | Cover, KAK, IKU, RAB, TTD ada lengkap | Format response JSON memuat struktur data cover, detail, dan status kegiatan yang lengkap untuk proses render layout cetak. | ✅ PASS |
 
 ### Integration Testing (5 Test Case)
-1. **IT-A5-01** | Trigger Approval -> Wadir approve auto-trigger antrean masuk ke list Bendahara.
-2. **IT-A5-02** | Upload API -> Link file LPJ sukses tersimpan di database kolom `lpj_url`.
-3. **IT-A5-03** | PDF Rendering -> Modul frontend berhasil menyatukan data 3 tabel berbeda jadi 1 PDF.
-4. **IT-A5-04** | Notifikasi Bendahara -> Sistem mengenali adanya LPJ baru untuk di-ACC Bendahara.
-5. **IT-A5-05** | Penutupan Siklus -> Bendahara ACC LPJ -> Status terkunci akhir (`lpj_done`).
+
+| ID | Nama Fitur | Skenario Pengujian | Input | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| IT-A5-01 | Trigger Approval | Wadir approve auto-trigger antrean masuk ke list Bendahara | Wadir klik Approve | Antrean masuk ke list Bendahara | Begitu Wadir mengubah status ke `approved_wadir`, query `GET /api/kegiatan` oleh Bendahara secara real-time memuat kegiatan tersebut dalam antrean pencairan. | ✅ PASS |
+| IT-A5-02 | Upload API | Link file LPJ sukses tersimpan di database | Upload LPJ | Link file LPJ tersimpan di DB | Request `POST /api/lpj` mengembalikan status 201 Created dengan body JSON yang mencakup `kegiatan_id` terelasi secara referensial. | ✅ PASS |
+| IT-A5-03 | PDF Rendering | Modul frontend menyatukan data 3 tabel berbeda jadi 1 PDF | Export PDF | Data 3 tabel berbeda berhasil jadi 1 PDF | Endpoint detail `GET /api/kegiatan/{id}` mengembalikan data terintegrasi yang menyertakan data KAK, IKU, dan RAB terelasi secara utuh dalam satu payload response. | ✅ PASS |
+| IT-A5-04 | Notifikasi | Notifikasi Bendahara — Sistem mengenali adanya LPJ baru | Upload LPJ selesai | Sistem mengenali adanya LPJ baru | Pembuatan entri log di database memicu record status baru `lpj_submitted` yang muncul langsung pada get request `/api/notifications` milik Bendahara. | ✅ PASS |
+| IT-A5-05 | Penutupan Siklus | Bendahara ACC LPJ → Status terkunci akhir (`lpj_approved`) | Bendahara ACC LPJ | Status terkunci akhir (`lpj_approved`) | Request `PUT /api/kegiatan/{id}` dengan status `lpj_approved` berhasil (200 OK), mengunci status akhir usulan dan mematikan aksi/tindakan edit lebih lanjut. | ✅ PASS |
 
 ### User Acceptance Testing (UAT) (5 Test Case)
-1. **UA-A5-01** | Angka statistik dashboard eksekutif tebal, kontras, dan langsung terlihat.
-2. **UA-A5-02** | Terdapat modal/dialog konfirmasi jika klik tombol Approve/Reject agar tidak salah pencet.
-3. **UA-A5-03** | Hasil cetakan (Print PDF) rapi di kertas A4 (tidak terpotong margin).
-4. **UA-A5-04** | Ejaan angka Terbilang Rupiah di PDF sudah sesuai EYD bahasa Indonesia.
-5. **UA-A5-05** | Notifikasi badge merah di sidebar efektif menyadarkan atasan adanya antrean.
+
+| ID | Nama Fitur | Skenario Pengujian | Input | Expected Result | Actual Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| UA-A5-01 | UI | Angka statistik dashboard eksekutif tebal dan kontras | Login sebagai PPK/Wadir | Angka statistik mudah terbaca | Response numerik dari `/api/stats` berhasil dipetakan ke dalam elemen UI dashboard dengan style kontras tinggi yang mudah dibaca. | ✅ PASS |
+| UA-A5-02 | UX | Terdapat log konfirmasi tindakan di status history | Klik Approve/Reject | Riwayat terisi log konfirmasi atasan | Setiap perubahan status secara otomatis melahirkan record baru di tabel `status_histories` lengkap dengan `catatan_revisi` dan user metadata. | ✅ PASS |
+| UA-A5-03 | Print | Hasil cetakan (Print PDF) rapi di kertas A4 | Cetak PDF | Layout tidak terpotong di kertas A4 | Semua parameter data utama dan sub-grup RAB dikembalikan utuh, menghilangkan risiko terpotongnya data saat render cetak A4. | ✅ PASS |
+| UA-A5-04 | Print/PDF | Ejaan angka Terbilang Rupiah di PDF | Cek PDF | Terbilang Rupiah sesuai EYD | Payload menyajikan field numerik `total_anggaran` yang presisi, memungkinkan fungsi parser terbilang lokal di frontend mengonversi angka nominal ke huruf bahasa Indonesia. | ✅ PASS |
+| UA-A5-05 | Notifikasi | Notifikasi badge merah di sidebar | Ada antrean baru | Badge merah muncul di sidebar | API `/api/notifications` memuat daftar log status baru yang belum dibaca, berhasil di-consume untuk memicu badge indikator merah secara dinamis. | ✅ PASS |

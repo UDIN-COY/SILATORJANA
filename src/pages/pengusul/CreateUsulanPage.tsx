@@ -441,10 +441,7 @@ export function CreateUsulanPage() {
     }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowVerifikatorModal(true);
-  };
+
 
   // ── Indikator helpers ──
   const addIndikatorRow = () =>
@@ -503,7 +500,7 @@ export function CreateUsulanPage() {
           ))}
         </div>
 
-        <form onSubmit={handleFormSubmit} className="space-y-10 mt-2">
+        <div className="space-y-10 mt-2">
 
           {/* ══════════════ STEP 1: INFO KEGIATAN ══════════════ */}
           <div className={currentStep !== 1 ? 'hidden' : 'space-y-6'}>
@@ -952,13 +949,13 @@ export function CreateUsulanPage() {
             {currentStep < 4 ? (
               <Button type="button" className="h-14 px-8 rounded-2xl font-bold bg-[#047857] hover:bg-[#065F46] text-white shadow-xl shadow-emerald-700/20 w-full sm:w-auto transition-all active:scale-95 text-[15px]" onClick={() => setCurrentStep(prev => prev + 1)}>Selanjutnya</Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} className="h-14 px-8 rounded-2xl font-bold bg-[#047857] hover:bg-[#065F46] text-white shadow-xl shadow-emerald-700/20 w-full sm:w-auto transition-all active:scale-95 text-[15px]">
+              <Button type="button" disabled={isSubmitting} onClick={() => setShowVerifikatorModal(true)} className="h-14 px-8 rounded-2xl font-bold bg-[#047857] hover:bg-[#065F46] text-white shadow-xl shadow-emerald-700/20 w-full sm:w-auto transition-all active:scale-95 text-[15px]">
                 {isSubmitting ? <Loader2 className="size-5 mr-3 animate-spin" /> : <Send className="size-5 mr-3" />}
                 {isSubmitting ? 'Memproses Pengajuan...' : 'Kirim Semua Data'}
               </Button>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </>
   );
