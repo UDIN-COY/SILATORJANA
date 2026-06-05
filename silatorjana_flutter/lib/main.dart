@@ -1,9 +1,21 @@
-
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart'; 
+import 'package:provider/provider.dart';
+import 'features/auth/views/login_view.dart';
+import 'features/auth/viewmodels/auth_viewmodel.dart';
+import 'features/kegiatan/viewmodels/kegiatan_viewmodel.dart';
+import 'features/chat/viewmodels/chat_viewmodel.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => KegiatanViewModel()),
+        ChangeNotifierProvider(create: (_) => ChatViewModel()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,15 +24,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Si-Latorjana',
+      title: 'Si-LATORJANA',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF005F52),
-          primary: const Color(0xFF005F52),
-          ), 
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF047857)), // emerald-700
         useMaterial3: true,
+        fontFamily: 'Inter',
       ),
-      home: const LoginScreen(),
+      home: const LoginView(),
     );
   }
 }

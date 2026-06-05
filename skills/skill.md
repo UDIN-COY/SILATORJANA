@@ -19,9 +19,10 @@ description: "Sistem Layanan Terpadu Administrasi Pengajuan (Si-LATORJANA) - Sis
 | **Lokasi Frontend** | `.` (Root Project) |
 | **Lokasi Backend** | `./backend/` |
 | **Backend** | **Laravel** + Sanctum Auth |
-| **Frontend** | React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui |
+| **Frontend Web** | React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui |
+| **Frontend Mobile**| Flutter (Feature-First MVVM + Provider + lucide_icons_flutter) |
 | **Database** | **MySQL / MariaDB** — Sesuaikan dengan konfigurasi di `backend/.env` (default DB: `silatorjana`) |
-| **Auth** | Laravel Sanctum — `POST /api/login` → Bearer token di `localStorage` (`auth_token`) |
+| **Auth** | Laravel Sanctum — `POST /api/login` → Bearer token di `localStorage` (Web) atau `flutter_secure_storage` (Mobile) |
 | **Proxy** | Vite dev server proxy: `/api` → `http://localhost:8000` |
 
 ---
@@ -72,6 +73,12 @@ Akses aplikasi di `http://localhost:3000`. Akses proxy API akan otomatis diterus
 │       ├── rektorat/
 │       ├── verifikator/
 │       └── wadir/
+│
+├── silatorjana_flutter/      # FLUTTER MOBILE APP
+│   ├── lib/                  # Aplikasi Mobile (Feature-First MVVM)
+│   │   ├── core/             # Global (constants, network)
+│   │   ├── features/         # auth/, kegiatan/, chat/ (Models, Views, ViewModels)
+│   │   └── main.dart         # Entry point dengan MultiProvider
 ```
 
 ---
