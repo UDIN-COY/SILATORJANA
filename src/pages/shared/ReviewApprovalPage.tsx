@@ -57,6 +57,10 @@ export function ReviewApprovalPage({ role, approveStatus, backPath }: ReviewPage
   const [kak, setKak] = useState<any>(null);
   const [rabList, setRabList] = useState<any[]>([]);
   const [ikuList, setIkuList] = useState<any[]>([]);
+  const [totalRab, setTotalRab] = useState(0);
+
+  const canAct = (role === 'ppk' && ['verified', 'pending_ppk'].includes(kegiatan?.status)) ||
+                 (role.startsWith('wadir') && kegiatan?.status === 'approved_ppk');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -301,6 +305,7 @@ export function ReviewApprovalPage({ role, approveStatus, backPath }: ReviewPage
       )}
 
       {/* Decision Section */}
+      {canAct && (
       <Card className="shadow-sm border-slate-200">
         <CardHeader className="bg-slate-50/50 border-b border-slate-100">
           <CardTitle className="text-base">Keputusan {roleLabel}</CardTitle>
@@ -319,6 +324,7 @@ export function ReviewApprovalPage({ role, approveStatus, backPath }: ReviewPage
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* MODAL PRINT PREVIEW */}
       <Dialog open={showPrintModal} onOpenChange={setShowPrintModal}>

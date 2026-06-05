@@ -41,11 +41,11 @@ class KegiatanController extends Controller
                 }
             } elseif ($user->role === 'ppk') {
                 if ($isMonitoring) {
-                    $query->whereNotIn('status', ['draft', 'submitted', 'revision_requested', 'revisi_done', 'verified']);
+                    $query->whereNotIn('status', ['draft', 'submitted', 'revision_requested', 'revisi_done', 'verified', 'pending_ppk']);
                 } elseif ($isArchive) {
                     $query->whereIn('status', ['approved_ppk', 'approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_rejected', 'lpj_done', 'completed', 'rejected']);
                 } else {
-                    $query->where('status', 'pending_ppk');
+                    $query->whereIn('status', ['pending_ppk', 'verified']);
                 }
             } elseif (str_starts_with($user->role, 'wadir')) {
                 $query->where(function($q) use ($user) {

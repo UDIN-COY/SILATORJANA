@@ -468,8 +468,9 @@ export function VerifikasiDetailPage() {
         </div>
 
         {/* Panel Aksi */}
-        <div className="w-full space-y-6 select-none animate-in fade-in slide-in-from-bottom duration-300">
-           <Card className="shadow-lg shadow-slate-200/50 border-slate-200/60 bg-white md:sticky md:top-24 rounded-2xl overflow-hidden">
+        {['submitted', 'revisi_done'].includes(data?.status) && (
+          <div className="w-full space-y-6 select-none animate-in fade-in slide-in-from-bottom duration-300">
+             <Card className="shadow-lg shadow-slate-200/50 border-slate-200/60 bg-white md:sticky md:top-24 rounded-2xl overflow-hidden">
               <div className="h-1.5 w-full bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
               <CardHeader className="bg-slate-50/30 border-b border-slate-100/60 py-4 px-4 sm:p-5">
                  <CardTitle className="text-base sm:text-lg text-slate-800">Ruang Keputusan Akhir</CardTitle>
@@ -514,6 +515,7 @@ export function VerifikasiDetailPage() {
               </CardContent>
            </Card>
         </div>
+        )}
       </div>
 
     </div>
