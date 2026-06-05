@@ -6,6 +6,8 @@ class BiometricService {
   final LocalAuthentication _auth = LocalAuthentication();
 
   Future<bool> hasBiometrics() async {
+    if (kIsWeb) return false;
+
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
       final bool canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
@@ -17,6 +19,8 @@ class BiometricService {
   }
 
   Future<bool> authenticate() async {
+    if (kIsWeb) return false;
+    
     final bool isAvailable = await hasBiometrics();
     if (!isAvailable) return false;
 

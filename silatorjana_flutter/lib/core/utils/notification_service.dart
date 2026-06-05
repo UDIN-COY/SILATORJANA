@@ -14,10 +14,14 @@ class NotificationService {
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
+    const LinuxInitializationSettings initializationSettingsLinux = LinuxInitializationSettings(
+      defaultActionName: 'Open notification',
+    );
     
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsDarwin,
+      linux: initializationSettingsLinux,
     );
 
     await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
@@ -35,10 +39,12 @@ class NotificationService {
     );
     
     const DarwinNotificationDetails darwinNotificationDetails = DarwinNotificationDetails();
+    const LinuxNotificationDetails linuxNotificationDetails = LinuxNotificationDetails();
     
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: darwinNotificationDetails,
+      linux: linuxNotificationDetails,
     );
     
     await _flutterLocalNotificationsPlugin.show(

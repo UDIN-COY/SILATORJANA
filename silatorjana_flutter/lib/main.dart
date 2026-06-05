@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'features/auth/views/login_view.dart';
+import 'features/auth/views/splash_view.dart';
 import 'features/auth/viewmodels/auth_viewmodel.dart';
 import 'features/kegiatan/viewmodels/kegiatan_viewmodel.dart';
 import 'features/chat/viewmodels/chat_viewmodel.dart';
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Inter',
       ),
-      home: const LoginView(),
+      home: const SplashView(),
     );
   }
 }
