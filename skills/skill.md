@@ -137,6 +137,7 @@ Alur persetujuan berjalan sekuensial dan ketat:
 ### Fitur Bendahara & Keuangan
 - **Pencairan Bertahap**: Bisa mencairkan dana beberapa persen (misal 50% dulu).
 - **Verifikasi LPJ Komparatif**: Membandingkan Rencana RAB (dari awal) vs Realisasi Kuitansi (saat pelaksanaan) beserta selisih anggarannya. Menampilkan link file lampiran LPJ.
+- **SPK Kualitas LPJ (Metode MOORA)**: Mengukur kualitas LPJ secara otomatis menggunakan 4 kriteria (Waktu Pelaksanaan, Ketepatan Anggaran, IKU, dan Waktu Approval). Hasil SPK (Grade A-D) dan statistik dipaparkan di Dashboard Bendahara secara visual.
 
 ### Fitur Monitoring & Admin
 - **Dashboard Global & Monitoring**: Monitoring Page universal, menampilkan data berdasarkan role dengan bypass filter tertentu (`monitoring=true`).
