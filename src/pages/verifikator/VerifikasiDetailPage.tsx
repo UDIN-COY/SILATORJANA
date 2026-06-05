@@ -490,7 +490,7 @@ export function VerifikasiDetailPage() {
                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-1">
                     <Button 
                       disabled={isUpdating} 
-                      onClick={() => updateStatus('verified')} 
+                      onClick={() => updateStatus('pending_ppk')} 
                       className="col-span-2 w-full bg-[#047857] hover:bg-[#065F46] shadow-md shadow-emerald-700/10 text-white h-11 md:h-12 rounded-xl font-bold transition-all active:scale-95 text-xs sm:text-[14px] flex items-center justify-center gap-2"
                     >
                        {isUpdating ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Verifikasi &amp; Setujui

@@ -119,9 +119,14 @@ export function MonitoringPage({ items, isLoading, title = 'Monitoring Kegiatan'
                       <div className="px-6 pb-6 pt-2 bg-slate-50/50 border-t border-slate-100">
                         <p className="text-sm font-medium text-slate-600 mb-3">Progress Workflow</p>
                         <ProgressTracker status={item.status} />
-                        <div className="mt-4 flex gap-3 text-xs text-slate-500">
+                        <div className="mt-4 flex gap-3 text-xs text-slate-500 items-center flex-wrap">
                           <span>Update terakhir: {timeAgo(item.$updatedAt || item.updated_at)}</span>
                           {item.jenis_kegiatan && <span>Jenis: {item.jenis_kegiatan}</span>}
+                          {item.verifikator_target && (
+                            <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium uppercase border border-emerald-100">
+                              Verifikator: {item.verifikator_target.replace('wadir', 'Wadir ')}
+                            </span>
+                          )}
                         </div>
 
                         {onIntervene && (

@@ -19,13 +19,13 @@ const SATUAN_PERJALANAN = ['', 'PP', 'ORG', 'KALI', 'LS'];
 
 type RabItem = {
   uraian: string;
-  qty1: number;
+  qty1: number | '';
   satuan1: string;
-  qty2: number;
+  qty2: number | '';
   satuan2: string;
-  qty3: number | null;
+  qty3: number | '' | null;
   satuan3: string;
-  harga_satuan: number;
+  harga_satuan: number | '';
 };
 
 type IndikatorRow = {
@@ -40,14 +40,14 @@ type IkuItem = {
 };
 
 function emptyRab(): RabItem {
-  return { uraian: '', qty1: 1, satuan1: '', qty2: 1, satuan2: '', qty3: null, satuan3: '', harga_satuan: 0 };
+  return { uraian: '', qty1: 1, satuan1: '', qty2: 1, satuan2: '', qty3: null, satuan3: '', harga_satuan: '' };
 }
 
 function calcTotal(item: RabItem): number {
-  const q1 = item.qty1 || 0;
-  const q2 = item.qty2 || 1;
-  const q3 = item.qty3 || 0;
-  const h  = item.harga_satuan || 0;
+  const q1 = Number(item.qty1) || 0;
+  const q2 = Number(item.qty2) || 1;
+  const q3 = Number(item.qty3) || 0;
+  const h  = Number(item.harga_satuan) || 0;
   return q3 > 0 ? q1 * q2 * q3 * h : q1 * q2 * h;
 }
 
@@ -105,7 +105,7 @@ function RabTable({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs mb-1.5 block text-slate-600 font-semibold">Jml 1 <span className="text-red-500">*</span></Label>
-                    <Input type="number" min={1} value={item.qty1} onChange={e => onUpdate(idx, 'qty1', Math.max(1, parseInt(e.target.value) || 1))} className="h-11 rounded-xl px-3 text-sm focus:ring-emerald-500/20" />
+                    <Input type="number" min={1} value={item.qty1} onChange={e => onUpdate(idx, 'qty1', e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))} className="h-11 rounded-xl px-3 text-sm focus:ring-emerald-500/20" />
                   </div>
                   <div>
                     <Label className="text-xs mb-1.5 block text-slate-600 font-semibold">Satuan 1 <span className="text-red-500">*</span></Label>
@@ -118,7 +118,7 @@ function RabTable({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs mb-1.5 block text-slate-600 font-semibold">Jml 2 <span className="text-red-500">*</span></Label>
-                    <Input type="number" min={1} value={item.qty2} onChange={e => onUpdate(idx, 'qty2', Math.max(1, parseInt(e.target.value) || 1))} className="h-11 rounded-xl px-3 text-sm focus:ring-emerald-500/20" />
+                    <Input type="number" min={1} value={item.qty2} onChange={e => onUpdate(idx, 'qty2', e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))} className="h-11 rounded-xl px-3 text-sm focus:ring-emerald-500/20" />
                   </div>
                   <div>
                     <Label className="text-xs mb-1.5 block text-slate-600 font-semibold">Satuan 2 <span className="text-red-500">*</span></Label>
@@ -131,7 +131,7 @@ function RabTable({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs mb-1.5 block text-slate-600 font-semibold">Jml 3 (Opsional)</Label>
-                    <Input type="number" min={0} value={item.qty3 ?? ''} placeholder="0" onChange={e => onUpdate(idx, 'qty3', e.target.value ? Math.max(0, parseInt(e.target.value) || 0) : null)} className="h-11 rounded-xl px-3 text-sm focus:ring-emerald-500/20" />
+                    <Input type="number" min={0} value={item.qty3 === null ? '' : item.qty3} placeholder="0" onChange={e => onUpdate(idx, 'qty3', e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value) || 0))} className="h-11 rounded-xl px-3 text-sm focus:ring-emerald-500/20" />
                   </div>
                   <div>
                     <Label className="text-xs mb-1.5 block text-slate-600 font-semibold">Satuan 3</Label>
@@ -143,7 +143,7 @@ function RabTable({
 
                 <div>
                    <Label className="text-xs mb-1.5 block text-slate-600 font-semibold">Harga Satuan (Rp) <span className="text-red-500">*</span></Label>
-                   <Input type="number" min={0} value={item.harga_satuan === 0 ? '' : item.harga_satuan} placeholder="0" onChange={e => onUpdate(idx, 'harga_satuan', Math.max(0, parseInt(e.target.value) || 0))} className="h-11 rounded-xl text-right font-medium text-sm focus:ring-emerald-500/20" />
+                   <Input type="number" min={0} value={item.harga_satuan} placeholder="0" onChange={e => onUpdate(idx, 'harga_satuan', e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value)))} className="h-11 rounded-xl text-right font-medium text-sm focus:ring-emerald-500/20" />
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
@@ -201,7 +201,7 @@ function RabTable({
                     <Input
                       type="number" min={1}
                       value={item.qty1}
-                      onChange={e => onUpdate(idx, 'qty1', Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={e => onUpdate(idx, 'qty1', e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
                       className="h-9 rounded-lg text-xs text-center px-1"
                     />
                   </td>
@@ -218,7 +218,7 @@ function RabTable({
                     <Input
                       type="number" min={1}
                       value={item.qty2}
-                      onChange={e => onUpdate(idx, 'qty2', Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={e => onUpdate(idx, 'qty2', e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
                       className="h-9 rounded-lg text-xs text-center px-1"
                     />
                   </td>
@@ -236,7 +236,7 @@ function RabTable({
                       type="number" min={0}
                       value={item.qty3 ?? ''}
                       placeholder="Opsional"
-                      onChange={e => onUpdate(idx, 'qty3', e.target.value ? Math.max(0, parseInt(e.target.value) || 0) : null)}
+                      onChange={e => onUpdate(idx, 'qty3', e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value) || 0))}
                       className="h-9 rounded-lg text-xs text-center px-1"
                     />
                   </td>
@@ -254,7 +254,7 @@ function RabTable({
                       type="number" min={0}
                       value={item.harga_satuan === 0 ? '' : item.harga_satuan}
                       placeholder="0"
-                      onChange={e => onUpdate(idx, 'harga_satuan', Math.max(0, parseInt(e.target.value) || 0))}
+                      onChange={e => onUpdate(idx, 'harga_satuan', e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value) || 0))}
                       className="h-9 rounded-lg text-xs text-right px-2"
                     />
                   </td>
@@ -722,6 +722,7 @@ export function CreateUsulanPage() {
     if (!step1.nama_kegiatan.trim()) errs.nama_kegiatan = 'Nama kegiatan wajib diisi';
     if (!step1.jenis_kegiatan.trim()) errs.jenis_kegiatan = 'Jenis kegiatan wajib diisi';
     if (!step1.tanggal_kegiatan) errs.tanggal_kegiatan = 'Tanggal kegiatan wajib diisi';
+    else if (step1.tanggal_kegiatan < todayStr) errs.tanggal_kegiatan = 'Tidak bisa memilih tanggal yang sudah lewat';
     if (!step1.tempat.trim()) errs.tempat = 'Tempat / lokasi wajib diisi';
     if (!step1.pengusul_organisasi.trim()) errs.pengusul_organisasi = 'Pengusul / organisasi wajib diisi';
     setErrors(errs);
@@ -761,7 +762,7 @@ export function CreateUsulanPage() {
   const validateStep4 = (): boolean => {
     const errs: Record<string, string> = {};
     const allRab = [...rabBarang, ...rabJasa, ...rabPerjalanan];
-    const filledRab = allRab.filter(it => it.uraian.trim() && it.harga_satuan > 0);
+    const filledRab = allRab.filter(it => it.uraian.trim() && Number(it.harga_satuan) > 0);
     if (filledRab.length === 0) {
       errs.rab_global = 'Minimal 1 item RAB harus diisi lengkap (uraian dan harga satuan)';
     }

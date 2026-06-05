@@ -61,8 +61,9 @@ class UserController extends Controller
 
         $user = User::create($validated);
 
-        // Clear any orphaned tokens/sessions/history if the ID was somehow reused or left over
+        // Clear any orphaned tokens/sessions/history/kegiatan if the ID was somehow reused or left over
         $user->tokens()->delete();
+        \App\Models\Kegiatan::where('pengusul_id', $user->id)->delete();
         DB::table('status_history')->where('user_id', $user->id)->delete();
 
         return response()->json($user, 201);

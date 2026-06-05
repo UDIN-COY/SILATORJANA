@@ -55,6 +55,14 @@ class Kegiatan extends Model
     {
         static::created(function (Kegiatan $kegiatan) {
             $user = request()->user();
+            $kegiatan->loadMissing(['kak', 'iku', 'rab']);
+            $payload = [
+                'kegiatan' => $kegiatan->only(['nama_kegiatan', 'jenis_kegiatan', 'tanggal_kegiatan', 'tempat', 'deskripsi', 'total_anggaran']),
+                'kak' => $kegiatan->kak ? $kegiatan->kak->toArray() : null,
+                'iku' => $kegiatan->iku ? $kegiatan->iku->toArray() : [],
+                'rab' => $kegiatan->rab ? $kegiatan->rab->toArray() : [],
+            ];
+
             StatusHistory::create([
                 'ref_type' => 'kegiatan',
                 'ref_id' => $kegiatan->id,
@@ -64,12 +72,21 @@ class Kegiatan extends Model
                 'user_id' => $user?->id,
                 'user_nama' => $user?->nama,
                 'user_role' => $user?->role,
+                'payload_snapshot' => json_encode($payload),
             ]);
         });
 
         static::updating(function (Kegiatan $kegiatan) {
             if ($kegiatan->isDirty('status')) {
                 $user = request()->user();
+                $kegiatan->loadMissing(['kak', 'iku', 'rab']);
+                $payload = [
+                    'kegiatan' => $kegiatan->only(['nama_kegiatan', 'jenis_kegiatan', 'tanggal_kegiatan', 'tempat', 'deskripsi', 'total_anggaran']),
+                    'kak' => $kegiatan->kak ? $kegiatan->kak->toArray() : null,
+                    'iku' => $kegiatan->iku ? $kegiatan->iku->toArray() : [],
+                    'rab' => $kegiatan->rab ? $kegiatan->rab->toArray() : [],
+                ];
+
                 StatusHistory::create([
                     'ref_type' => 'kegiatan',
                     'ref_id' => $kegiatan->id,
@@ -79,6 +96,7 @@ class Kegiatan extends Model
                     'user_id' => $user?->id,
                     'user_nama' => $user?->nama,
                     'user_role' => $user?->role,
+                    'payload_snapshot' => json_encode($payload),
                 ]);
             }
         });

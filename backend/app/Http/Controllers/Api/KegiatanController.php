@@ -20,6 +20,7 @@ class KegiatanController extends Controller
 
         if ($user) {
             $isArchive = $request->get('archive') === 'true';
+            $isMonitoring = $request->get('monitoring') === 'true';
 
             if ($user->role === 'pengusul') {
                 $query->where('pengusul_id', $user->id);
@@ -31,13 +32,17 @@ class KegiatanController extends Controller
                     });
                 }
                 
-                if ($isArchive) {
+                if ($isMonitoring) {
+                    $query->whereNotIn('status', ['draft']);
+                } elseif ($isArchive) {
                     $query->whereNotIn('status', ['draft', 'submitted', 'revision_requested', 'revisi_done']);
                 } else {
                     $query->whereIn('status', ['submitted', 'revision_requested', 'revisi_done']);
                 }
             } elseif ($user->role === 'ppk') {
-                if ($isArchive) {
+                if ($isMonitoring) {
+                    $query->whereNotIn('status', ['draft', 'submitted', 'revision_requested', 'revisi_done', 'verified']);
+                } elseif ($isArchive) {
                     $query->whereIn('status', ['approved_ppk', 'approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_rejected', 'lpj_done', 'completed', 'rejected']);
                 } else {
                     $query->where('status', 'pending_ppk');
@@ -49,13 +54,19 @@ class KegiatanController extends Controller
                         $q->orWhereNull('verifikator_target');
                     }
                 });
-                if ($isArchive) {
+                if ($isMonitoring) {
+                    $query->whereNotIn('status', ['draft', 'submitted', 'revision_requested', 'revisi_done', 'verified', 'pending_ppk']);
+                } elseif ($isArchive) {
                     $query->whereIn('status', ['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_rejected', 'lpj_done', 'completed', 'rejected']);
                 } else {
                     $query->where('status', 'approved_ppk');
                 }
             } elseif ($user->role === 'bendahara') {
-                $query->whereIn('status', ['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted']);
+                if ($isMonitoring) {
+                    $query->whereIn('status', ['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_rejected', 'lpj_done', 'completed']);
+                } else {
+                    $query->whereIn('status', ['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted']);
+                }
             } elseif ($user->role === 'rektorat') {
                 $query->whereNotIn('status', ['draft']);
             }
@@ -191,8 +202,15 @@ class KegiatanController extends Controller
         // Capture snapshot for BUG-007
         $latestHistory = $kegiatan->statusHistory()->latest()->first();
         if ($latestHistory && empty($latestHistory->payload_snapshot)) {
+            $kegiatan->load(['kak', 'iku', 'rab']);
+            $payload = [
+                'kegiatan' => $kegiatan->only(['nama_kegiatan', 'jenis_kegiatan', 'tanggal_kegiatan', 'tempat', 'deskripsi', 'total_anggaran']),
+                'kak' => $kegiatan->kak ? $kegiatan->kak->toArray() : null,
+                'iku' => $kegiatan->iku ? $kegiatan->iku->toArray() : [],
+                'rab' => $kegiatan->rab ? $kegiatan->rab->toArray() : [],
+            ];
             $latestHistory->update([
-                'payload_snapshot' => json_encode($kegiatan->load(['kak', 'iku', 'rab']))
+                'payload_snapshot' => json_encode($payload)
             ]);
         }
 

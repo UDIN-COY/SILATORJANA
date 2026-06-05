@@ -8,7 +8,7 @@ export function BendaharaMonitoringPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await apiListKegiatan();
+        const res = await apiListKegiatan({ monitoring: 'true' });
         setItems((res.data || res));
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();

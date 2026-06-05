@@ -21,13 +21,13 @@ interface RabItem {
   id?: number;
   kategori: string;
   uraian: string;
-  qty1: number;
+  qty1: number | '';
   satuan1: string;
-  qty2: number;
+  qty2: number | '';
   satuan2: string;
-  qty3: number | null;
+  qty3: number | '' | null;
   satuan3: string;
-  harga_satuan: number;
+  harga_satuan: number | '';
 }
 
 interface IndikatorRow {
@@ -145,7 +145,7 @@ function EditRabTable({
                     <Input value={item.uraian} onChange={e => onUpdate(idx, 'uraian', e.target.value)} className="h-8 rounded-lg text-xs" />
                   </td>
                   <td className="p-1.5">
-                    <Input type="number" min={1} value={item.qty1} onChange={e => onUpdate(idx, 'qty1', Math.max(1, parseInt(e.target.value) || 1))} className="h-8 rounded-lg text-xs text-center px-1" />
+                    <Input type="number" min={1} value={item.qty1} onChange={e => onUpdate(idx, 'qty1', e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))} className="h-8 rounded-lg text-xs text-center px-1" />
                   </td>
                   <td className="p-1.5">
                     <select value={item.satuan1} onChange={e => onUpdate(idx, 'satuan1', e.target.value)}
@@ -154,7 +154,7 @@ function EditRabTable({
                     </select>
                   </td>
                   <td className="p-1.5">
-                    <Input type="number" min={1} value={item.qty2} onChange={e => onUpdate(idx, 'qty2', Math.max(1, parseInt(e.target.value) || 1))} className="h-8 rounded-lg text-xs text-center px-1" />
+                    <Input type="number" min={1} value={item.qty2} onChange={e => onUpdate(idx, 'qty2', e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))} className="h-8 rounded-lg text-xs text-center px-1" />
                   </td>
                   <td className="p-1.5">
                     <select value={item.satuan2} onChange={e => onUpdate(idx, 'satuan2', e.target.value)}
@@ -163,7 +163,7 @@ function EditRabTable({
                     </select>
                   </td>
                   <td className="p-1.5">
-                    <Input type="number" min={0} value={item.qty3 ?? ''} placeholder="Opsional" onChange={e => onUpdate(idx, 'qty3', e.target.value ? Math.max(0, parseInt(e.target.value) || 0) : null)} className="h-8 rounded-lg text-xs text-center px-1" />
+                    <Input type="number" min={0} value={item.qty3 === null ? '' : item.qty3} placeholder="Opsional" onChange={e => onUpdate(idx, 'qty3', e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value) || 0))} className="h-8 rounded-lg text-xs text-center px-1" />
                   </td>
                   <td className="p-1.5">
                     <select value={item.satuan3} onChange={e => onUpdate(idx, 'satuan3', e.target.value)}
@@ -172,7 +172,7 @@ function EditRabTable({
                     </select>
                   </td>
                   <td className="p-1.5">
-                    <Input type="number" min={0} value={item.harga_satuan || ''} placeholder="0" onChange={e => onUpdate(idx, 'harga_satuan', Math.max(0, parseInt(e.target.value) || 0))} className="h-8 rounded-lg text-xs text-right px-2" />
+                    <Input type="number" min={0} value={item.harga_satuan} placeholder="0" onChange={e => onUpdate(idx, 'harga_satuan', e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value) || 0))} className="h-8 rounded-lg text-xs text-right px-2" />
                   </td>
                   <td className="px-3 py-2 text-right font-semibold text-slate-800 bg-slate-50/50 whitespace-nowrap">
                     {formatCurrency(calcTotal(item))}
@@ -235,7 +235,7 @@ export function EditRevisiPage() {
   const [rabPerjalanan, setRabPerjalanan] = useState<RabItem[]>([]);
 
   function emptyRab(kategori: string): RabItem {
-    return { kategori, uraian: '', qty1: 1, satuan1: '', qty2: 1, satuan2: '', qty3: null, satuan3: '', harga_satuan: 0 };
+    return { kategori, uraian: '', qty1: 1, satuan1: '', qty2: 1, satuan2: '', qty3: null, satuan3: '', harga_satuan: '' };
   }
 
   useEffect(() => {
@@ -350,8 +350,28 @@ export function EditRevisiPage() {
     if (!id || !kegiatan) return;
 
     // Validation
+    if (!form.nama_kegiatan.trim()) return setForm(prev => ({...prev, submitError: 'Nama kegiatan wajib diisi.'}));
+    if (!form.jenis_kegiatan.trim()) return setForm(prev => ({...prev, submitError: 'Jenis kegiatan wajib diisi.'}));
+    if (!form.tanggal_kegiatan) return setForm(prev => ({...prev, submitError: 'Tanggal kegiatan wajib diisi.'}));
+    if (form.tanggal_kegiatan < todayStr) return setForm(prev => ({...prev, submitError: 'Tidak bisa memilih tanggal yang sudah lewat.'}));
+    if (!form.tempat.trim()) return setForm(prev => ({...prev, submitError: 'Tempat / lokasi wajib diisi.'}));
+    if (!form.pengusul_organisasi.trim()) return setForm(prev => ({...prev, submitError: 'Pengusul / organisasi wajib diisi.'}));
+    if (!form.gambaran_umum.trim()) return setForm(prev => ({...prev, submitError: 'Gambaran umum wajib diisi.'}));
+    if (!form.latar_belakang.trim()) return setForm(prev => ({...prev, submitError: 'Latar belakang KAK wajib diisi.'}));
+    if (!form.tujuan.trim()) return setForm(prev => ({...prev, submitError: 'Tujuan KAK wajib diisi.'}));
+    if (!form.mekanisme.trim()) return setForm(prev => ({...prev, submitError: 'Mekanisme & Rancangan KAK wajib diisi.'}));
+    if (!form.susunan_panitia.trim()) return setForm(prev => ({...prev, submitError: 'Susunan Panitia KAK wajib diisi.'}));
+    if (!form.susunan_acara.trim()) return setForm(prev => ({...prev, submitError: 'Susunan Acara KAK wajib diisi.'}));
+    
+    if (ikuItems.length === 0) return setForm(prev => ({...prev, submitError: 'Minimal 1 indikator IKU harus ditambahkan.'}));
+    for (let i = 0; i < ikuItems.length; i++) {
+      if (!ikuItems[i].nama_indikator.trim() || ikuItems[i].target_persen === null || ikuItems[i].target_persen === undefined) {
+        return setForm(prev => ({...prev, submitError: `Indikator ke-${i+1} belum lengkap.`}));
+      }
+    }
+
     const allRab = [...rabBarang, ...rabJasa, ...rabPerjalanan];
-    const filledRab = allRab.filter(it => it.uraian.trim() && it.harga_satuan > 0);
+    const filledRab = allRab.filter(it => it.uraian.trim() && Number(it.harga_satuan) > 0);
     if (filledRab.length === 0) {
       setForm(prev => ({...prev, submitError: 'Gagal mengirim: Minimal 1 item RAB harus diisi lengkap (uraian dan harga satuan).'}));
       return;
