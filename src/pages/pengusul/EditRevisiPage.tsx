@@ -357,11 +357,10 @@ export function EditRevisiPage() {
     if (!form.tempat.trim()) return setForm(prev => ({...prev, submitError: 'Tempat / lokasi wajib diisi.'}));
     if (!form.pengusul_organisasi.trim()) return setForm(prev => ({...prev, submitError: 'Pengusul / organisasi wajib diisi.'}));
     if (!form.gambaran_umum.trim()) return setForm(prev => ({...prev, submitError: 'Gambaran umum wajib diisi.'}));
-    if (!form.latar_belakang.trim()) return setForm(prev => ({...prev, submitError: 'Latar belakang KAK wajib diisi.'}));
-    if (!form.tujuan.trim()) return setForm(prev => ({...prev, submitError: 'Tujuan KAK wajib diisi.'}));
-    if (!form.mekanisme.trim()) return setForm(prev => ({...prev, submitError: 'Mekanisme & Rancangan KAK wajib diisi.'}));
-    if (!form.susunan_panitia.trim()) return setForm(prev => ({...prev, submitError: 'Susunan Panitia KAK wajib diisi.'}));
-    if (!form.susunan_acara.trim()) return setForm(prev => ({...prev, submitError: 'Susunan Acara KAK wajib diisi.'}));
+      if (!form.penerima_manfaat.trim()) return setForm(prev => ({...prev, submitError: 'Penerima manfaat wajib diisi.'}));
+      if (!form.strategi_pencapaian.trim()) return setForm(prev => ({...prev, submitError: 'Strategi pencapaian wajib diisi.'}));
+      if (!form.metode_pelaksanaan.trim()) return setForm(prev => ({...prev, submitError: 'Metode pelaksanaan wajib diisi.'}));
+      if (!form.tahapan_pelaksanaan.trim()) return setForm(prev => ({...prev, submitError: 'Tahapan pelaksanaan wajib diisi.'}));
     
     if (ikuItems.length === 0) return setForm(prev => ({...prev, submitError: 'Minimal 1 indikator IKU harus ditambahkan.'}));
     for (let i = 0; i < ikuItems.length; i++) {

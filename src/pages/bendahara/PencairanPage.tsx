@@ -67,6 +67,13 @@ export function PencairanPage() {
       return;
     }
 
+    const hasSubmittedLpj = ['lpj_submitted', 'lpj_revision', 'lpj_approved', 'lpj_verified', 'lpj_done', 'completed'].includes(data.status?.toLowerCase());
+    
+    if (!hasSubmittedLpj && (totalDisbursed + inputPercentNum >= 100)) {
+      alert('Pencairan tahap awal tidak boleh mencapai 100%. Sisa dana (misal 30%) baru dapat dicairkan setelah LPJ disubmit oleh pengusul.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const result = await apiTambahPencairan(id, {

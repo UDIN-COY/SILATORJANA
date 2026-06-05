@@ -16,7 +16,7 @@ export function BendaharaProposalList() {
     (async () => {
       try {
         const res = await apiListKegiatan();
-        setItems((res.data || res).filter((d: any) => ['approved_wadir','accepted_funds','funds_disbursed','lpj_submitted','lpj_approved','lpj_done','completed'].includes(d.status?.toLowerCase())));
+        setItems((res.data || res).filter((d: any) => ['approved_wadir', 'disetujui_rektorat', 'accepted_funds', 'lpj_submitted'].includes(d.status?.toLowerCase())));
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     })();
   }, []);

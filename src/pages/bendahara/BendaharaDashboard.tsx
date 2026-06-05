@@ -20,14 +20,14 @@ export function BendaharaDashboard() {
         const res = await apiListKegiatan();
         const rawItems = Array.isArray(res) ? res : (res.data || []);
         
-        // Filter for disbursement requests: LPJ must be submitted first
+        // Filter for disbursement requests
         const pencairan = rawItems.filter((item: any) =>
-          ['lpj_submitted', 'lpj_approved', 'lpj_revision'].includes(item.status?.toLowerCase())
+          ['approved_wadir', 'accepted_funds', 'disetujui_rektorat'].includes(item.status?.toLowerCase())
         );
 
-        // Filter for LPJ verification requests: LPJ submitted
+        // Filter for LPJ verification requests
         const lpj = rawItems.filter((item: any) =>
-          ['approved_wadir', 'accepted_funds', 'disetujui_rektorat'].includes(item.status?.toLowerCase())
+          ['lpj_submitted', 'lpj_revision'].includes(item.status?.toLowerCase())
         );
 
         setUsulanPencairan(pencairan);

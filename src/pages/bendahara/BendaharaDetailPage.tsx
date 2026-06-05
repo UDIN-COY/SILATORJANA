@@ -484,23 +484,18 @@ export function BendaharaDetailPage() {
                     />
                  </div>
                  
-                 <div className="flex flex-col gap-2 pt-2">
-                    {canPencairan && (
-                      <Button disabled={isUpdating} onClick={() => updateStatus('funds_disbursed', catatan)} className="w-full bg-blue-600 hover:bg-blue-700 h-10">
-                         {isUpdating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <DollarSign className="size-4 mr-2" />} Proses Pencairan Dana
-                      </Button>
-                    )}
+                 <div className="pt-2 space-y-3">
+                      {canPencairan && (
+                        <Button disabled={isUpdating} onClick={() => navigate(`/dashboard/bendahara/pencairan/${id}`)} className="w-full bg-blue-600 hover:bg-blue-700 h-10">
+                           <DollarSign className="size-4 mr-2" /> Proses Pencairan Dana
+                        </Button>
+                      )}
 
-                    {isMenungguLpj && (
-                      <>
-                        <Button disabled={isUpdating} onClick={() => updateStatus('lpj_approved', catatan)} className="w-full bg-emerald-600 hover:bg-emerald-700 h-10">
-                          {isUpdating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />} Setujui LPJ
+                      {isMenungguLpj && (
+                        <Button disabled={isUpdating} onClick={() => navigate(`/dashboard/bendahara/lpj/${id}`)} className="w-full bg-emerald-600 hover:bg-emerald-700 h-10">
+                          <Check className="size-4 mr-2" /> Proses Verifikasi LPJ
                         </Button>
-                        <Button disabled={isUpdating} onClick={() => updateStatus('lpj_revision', catatan)} variant="outline" className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 h-10">
-                          {isUpdating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <AlertTriangle className="size-4 mr-2" />} Minta Revisi LPJ
-                        </Button>
-                      </>
-                    )}
+                      )}
 
                     {!canPencairan && !isMenungguLpj && (
                        <p className="text-xs text-slate-500 text-center">Tidak ada tindakan yang diperlukan saat ini. Status kegiatan: {data.status}</p>
