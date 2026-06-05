@@ -15,7 +15,7 @@ class KegiatanController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Kegiatan::with(['pengusul', 'kak', 'iku', 'rab']);
+        $query = Kegiatan::with(['pengusul']);
         $user = $request->user();
 
         if ($user) {
