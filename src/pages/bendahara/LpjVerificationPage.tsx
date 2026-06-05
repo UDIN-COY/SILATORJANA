@@ -218,25 +218,34 @@ export function LpjVerificationPage() {
                           <Label className="text-xs font-bold text-slate-500 block">Berkas Kuitansi / Bukti Pembayaran:</Label>
                           {item.existing_files && item.existing_files.length > 0 ? (
                             <div className="space-y-1.5">
-                              {item.existing_files.map((file) => (
-                                <div key={file.file_id} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-lg group text-xs">
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    <FileText className="size-4 text-emerald-600 shrink-0" />
-                                    <div className="min-w-0">
-                                      <p className="font-medium text-slate-800 truncate max-w-xs">{file.original_name}</p>
-                                      <p className="text-[10px] text-slate-400">{formatFileSize(file.file_size)} • {formatDate(file.uploaded_at)}</p>
+                              {item.existing_files.map((file) => {
+                                const isImage = file.url.match(/\\.(jpeg|jpg|gif|png)$/i);
+                                return (
+                                <div key={file.file_id} className="flex flex-col p-2.5 bg-slate-50 border border-slate-100 rounded-lg group text-xs">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <FileText className="size-4 text-emerald-600 shrink-0" />
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-slate-800 truncate max-w-xs">{file.original_name}</p>
+                                        <p className="text-[10px] text-slate-400">{formatFileSize(file.file_size)} • {formatDate(file.uploaded_at)}</p>
+                                      </div>
                                     </div>
+                                    <a
+                                      href={file.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-800 bg-white border border-slate-200 rounded px-2.5 py-1 shadow-sm font-semibold transition-colors shrink-0"
+                                    >
+                                      <Download className="size-3" /> Unduh / Lihat
+                                    </a>
                                   </div>
-                                  <a
-                                    href={file.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-800 bg-white border border-slate-200 rounded px-2.5 py-1 shadow-sm font-semibold transition-colors"
-                                  >
-                                    <Download className="size-3" /> Unduh / Lihat
-                                  </a>
+                                  {isImage && (
+                                    <div className="mt-3 bg-slate-200/50 rounded-md overflow-hidden border border-slate-200/50 flex justify-center p-1">
+                                      <img src={file.url} alt={file.original_name} className="max-w-full max-h-64 object-contain rounded" />
+                                    </div>
+                                  )}
                                 </div>
-                              ))}
+                              )})}
                             </div>
                           ) : (
                             <p className="text-xs text-red-500 italic flex items-center gap-1.5">

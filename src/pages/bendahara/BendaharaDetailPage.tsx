@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { apiCreateKegiatan, apiGetKegiatan, apiGetUser, apiListUsers, apiUpdateKegiatan } from '@/lib/api';
+import { apiGetKegiatan, apiGetUser, apiListUsers, apiUpdateKegiatan, apiGetLpjDetail } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Check, X, AlertCircle, Loader2, User, FileText, DollarSign, Target, Info, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, User, FileText, CheckCircle, AlertTriangle, Target, Info, DollarSign, Check, X, Loader2, Eye } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
@@ -12,7 +12,7 @@ export function BendaharaDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   
-  const [activeTab, setActiveTab] = useState<'info'|'pengusul'|'kak'|'rab'|'iku'>('info');
+  const [activeTab, setActiveTab] = useState<'info'|'pengusul'|'kak'|'rab'|'iku'|'lpj'>('info');
   const [data, setData] = useState<any>(null);
   const [rabData, setRabData] = useState<any[]>([]);
   const [kakData, setKakData] = useState<any>(null);
@@ -21,6 +21,7 @@ export function BendaharaDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [catatan, setCatatan] = useState('');
+  const [lpjData, setLpjData] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,6 +54,13 @@ export function BendaharaDetailPage() {
               setPengusulData(userDoc);
             } catch { /* skip */ }
           }
+        }
+
+        if (['lpj_submitted', 'lpj_approved', 'lpj_revision', 'lpj_done', 'completed'].includes(kegiatan.status?.toLowerCase())) {
+          try {
+            const lpjRes = await apiGetLpjDetail(id);
+            setLpjData(lpjRes);
+          } catch { /* skip */ }
         }
 
       } catch (error) {
@@ -121,6 +129,10 @@ export function BendaharaDetailPage() {
     { id: 'rab', label: 'RAB', icon: DollarSign },
     { id: 'iku', label: 'IKU', icon: Target },
   ];
+
+  if (['lpj_submitted', 'lpj_approved', 'lpj_revision', 'lpj_done', 'completed'].includes(data.status?.toLowerCase())) {
+     tabs.push({ id: 'lpj', label: 'LPJ', icon: CheckCircle });
+  }
 
   const canPencairan = ['approved_wadir', 'accepted_funds', 'disetujui_rektorat'].includes(data.status?.toLowerCase());
   const isMenungguLpj = data.status === 'menunggu_lpj' || data.status === 'lpj_submitted';
@@ -353,6 +365,67 @@ export function BendaharaDetailPage() {
               </CardContent>
             </Card>
           )}
+          {/* ===== LPJ TAB ===== */}
+          {activeTab === 'lpj' && (
+            <Card className="shadow-sm border-slate-200">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CheckCircle className="size-4.5 text-emerald-600" /> Berkas Laporan Pertanggungjawaban (LPJ)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {!lpjData ? (
+                  <p className="text-slate-500 text-sm">Data LPJ belum tersedia.</p>
+                ) : (
+                  <div className="space-y-6">
+                    {Object.entries(lpjData.rab || {}).map(([kat, group]: [string, any]) => (
+                      <div key={kat} className="border border-slate-200 rounded-lg overflow-hidden">
+                        <div className="bg-emerald-50/60 px-4 py-2 border-b border-emerald-100">
+                          <span className="text-sm font-semibold text-emerald-800 capitalize">{group.label}</span>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          {group.items.map((item: any) => (
+                            <div key={item.id} className="border border-slate-100 rounded-lg p-3 bg-white">
+                              <p className="font-medium text-slate-800 text-sm mb-2">{item.uraian}</p>
+                              {item.existing_files && item.existing_files.length > 0 ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                  {item.existing_files.map((file: any) => {
+                                    const isImage = /\.(jpeg|jpg|gif|png|webp)$/i.test(file.url);
+                                    return (
+                                      <div key={file.file_id} className="border border-slate-200 rounded-lg overflow-hidden hover:border-emerald-400 transition-colors group">
+                                        {isImage ? (
+                                          <a href={file.url} target="_blank" rel="noreferrer">
+                                            <img src={file.url} alt={file.original_name} className="w-full h-32 object-cover cursor-pointer" />
+                                          </a>
+                                        ) : (
+                                          <a href={file.url} target="_blank" rel="noreferrer" className="w-full h-32 bg-slate-50 flex flex-col items-center justify-center text-slate-400 group-hover:text-emerald-500">
+                                            <FileText className="size-10 mb-1" />
+                                            <span className="text-xs uppercase font-semibold">{file.original_name.split('.').pop()}</span>
+                                          </a>
+                                        )}
+                                        <div className="p-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-1">
+                                          <span className="text-xs truncate flex-1" title={file.original_name}>{file.original_name}</span>
+                                          <a href={file.url} download className="text-emerald-600 hover:text-emerald-800 shrink-0" title="Download">
+                                            <Eye className="size-3.5" />
+                                          </a>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-slate-400 italic">Tidak ada berkas terlampir.</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
         </div>
 
@@ -388,7 +461,7 @@ export function BendaharaDetailPage() {
                           {isUpdating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Check className="size-4 mr-2" />} Setujui LPJ
                         </Button>
                         <Button disabled={isUpdating} onClick={() => updateStatus('lpj_revision', catatan)} variant="outline" className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 h-10">
-                          {isUpdating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <AlertCircle className="size-4 mr-2" />} Minta Revisi LPJ
+                          {isUpdating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <AlertTriangle className="size-4 mr-2" />} Minta Revisi LPJ
                         </Button>
                       </>
                     )}

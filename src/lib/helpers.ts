@@ -24,7 +24,7 @@ export const STATUS_MAP: Record<string, string> = {
   verified: 'Terverifikasi',
   pending_ppk: 'Menunggu PPK',
   approved_ppk: 'Disetujui PPK',
-  approved_wadir: 'Disetujui Wadir',
+  approved_wadir: 'Menunggu LPJ (Disetujui Wadir)',
   accepted_funds: 'Dana Diterima',
   funds_disbursed: 'Dana Cair',
   rejected: 'Ditolak',

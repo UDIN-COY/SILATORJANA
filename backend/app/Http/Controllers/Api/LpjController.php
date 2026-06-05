@@ -74,7 +74,7 @@ class LpjController extends Controller
                     'original_name' => $f->original_name,
                     'file_size' => $f->file_size,
                     'uploaded_at' => $f->uploaded_at,
-                    'url' => Storage::disk('public')->url('lpj/' . $f->filename),
+                    'url' => '/data/upload/lpj/' . $f->filename,
                 ];
             })->values();
 
@@ -123,7 +123,7 @@ class LpjController extends Controller
         $kegiatanId = $request->input('kegiatan_id');
 
         $kegiatan = Kegiatan::where('id', $kegiatanId)
-            ->whereIn('status', ['funds_disbursed', 'accepted_funds', 'lpj_revision', 'lpj_pending'])
+            ->whereIn('status', ['approved_wadir', 'funds_disbursed', 'accepted_funds', 'lpj_revision', 'lpj_pending'])
             ->first();
 
         if (!$kegiatan) {
@@ -176,11 +176,22 @@ class LpjController extends Controller
             // Handle file uploads per RAB item
             $uploadedFiles = [];
             $errors = [];
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+            $uploadDir = base_path('../data/upload/lpj');
+            $allowedMimes = [
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ];
             $maxSize = 5 * 1024 * 1024; // 5MB
 
             // Ensure storage directory exists
-            Storage::disk('public')->makeDirectory('lpj');
+            $uploadDir = base_path('../data/upload/lpj');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
 
             foreach ($itemFiles as $rabId => $files) {
                 // Ensure files is an array
@@ -199,7 +210,10 @@ class LpjController extends Controller
                 }
 
                 foreach ($files as $file) {
-                    if (!$file || !$file->isValid()) continue;
+                    if (!$file || !$file->isValid()) {
+                        $errors[] = "File " . ($file ? $file->getClientOriginalName() : 'unknown') . ": Gagal upload (Max ukuran melebihi limit PHP).";
+                        continue;
+                    }
 
                     if (!in_array($file->getMimeType(), $allowedMimes)) {
                         $errors[] = "File {$file->getClientOriginalName()}: Tipe tidak diizinkan";
@@ -211,6 +225,9 @@ class LpjController extends Controller
                         continue;
                     }
 
+                    $fileSize = $file->getSize();
+                    $originalName = $file->getClientOriginalName();
+                    
                     $ext = strtolower($file->getClientOriginalExtension());
                     $filename = sprintf(
                         '%s_%d_rab%d_%d_%s.%s',
@@ -222,7 +239,7 @@ class LpjController extends Controller
                         $ext
                     );
 
-                    $file->storeAs('lpj', $filename, 'public');
+                    $file->move($uploadDir, $filename);
 
                     LpjFile::create([
                         'lpj_id' => $lpj->id,
@@ -230,16 +247,25 @@ class LpjController extends Controller
                         'kategori' => $rab->kategori ?? 'barang',
                         'rab_id' => $rabId,
                         'filename' => $filename,
-                        'original_name' => $file->getClientOriginalName(),
-                        'file_size' => $file->getSize(),
+                        'original_name' => $originalName,
+                        'file_size' => $fileSize,
                     ]);
 
                     $uploadedFiles[] = [
                         'filename' => $filename,
-                        'original_name' => $file->getClientOriginalName(),
+                        'original_name' => $originalName,
                         'rab_id' => $rabId,
                     ];
                 }
+            }
+
+            $totalFiles = $existingFileCount + count($uploadedFiles);
+
+            if ($totalFiles === 0) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Gagal submit: Minimal harus ada 1 file bukti kuitansi yang valid. Error: ' . implode(', ', $errors)
+                ], 422);
             }
 
             // Save realisasi data
@@ -311,7 +337,7 @@ class LpjController extends Controller
         }
 
         // Delete physical file
-        Storage::disk('public')->delete('lpj/' . $file->filename);
+        @unlink(base_path('../data/upload/lpj/' . $file->filename));
 
         $file->delete();
 

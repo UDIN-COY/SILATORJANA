@@ -194,6 +194,32 @@ export function PengusulDashboard() {
             </Card>
           )}
 
+          {/* Perlu Upload LPJ Alert */}
+          {usulanList.filter((i: any) => i.status === 'approved_wadir').length > 0 && (
+            <Card className="shadow-sm border-blue-200 bg-blue-50/30">
+              <CardHeader className="border-b border-blue-100 bg-blue-50/50">
+                <CardTitle className="text-base text-blue-800 flex items-center gap-2">
+                  <FileText className="size-5 shrink-0" /> Perlu Upload LPJ ({usulanList.filter((i: any) => i.status === 'approved_wadir').length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-blue-100">
+                  {usulanList.filter((i: any) => i.status === 'approved_wadir').map((item: any) => (
+                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 hover:bg-blue-50/50">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 truncate">{item.nama_kegiatan}</p>
+                        <p className="text-xs text-blue-700 mt-1 italic">Telah disetujui Wadir. Silakan unggah LPJ untuk pencairan dana.</p>
+                      </div>
+                      <Button size="sm" onClick={() => navigate(`/dashboard/pengusul/usulan/${item.id}`)} className="bg-blue-600 hover:bg-blue-700 shrink-0">
+                        Upload Sekarang
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Verified — siap diteruskan ke PPK */}
           {usulanList.filter((i: any) => i.status === 'verified' || i.status === 'diverifikasi').length > 0 && (
             <Card className="shadow-sm border-emerald-200 bg-emerald-50/20">

@@ -20,14 +20,14 @@ export function BendaharaDashboard() {
         const res = await apiListKegiatan();
         const rawItems = Array.isArray(res) ? res : (res.data || []);
         
-        // Filter for disbursement requests: approved by Wadir or Rektorat
-        const pencairan = rawItems.filter((item: any) => 
-          ['approved_wadir', 'accepted_funds', 'disetujui_rektorat'].includes(item.status?.toLowerCase())
+        // Filter for disbursement requests: LPJ must be submitted first
+        const pencairan = rawItems.filter((item: any) =>
+          ['lpj_submitted', 'lpj_approved', 'lpj_revision'].includes(item.status?.toLowerCase())
         );
 
         // Filter for LPJ verification requests: LPJ submitted
-        const lpj = rawItems.filter((item: any) => 
-          ['lpj_submitted', 'menunggu_lpj'].includes(item.status?.toLowerCase())
+        const lpj = rawItems.filter((item: any) =>
+          ['approved_wadir', 'accepted_funds', 'disetujui_rektorat'].includes(item.status?.toLowerCase())
         );
 
         setUsulanPencairan(pencairan);
@@ -58,7 +58,7 @@ export function BendaharaDashboard() {
                <DollarSign className={`size-8 sm:size-10 transition-transform group-hover:scale-110 ${activeTab === 'pencairan' ? 'text-blue-500' : 'text-slate-400'}`} />
                <div>
                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-800 leading-none mb-1">{usulanPencairan.length}</h3>
-                 <p className="text-xs sm:text-sm text-slate-500 font-medium">Permintaan Pencairan</p>
+                 <p className="text-xs sm:text-sm text-slate-500 font-medium">Tindakan Bendahara (Pencairan/LPJ)</p>
                </div>
            </CardContent>
          </Card>
@@ -67,7 +67,7 @@ export function BendaharaDashboard() {
                <FileCheck className={`size-8 sm:size-10 transition-transform group-hover:scale-110 ${activeTab === 'lpj' ? 'text-emerald-500' : 'text-slate-400'}`} />
                <div>
                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-800 leading-none mb-1">{usulanLpj.length}</h3>
-                 <p className="text-xs sm:text-sm text-slate-500 font-medium">Verifikasi LPJ</p>
+                 <p className="text-xs sm:text-sm text-slate-500 font-medium">Menunggu Pengusul (Submit LPJ)</p>
                </div>
            </CardContent>
          </Card>
@@ -123,14 +123,14 @@ export function BendaharaDashboard() {
                       {new Date(item.created_at).toLocaleDateString('id-ID')}
                     </td>
                     <td className="px-6 py-4 text-center">
-                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${activeTab === 'pencairan' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-                         {activeTab === 'pencairan' ? 'Menunggu Pencairan' : 'Menunggu LPJ'}
+                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${activeTab === 'pencairan' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                         {activeTab === 'pencairan' ? 'Menunggu Tindakan' : 'Menunggu Pengusul'}
                        </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                        <Button size="sm" onClick={() => navigate(activeTab === 'pencairan' ? `/dashboard/bendahara/detail/${item.id}` : `/dashboard/bendahara/lpj/${item.id}`)} className={activeTab === 'pencairan' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}>
                           <CheckCircle2 className="size-4 mr-2" />
-                          {activeTab === 'pencairan' ? 'Proses Pencairan' : 'Periksa LPJ'}
+                          {activeTab === 'pencairan' ? 'Proses Sekarang' : 'Verifikasi LPJ'}
                        </Button>
                     </td>
                   </tr>

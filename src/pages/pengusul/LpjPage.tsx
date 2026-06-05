@@ -126,7 +126,7 @@ export function LpjPage() {
     }
   }
 
-  const canSubmit = kegiatan && ['funds_disbursed', 'accepted_funds', 'lpj_revision', 'lpj_pending'].includes(kegiatan.status?.toLowerCase());
+  const canSubmit = kegiatan && ['approved_wadir', 'funds_disbursed', 'accepted_funds', 'lpj_revision', 'lpj_pending', 'lpj_submitted'].includes(kegiatan.status?.toLowerCase());
 
   function updateRealisasi(rabId: number, field: string, value: any) {
     setRealisasi(prev => ({
@@ -520,7 +520,7 @@ export function LpjPage() {
                                   ref={el => { fileRefs.current[item.id] = el; }}
                                   type="file"
                                   className="hidden"
-                                  accept=".jpg,.jpeg,.png,.gif,.pdf"
+                                  accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx"
                                   multiple
                                   onChange={e => handleFileSelect(item.id, e.target.files)}
                                 />
@@ -531,24 +531,33 @@ export function LpjPage() {
                           {/* Existing Files */}
                           {rabFiles.length > 0 && (
                             <div className="space-y-1.5 mb-2">
-                              {rabFiles.map(file => (
-                                <div key={file.file_id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-100 group">
-                                  <FileText className="size-4 text-slate-400 shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-slate-700 truncate">{file.original_name}</p>
-                                    <p className="text-[10px] text-slate-400">{formatFileSize(file.file_size)}</p>
+                              {rabFiles.map(file => {
+                                const isImage = file.url.match(/\\.(jpeg|jpg|gif|png)$/i);
+                                return (
+                                <div key={file.file_id} className="flex flex-col bg-white rounded-lg px-3 py-2 border border-slate-100 group">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="size-4 text-slate-400 shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-slate-700 truncate">{file.original_name}</p>
+                                      <p className="text-[10px] text-slate-400">{formatFileSize(file.file_size)}</p>
+                                    </div>
+                                    {canSubmit && (
+                                      <button
+                                        onClick={() => removeExistingFile(item.id, file.file_id)}
+                                        className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-1 rounded hover:bg-red-50"
+                                        title="Hapus file"
+                                      >
+                                        <Trash2 className="size-3.5" />
+                                      </button>
+                                    )}
                                   </div>
-                                  {canSubmit && (
-                                    <button
-                                      onClick={() => removeExistingFile(item.id, file.file_id)}
-                                      className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-1 rounded hover:bg-red-50"
-                                      title="Hapus file"
-                                    >
-                                      <Trash2 className="size-3.5" />
-                                    </button>
+                                  {isImage && (
+                                    <div className="mt-2 rounded bg-slate-50 border border-slate-100 p-1">
+                                      <img src={file.url} alt={file.original_name} className="max-w-full max-h-32 object-contain rounded mx-auto" />
+                                    </div>
                                   )}
                                 </div>
-                              ))}
+                              )})}
                             </div>
                           )}
 

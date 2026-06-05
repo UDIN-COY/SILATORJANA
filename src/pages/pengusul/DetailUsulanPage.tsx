@@ -429,10 +429,33 @@ export function DetailUsulanPage() {
         </Card>
       )}
 
+      {/* Button Upload LPJ */}
+      {['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_revision', 'lpj_approved', 'lpj_done', 'completed'].includes(kegiatan.status?.toLowerCase()) && (
+        <Card className="shadow-lg border-blue-200/60 bg-white overflow-hidden mt-8">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="size-5 text-blue-300" /> Pelaporan LPJ (Laporan Pertanggungjawaban)
+              </CardTitle>
+              <p className="text-sm text-blue-100/90 mt-1">
+                Sesuai ketentuan, LPJ harus diunggah untuk pencairan dana. Anda dapat mulai menyusun dan mengirim LPJ sekarang.
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate(`/dashboard/pengusul/lpj/${id}`)}
+              className="bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-md px-6 py-5 rounded-xl h-11 shrink-0"
+            >
+              <Upload className="size-4 mr-2" />
+              Upload / Kelola LPJ
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Tampilan Riwayat Pencairan Dana & Ambil Uang Muka */}
       {((kegiatan.pencairan_dana && kegiatan.pencairan_dana.length > 0) ||
         (kegiatan.pencairanDana && kegiatan.pencairanDana.length > 0) ||
-        ['accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_rejected', 'lpj_done', 'completed'].includes(kegiatan.status?.toLowerCase())) && (
+        ['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_approved', 'lpj_done', 'completed'].includes(kegiatan.status?.toLowerCase())) && (
         <Card className="shadow-sm border-slate-200 bg-white">
           <CardHeader className="bg-slate-50/30 border-b border-slate-100/60 py-4">
             <CardTitle className="text-base text-slate-800 flex items-center gap-2">
