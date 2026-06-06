@@ -335,5 +335,10 @@ export async function apiGetSpkRiwayat() {
   return apiFetch('/spk/riwayat');
 }
 
+/** Ranking jurusan berdasarkan SPK */
+export async function apiGetSpkRankingJurusan() {
+  return apiFetch('/spk/ranking-jurusan');
+}
+
 
 

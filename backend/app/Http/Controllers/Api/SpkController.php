@@ -159,7 +159,72 @@ class SpkController extends Controller
         $riwayat = SpkPenilaian::with('kegiatan')
             ->orderBy('dinilai_pada', 'desc')
             ->paginate(20);
-
+ 
         return response()->json($riwayat);
+    }
+
+    /**
+     * GET /api/spk/ranking-jurusan
+     * Menghitung rangking jurusan berdasarkan rata-rata skor akhir SPK (Yi)
+     */
+    public function rankingJurusan()
+    {
+        $penilaians = SpkPenilaian::with('kegiatan')->get();
+ 
+        $jurusanData = [];
+ 
+        foreach ($penilaians as $p) {
+            $kegiatan = $p->kegiatan;
+            if (!$kegiatan) continue;
+ 
+            $jurusan = $kegiatan->nama_jurusan ?: 'Lainnya';
+ 
+            if (!isset($jurusanData[$jurusan])) {
+                $jurusanData[$jurusan] = [
+                    'nama_jurusan' => $jurusan,
+                    'total_evaluasi' => 0,
+                    'sum_skor_akhir' => 0,
+                    'sum_c1' => 0,
+                    'sum_c2' => 0,
+                    'sum_c3' => 0,
+                    'sum_c4' => 0,
+                    'grades' => ['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0],
+                ];
+            }
+ 
+            $jurusanData[$jurusan]['total_evaluasi']++;
+            $jurusanData[$jurusan]['sum_skor_akhir'] += (float) $p->skor_akhir;
+            $jurusanData[$jurusan]['sum_c1'] += (float) $p->skor_c1;
+            $jurusanData[$jurusan]['sum_c2'] += (float) $p->skor_c2;
+            $jurusanData[$jurusan]['sum_c3'] += (float) $p->skor_c3;
+            $jurusanData[$jurusan]['sum_c4'] += (float) $p->skor_c4;
+ 
+            $grade = strtoupper($p->grade);
+            if (isset($jurusanData[$jurusan]['grades'][$grade])) {
+                $jurusanData[$jurusan]['grades'][$grade]++;
+            }
+        }
+ 
+        $result = [];
+        foreach ($jurusanData as $jName => $data) {
+            $total = $data['total_evaluasi'];
+            $result[] = [
+                'nama_jurusan' => $jName,
+                'total_evaluasi' => $total,
+                'skor_akhir_avg' => round($data['sum_skor_akhir'] / $total, 4),
+                'skor_c1_avg' => round($data['sum_c1'] / $total, 2),
+                'skor_c2_avg' => round($data['sum_c2'] / $total, 2),
+                'skor_c3_avg' => round($data['sum_c3'] / $total, 2),
+                'skor_c4_avg' => round($data['sum_c4'] / $total, 2),
+                'grades' => $data['grades'],
+            ];
+        }
+ 
+        // Sort descending by average skor akhir
+        usort($result, function ($a, $b) {
+            return $b['skor_akhir_avg'] <=> $a['skor_akhir_avg'];
+        });
+ 
+        return response()->json($result);
     }
 }

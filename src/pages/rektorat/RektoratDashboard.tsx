@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiListKegiatan } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { apiListKegiatan, apiGetSpkRankingJurusan } from '@/lib/api';
 import { formatCurrency } from '@/lib/helpers';
-import { BarChart3, FileText, CheckCircle, XCircle, Clock, TrendingUp, Loader2, ArrowUpRight, PieChart } from 'lucide-react';
+import { BarChart3, FileText, CheckCircle, XCircle, Clock, TrendingUp, Loader2, ArrowUpRight, PieChart, Award } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,6 +19,8 @@ export function RektoratDashboard() {
   const [jurusanStats, setJurusanStats] = useState<{ nama: string; total: number; budget: number }[]>([]);
   const [monthlyData, setMonthlyData] = useState<{ month: string; count: number }[]>([]);
   const [statusBreakdown, setStatusBreakdown] = useState<{ label: string; count: number; color: string }[]>([]);
+  const [spkRanking, setSpkRanking] = useState<any[]>([]);
+  const [spkLoading, setSpkLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -69,7 +71,16 @@ export function RektoratDashboard() {
           { label: 'Ditolak', count: rejected, color: '#dc2626' },
         ];
         setStatusBreakdown(breakdown);
-      } catch (e) { console.error(e); } finally { setIsLoading(false); }
+
+        // Fetch SPK ranking
+        const ranking = await apiGetSpkRankingJurusan();
+        setSpkRanking(ranking);
+      } catch (e) { 
+        console.error('Failed to fetch SPK ranking:', e); 
+      } finally { 
+        setIsLoading(false);
+        setSpkLoading(false);
+      }
     })();
   }, []);
 
@@ -209,40 +220,128 @@ export function RektoratDashboard() {
         </Card>
       </div>
 
-      {/* Jurusan Horizontal Bar Chart */}
-      <Card className="shadow-sm border-slate-200">
-        <CardHeader className="bg-slate-50/50 border-b border-slate-100">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <BarChart3 className="size-4 text-emerald-600" /> Rekap per Jurusan
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          {jurusanStats.length === 0 ? <div className="py-8 text-center text-slate-500">Belum ada data.</div> : (
-            <div className="space-y-4">
-              {jurusanStats.map((j, i) => (
-                <div key={i} className="group">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-medium text-slate-800">{j.nama}</span>
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-slate-500">{formatCurrency(j.budget)}</span>
-                      <span className="font-bold text-slate-900">{j.total} usulan</span>
+      {/* Jurusan & SPK Rankings Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Jurusan Horizontal Bar Chart */}
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <BarChart3 className="size-4 text-emerald-600" /> Rekap Usulan per Jurusan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {jurusanStats.length === 0 ? <div className="py-8 text-center text-slate-500">Belum ada data.</div> : (
+              <div className="space-y-4">
+                {jurusanStats.map((j, i) => (
+                  <div key={i} className="group">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm font-medium text-slate-800">{j.nama}</span>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-slate-500">{formatCurrency(j.budget)}</span>
+                        <span className="font-bold text-slate-900">{j.total} usulan</span>
+                      </div>
+                    </div>
+                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500 group-hover:opacity-80"
+                        style={{
+                          width: `${Math.max(3, (j.total / maxJurusan) * 100)}%`,
+                          background: `linear-gradient(to right, #059669, #34d399)`,
+                        }}
+                      />
                     </div>
                   </div>
-                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500 group-hover:opacity-80"
-                      style={{
-                        width: `${Math.max(3, (j.total / maxJurusan) * 100)}%`,
-                        background: `linear-gradient(to right, #059669, #34d399)`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Peringkat Kinerja Mutu Jurusan (SPK) */}
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Award className="size-4 text-emerald-600" /> Peringkat Mutu Jurusan (SPK MOORA)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {spkLoading ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-2">
+                <Loader2 className="animate-spin text-emerald-600 size-6" />
+                <span className="text-xs text-slate-400">Memuat analisis kinerja...</span>
+              </div>
+            ) : spkRanking.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 text-xs italic">
+                Belum ada laporan pertanggungjawaban (LPJ) yang dievaluasi SPK.
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {spkRanking.map((item, index) => {
+                  const getRankStyle = (idx: number) => {
+                    if (idx === 0) return 'bg-amber-500 text-white font-bold border-amber-600';
+                    if (idx === 1) return 'bg-slate-300 text-slate-800 font-bold border-slate-400';
+                    if (idx === 2) return 'bg-amber-700 text-white font-bold border-amber-800';
+                    return 'bg-slate-100 text-slate-600 border-slate-200';
+                  };
+                  return (
+                    <div key={item.nama_jurusan} className="flex gap-3 items-start border-b border-slate-100 pb-4 last:border-0 last:pb-0">
+                      {/* Rank Number */}
+                      <span className={`size-6 rounded-full border flex items-center justify-center text-xs font-mono shrink-0 ${getRankStyle(index)}`}>
+                        {index + 1}
+                      </span>
+                      
+                      <div className="flex-1 space-y-1.5">
+                        <div className="flex justify-between items-start">
+                          <p className="text-sm font-bold text-slate-800 leading-snug">{item.nama_jurusan}</p>
+                          <div className="text-right shrink-0">
+                            <span className="text-sm font-extrabold text-emerald-700 font-mono">
+                              {(item.skor_akhir_avg * 100).toFixed(1)}%
+                            </span>
+                            <span className="text-[10px] text-slate-400 block font-medium">Skor Akhir (Y_i)</span>
+                          </div>
+                        </div>
+
+                        {/* Sub details: grades & criteria averages */}
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500 font-medium">
+                          <span className="text-slate-400">{item.total_evaluasi} LPJ dinilai</span>
+                          <span className="text-slate-300">|</span>
+                          <span className="flex items-center gap-1">
+                            Grades: 
+                            <span className="text-emerald-600 font-bold">A:{item.grades?.A || 0}</span>
+                            <span className="text-blue-600 font-bold">B:{item.grades?.B || 0}</span>
+                            <span className="text-amber-600 font-bold">C:{item.grades?.C || 0}</span>
+                            <span className="text-red-600 font-bold">D:{item.grades?.D || 0}</span>
+                          </span>
+                        </div>
+
+                        {/* Criteria details */}
+                        <div className="grid grid-cols-4 gap-1 pt-1">
+                          <div className="bg-slate-50 px-1.5 py-1 rounded text-center">
+                            <span className="text-[8px] text-slate-400 block uppercase">C1 (Waktu)</span>
+                            <span className="text-[10px] font-bold text-slate-700">{item.skor_c1_avg}</span>
+                          </div>
+                          <div className="bg-slate-50 px-1.5 py-1 rounded text-center">
+                            <span className="text-[8px] text-slate-400 block uppercase">C2 (Biaya)</span>
+                            <span className="text-[10px] font-bold text-slate-700">{item.skor_c2_avg}</span>
+                          </div>
+                          <div className="bg-slate-50 px-1.5 py-1 rounded text-center">
+                            <span className="text-[8px] text-slate-400 block uppercase">C3 (IKU)</span>
+                            <span className="text-[10px] font-bold text-slate-700">{item.skor_c3_avg}</span>
+                          </div>
+                          <div className="bg-slate-50 px-1.5 py-1 rounded text-center">
+                            <span className="text-[8px] text-slate-400 block uppercase">C4 (Apprv)</span>
+                            <span className="text-[10px] font-bold text-slate-700">{item.skor_c4_avg}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -121,6 +121,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/hitung-batch', [SpkController::class, 'hitungBatch']);
         Route::post('/simpan/{kegiatan_id}', [SpkController::class, 'simpan']);
         Route::get('/riwayat', [SpkController::class, 'riwayat']);
+        Route::get('/ranking-jurusan', [SpkController::class, 'rankingJurusan']);
     });
 
     // LPJ
