@@ -288,65 +288,8 @@ class _HomeTabViewState extends State<HomeTabView> {
                       const SizedBox(height: 16),
                     ],
                   ] else ...[
-                    // Default/fallback: show all for admin/rektorat
-                    if (revisiItems.isNotEmpty) ...[
-                      _buildAlertCard(
-                        title: 'Usulan Perlu Direvisi (${revisiItems.length})',
-                        icon: LucideIcons.alertTriangle,
-                        borderColor: const Color(0xFFFECDD3),
-                        bgColor: const Color(0xFFFFF1F2),
-                        headerBgColor: const Color(0xFFFFE4E6),
-                        titleColor: const Color(0xFF9F1239),
-                        items: revisiItems,
-                        actionLabel: 'Perbaiki',
-                        actionColor: const Color(0xFFE11D48),
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => EditKegiatanView(kegiatanId: item.id)));
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (needLpjItems.isNotEmpty) ...[
-                      _buildAlertCard(
-                        title: 'Perlu Upload LPJ (${needLpjItems.length})',
-                        icon: LucideIcons.fileText,
-                        borderColor: const Color(0xFFBFDBFE),
-                        bgColor: const Color(0xFFEFF6FF),
-                        headerBgColor: const Color(0xFFDBEAFE),
-                        titleColor: const Color(0xFF1E40AF),
-                        items: needLpjItems,
-                        actionLabel: 'Upload',
-                        actionColor: const Color(0xFF2563EB),
-                        subtitle: 'Telah disetujui Wadir. Silakan unggah LPJ.',
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => KegiatanDetailView(kegiatan: item, currentUser: widget.user),
-                          ));
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (verifiedItems.isNotEmpty) ...[
-                      _buildAlertCard(
-                        title: 'Terverifikasi – Siap ke PPK (${verifiedItems.length})',
-                        icon: LucideIcons.checkCircle2,
-                        borderColor: const Color(0xFFA7F3D0),
-                        bgColor: const Color(0xFFECFDF5),
-                        headerBgColor: const Color(0xFFD1FAE5),
-                        titleColor: const Color(0xFF065F46),
-                        items: verifiedItems,
-                        actionLabel: 'Teruskan',
-                        actionColor: const Color(0xFF047857),
-                        subtitle: 'Diverifikasi · Klik untuk teruskan ke PPK',
-                        isOutlined: true,
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => KegiatanDetailView(kegiatan: item, currentUser: widget.user),
-                          ));
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                    // Admin/Rektorat just get an overview, no specific actionable alerts
+                    const SizedBox.shrink(),
                   ],
 
                   // Aktivitas Terakhir
