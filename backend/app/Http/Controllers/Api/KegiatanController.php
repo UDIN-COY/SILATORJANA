@@ -114,9 +114,12 @@ class KegiatanController extends Controller
     /**
      * Get single kegiatan with all relations
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $kegiatan = Kegiatan::with(['pengusul', 'kak', 'iku', 'rab', 'pencairanDana'])->findOrFail($id);
+        if (!$this->authorizeKegiatan($request, $kegiatan)) {
+            return response()->json(['message' => 'Akses ditolak. Proposal ini ditujukan untuk unit/Wadir lain.'], 403);
+        }
         return response()->json($kegiatan);
     }
 
@@ -241,6 +244,9 @@ class KegiatanController extends Controller
     public function update(Request $request, string $id)
     {
         $kegiatan = Kegiatan::findOrFail($id);
+        if (!$this->authorizeKegiatan($request, $kegiatan)) {
+            return response()->json(['message' => 'Akses ditolak. Anda tidak berwenang mengedit proposal ini.'], 403);
+        }
 
         $validated = $request->validate([
             'nama_kegiatan' => 'sometimes|string|max:255',
@@ -253,6 +259,7 @@ class KegiatanController extends Controller
             'total_anggaran' => 'nullable|numeric',
             'jurusan_id' => 'nullable|integer',
             'kode_mak' => 'nullable|string|max:100',
+            'verifikator_target' => 'nullable|string|in:wadir1,wadir2,wadir3,wadir4',
             // KAK
             'kak' => 'nullable|array',
             // IKU
@@ -276,19 +283,34 @@ class KegiatanController extends Controller
         if (in_array($kegiatan->status, ['lpj_approved', 'lpj_revision', 'lpj_rejected'])) {
             $lpj = \App\Models\Lpj::where('kegiatan_id', $kegiatan->id)->first();
             if ($lpj) {
+                $statusVerifikasi = 'submitted';
+                if ($kegiatan->status === 'lpj_approved') {
+                    $statusVerifikasi = 'approved';
+                } elseif ($kegiatan->status === 'lpj_revision') {
+                    $statusVerifikasi = 'revision';
+                } elseif ($kegiatan->status === 'lpj_rejected') {
+                    $statusVerifikasi = 'rejected';
+                }
+
                 $lpj->update([
                     'catatan_bendahara' => $kegiatan->catatan_revisi,
                     'catatan_verifikasi' => $kegiatan->catatan_revisi,
                     'verified_by' => $request->user()?->nama,
+                    'status_verifikasi' => $statusVerifikasi,
                 ]);
             }
         }
 
         // Update KAK
         if (isset($validated['kak'])) {
+            $kakData = $validated['kak'];
+            if (isset($kakData['indikator']) && is_array($kakData['indikator'])) {
+                $kakData['indikator_kinerja'] = json_encode($kakData['indikator']);
+                unset($kakData['indikator']);
+            }
             $kegiatan->kak()->updateOrCreate(
                 ['kegiatan_id' => $kegiatan->id],
-                $validated['kak']
+                $kakData
             );
         }
 
@@ -341,6 +363,9 @@ class KegiatanController extends Controller
     public function submitPpk(Request $request, string $id)
     {
         $kegiatan = Kegiatan::findOrFail($id);
+        if ($kegiatan->pengusul_id !== $request->user()->id && $request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Akses ditolak. Anda bukan pengusul usulan ini.'], 403);
+        }
 
         $validated = $request->validate([
             'surat_pengantar_path' => 'nullable|string',
@@ -452,6 +477,9 @@ class KegiatanController extends Controller
     public function updateKodeMak(Request $request, string $id)
     {
         $kegiatan = Kegiatan::findOrFail($id);
+        if (!$this->authorizeKegiatan($request, $kegiatan) || ($request->user()->role !== 'verifikator' && $request->user()->role !== 'admin')) {
+            return response()->json(['message' => 'Akses ditolak. Hanya verifikator yang berwenang mengisi Kode MAK.'], 403);
+        }
 
         $validated = $request->validate([
             'kode_mak' => 'required|string|max:100',
@@ -515,5 +543,48 @@ class KegiatanController extends Controller
             }
         }
         return $deadline->format('Y-m-d');
+    }
+
+    /**
+     * Check target wadir/unit authorization
+     */
+    private function authorizeKegiatan(Request $request, Kegiatan $kegiatan)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return false;
+        }
+
+        // Admin, bendahara, rektorat, ppk have global access
+        if (in_array($user->role, ['admin', 'bendahara', 'rektorat', 'ppk'], true)) {
+            return true;
+        }
+
+        // Pengusul can only access their own
+        if ($user->role === 'pengusul') {
+            return $kegiatan->pengusul_id === $user->id;
+        }
+
+        // Verifikator check
+        if ($user->role === 'verifikator') {
+            if (empty($kegiatan->verifikator_target)) {
+                return true; // if null, any verifikator can access/claim
+            }
+            return $kegiatan->verifikator_target === $user->verifikator_unit;
+        }
+
+        // Wadir check (role starts with wadir)
+        if (str_starts_with($user->role, 'wadir')) {
+            if ($kegiatan->verifikator_target === $user->role) {
+                return true;
+            }
+            // Fallback for wadir2 if target is null
+            if ($user->role === 'wadir2' && empty($kegiatan->verifikator_target)) {
+                return true;
+            }
+            return false;
+        }
+
+        return false;
     }
 }

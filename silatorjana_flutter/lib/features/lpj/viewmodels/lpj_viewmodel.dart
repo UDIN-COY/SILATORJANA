@@ -210,9 +210,10 @@ class LpjViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.post('/kegiatan/$kegiatanId/status', body: {
-        'action': action,
-        'catatan': catatan,
+      final String targetStatus = action == 'approve' ? 'lpj_approved' : 'lpj_revision';
+      final response = await _apiService.put('/kegiatan/$kegiatanId', body: {
+        'status': targetStatus,
+        'catatan_revisi': catatan,
       });
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {

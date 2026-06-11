@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/network/api_service.dart';
 
@@ -453,6 +454,45 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
         _showError('Minimal 1 item RAB harus diisi lengkap (uraian dan harga satuan)');
         return false;
       }
+
+      // Validate positive qty and non-negative price for all filled items
+      for (final cat in ['barang', 'jasa', 'perjalanan']) {
+        final list = cat == 'barang' ? _rabBarang : (cat == 'jasa' ? _rabJasa : _rabPerjalanan);
+        final label = cat == 'barang' ? 'Belanja Barang' : (cat == 'jasa' ? 'Belanja Jasa' : 'Belanja Perjalanan');
+        for (int i = 0; i < list.length; i++) {
+          final item = list[i];
+          final uraian = item['uraian']!.text.trim();
+          if (uraian.isNotEmpty) {
+            final q1 = double.tryParse(item['qty1']!.text);
+            if (q1 == null || q1 <= 0) {
+              _showError('Jumlah 1 pada item $label #${i + 1} harus lebih dari 0');
+              return false;
+            }
+            final q2Text = item['qty2']!.text;
+            if (q2Text.isNotEmpty) {
+              final q2 = double.tryParse(q2Text);
+              if (q2 == null || q2 <= 0) {
+                _showError('Jumlah 2 pada item $label #${i + 1} harus lebih dari 0');
+                return false;
+              }
+            }
+            final q3Text = item['qty3']!.text;
+            if (q3Text.isNotEmpty) {
+              final q3 = double.tryParse(q3Text);
+              if (q3 == null || q3 <= 0) {
+                _showError('Jumlah 3 pada item $label #${i + 1} harus lebih dari 0');
+                return false;
+              }
+            }
+            final h = double.tryParse(item['harga_satuan']!.text);
+            if (h == null || h < 0) {
+              _showError('Harga satuan pada item $label #${i + 1} tidak boleh negatif');
+              return false;
+            }
+          }
+        }
+      }
+
       if (_getGrandTotal() <= 0) {
         _showError('Total anggaran harus lebih dari Rp 0');
         return false;
@@ -1496,7 +1536,10 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
       children: [
         TextField(
           controller: ctrl,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+          inputFormatters: isNumber
+              ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))]
+              : null,
           onChanged: onChanged,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A)),
           decoration: _inputDecoration(label, icon, hint: hint, commentFields: commentFields),

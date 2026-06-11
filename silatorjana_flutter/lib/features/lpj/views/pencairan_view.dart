@@ -235,31 +235,31 @@ class _PencairanViewState extends State<PencairanView> {
           ]),
           const SizedBox(height: 16),
           // Progress bar
-          Stack(
-            children: [
-              Container(
-                height: 12,
-                decoration: BoxDecoration(color: _slate100, borderRadius: BorderRadius.circular(99)),
-              ),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeOut,
-                height: 12,
-                width: (MediaQuery.of(context).size.width - 72) * progressRatio,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: totalPersen >= maxPersen
-                        ? [const Color(0xFFD97706), const Color(0xFFF59E0B)]
-                        : [_emerald700, _emerald600],
+          Container(
+            height: 12,
+            width: double.infinity,
+            decoration: BoxDecoration(color: _slate100, borderRadius: BorderRadius.circular(99)),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: progressRatio,
+                child: Container(
+                  height: 12,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: totalPersen >= maxPersen
+                          ? [const Color(0xFFD97706), const Color(0xFFF59E0B)]
+                          : [_emerald700, _emerald600],
+                    ),
+                    borderRadius: BorderRadius.circular(99),
+                    boxShadow: [BoxShadow(
+                      color: (totalPersen >= maxPersen ? _amber600 : _emerald600).withValues(alpha: 0.3),
+                      blurRadius: 6, offset: const Offset(0, 2),
+                    )],
                   ),
-                  borderRadius: BorderRadius.circular(99),
-                  boxShadow: [BoxShadow(
-                    color: (totalPersen >= maxPersen ? _amber600 : _emerald600).withValues(alpha: 0.3),
-                    blurRadius: 6, offset: const Offset(0, 2),
-                  )],
                 ),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -387,8 +387,6 @@ class _PencairanViewState extends State<PencairanView> {
   }
 
   Widget _buildDanaDiambilToggle() {
-    final list = (_vm.pencairanData?['pencairan_list'] as List?) ?? [];
-    if (list.isEmpty) return const SizedBox.shrink();
     final isTaken = _isDanaDiambil;
 
     return Container(

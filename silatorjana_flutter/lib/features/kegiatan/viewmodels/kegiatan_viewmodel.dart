@@ -107,4 +107,12 @@ class KegiatanViewModel extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> deleteKegiatan(int id) async {
+    try {
+      final response = await _apiService.delete('/kegiatan/$id');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (_) {}
+    return false;
+  }
 }

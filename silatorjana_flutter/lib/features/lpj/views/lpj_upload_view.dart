@@ -149,6 +149,39 @@ class _LpjUploadViewState extends State<LpjUploadView> {
   }
 
   Future<void> _handleSubmit() async {
+    // Validate realisasi values
+    for (final entry in _qtyControllers.entries) {
+      final rabId = entry.key;
+      final q1 = int.tryParse(entry.value.text);
+      if (q1 == null || q1 <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Kuantitas realisasi harus lebih dari 0'),
+          backgroundColor: Colors.red,
+        ));
+        return;
+      }
+      final h = double.tryParse(_hargaControllers[rabId]?.text ?? '');
+      if (h == null || h < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Harga realisasi tidak boleh negatif'),
+          backgroundColor: Colors.red,
+        ));
+        return;
+      }
+    }
+
+    // Validate IKU capaian
+    for (final entry in _ikuControllers.entries) {
+      final val = double.tryParse(entry.value.text);
+      if (val == null || val < 0 || val > 100) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Capaian IKU harus di antara 0 s/d 100%'),
+          backgroundColor: Colors.red,
+        ));
+        return;
+      }
+    }
+
     // Build realisasi map
     final Map<String, Map<String, dynamic>> realisasi = {};
     for (final entry in _qtyControllers.entries) {

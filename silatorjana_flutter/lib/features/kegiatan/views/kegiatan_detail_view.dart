@@ -980,6 +980,17 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
     if (role == 'admin' || role == 'bendahara' || role.isEmpty) return null;
     if (!_canActOnStatus()) return null;
 
+    final isPpkOrWadir = role == 'ppk' || role.startsWith('wadir');
+
+    if (isPpkOrWadir) {
+      return _buildSingleActionBar(
+        icon: LucideIcons.checkCircle,
+        label: 'Setujui',
+        color: _emerald700,
+        onPressed: _vm.isActionLoading ? null : () => _submitAction('approve'),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -1028,7 +1039,7 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
   }
 
   /// Helper: single action button bar
-  Widget _buildSingleActionBar({required IconData icon, required String label, required Color color, required VoidCallback onPressed}) {
+  Widget _buildSingleActionBar({required IconData icon, required String label, required Color color, required VoidCallback? onPressed}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
