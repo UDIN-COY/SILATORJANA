@@ -6,7 +6,6 @@ import '../../auth/models/user.dart';
 import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../auth/views/login_view.dart';
 import '../viewmodels/kegiatan_viewmodel.dart';
-import '../models/kegiatan.dart';
 
 class HomeTabView extends StatefulWidget {
   final User user;
@@ -17,8 +16,6 @@ class HomeTabView extends StatefulWidget {
 }
 
 class _HomeTabViewState extends State<HomeTabView> {
-  final AuthViewModel _authViewModel = AuthViewModel();
-
   @override
   void initState() {
     super.initState();
@@ -28,7 +25,7 @@ class _HomeTabViewState extends State<HomeTabView> {
   }
 
   void _logout() async {
-    await _authViewModel.logout();
+    await context.read<AuthViewModel>().logout();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginView()),

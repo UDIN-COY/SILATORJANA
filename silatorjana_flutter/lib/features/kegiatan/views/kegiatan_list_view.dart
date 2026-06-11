@@ -3,6 +3,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../auth/models/user.dart';
 import '../viewmodels/kegiatan_viewmodel.dart';
 import 'kegiatan_detail_view.dart';
+import 'create_kegiatan_view.dart';
+import 'edit_kegiatan_view.dart';
 
 class KegiatanListView extends StatefulWidget {
   final User currentUser;
@@ -65,18 +67,22 @@ class _KegiatanListViewState extends State<KegiatanListView> {
         listenable: _kegiatanViewModel,
         builder: (context, _) => _buildBody(),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navigasi ke halaman form pembuatan usulan (jika sudah ada)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fitur Buat Usulan akan segera tersedia')),
-          );
-        },
-        backgroundColor: const Color(0xFF047857),
-        foregroundColor: Colors.white,
-        icon: const Icon(LucideIcons.plus),
-        label: const Text('Buat Usulan', style: TextStyle(fontWeight: FontWeight.bold)),
-      ),
+      floatingActionButton: (widget.currentUser.role == 'pengusul' || widget.currentUser.role == 'admin')
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateKegiatanView()),
+                ).then((result) {
+                  if (result == true) _kegiatanViewModel.fetchKegiatanList();
+                });
+              },
+              backgroundColor: const Color(0xFF047857),
+              foregroundColor: Colors.white,
+              icon: const Icon(LucideIcons.plus),
+              label: const Text('Buat Usulan', style: TextStyle(fontWeight: FontWeight.bold)),
+            )
+          : null,
     );
   }
 
@@ -221,7 +227,14 @@ class _KegiatanListViewState extends State<KegiatanListView> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: isEditable ? () {} : null,
+                        onPressed: isEditable ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => EditKegiatanView(kegiatanId: item.id)),
+                          ).then((result) {
+                            if (result == true) _kegiatanViewModel.fetchKegiatanList();
+                          });
+                        } : null,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFFD97706),
                           side: BorderSide(color: isEditable ? const Color(0xFFFDE68A) : const Color(0xFFE2E8F0)),

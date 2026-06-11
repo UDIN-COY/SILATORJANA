@@ -3,6 +3,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/kegiatan.dart';
 import '../../auth/models/user.dart';
 import '../viewmodels/kegiatan_viewmodel.dart';
+import '../../monitoring/views/timeline_view.dart';
+import 'kegiatan_print_view.dart';
 
 class KegiatanDetailView extends StatefulWidget {
   final Kegiatan kegiatan;
@@ -29,11 +31,65 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
     super.dispose();
   }
 
+  /// Shows a dialog for user to input catatan before approving/rejecting
   Future<void> _submitAction(String action) async {
+    final catatanCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(action == 'approve' ? 'Setujui Proposal' : 'Minta Revisi'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              action == 'approve'
+                  ? 'Apakah Anda yakin menyetujui proposal ini?'
+                  : 'Berikan catatan revisi untuk pengusul:',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: catatanCtrl,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: action == 'approve' ? 'Catatan (opsional)' : 'Catatan revisi *',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () {
+              if (action == 'reject' && catatanCtrl.text.isEmpty) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('Catatan wajib diisi untuk revisi'), backgroundColor: Colors.orange),
+                );
+                return;
+              }
+              Navigator.pop(ctx, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: action == 'approve' ? const Color(0xFF047857) : Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(action == 'approve' ? 'Setujui' : 'Minta Revisi'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final catatan = catatanCtrl.text.isNotEmpty
+        ? catatanCtrl.text
+        : 'Disetujui oleh ${widget.currentUser.nama} (${widget.currentUser.role})';
+
     final success = await _kegiatanViewModel.submitAction(
       widget.kegiatan.id,
       action,
-      'Disetujui dari aplikasi Mobile.',
+      catatan,
     );
 
     if (success && mounted) {
@@ -46,6 +102,7 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
         const SnackBar(content: Text('Gagal memperbarui status.'), backgroundColor: Colors.red),
       );
     }
+    catatanCtrl.dispose();
   }
 
   @override
@@ -57,6 +114,35 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0F172A),
         elevation: 1,
+        actions: [
+          // Timeline button
+          IconButton(
+            icon: const Icon(LucideIcons.clock, size: 20),
+            tooltip: 'Timeline',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TimelineView(
+                    kegiatanId: widget.kegiatan.id,
+                    title: 'Timeline: ${widget.kegiatan.namaKegiatan}',
+                  ),
+                ),
+              );
+            },
+          ),
+          // Print button
+          IconButton(
+            icon: const Icon(LucideIcons.printer, size: 20),
+            tooltip: 'Pratinjau',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => KegiatanPrintView(kegiatanId: widget.kegiatan.id)),
+              );
+            },
+          ),
+        ],
       ),
       body: ListenableBuilder(
         listenable: _kegiatanViewModel,
@@ -107,6 +193,10 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
                 _buildInfoRow(LucideIcons.user, 'Pengusul', widget.kegiatan.namaPengusul),
                 _buildInfoRow(LucideIcons.banknote, 'Total RAB', 'Rp $totalAnggaran'),
                 _buildInfoRow(LucideIcons.activity, 'Status Terkini', widget.kegiatan.status.toUpperCase()),
+                if (widget.kegiatan.namaJurusan != null)
+                  _buildInfoRow(LucideIcons.building2, 'Jurusan', widget.kegiatan.namaJurusan!),
+                if (widget.kegiatan.catatanRevisi != null && widget.kegiatan.catatanRevisi!.isNotEmpty)
+                  _buildInfoRow(LucideIcons.messageCircle, 'Catatan Revisi', widget.kegiatan.catatanRevisi!),
               ],
             ),
           ),
@@ -138,12 +228,14 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
         children: [
           Icon(icon, size: 20, color: const Color(0xFF94A3B8)),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+              ],
+            ),
           ),
         ],
       ),
@@ -151,7 +243,9 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
   }
 
   Widget? _buildActionButtons() {
-    if (widget.currentUser.role == 'pengusul' || widget.currentUser.role == 'admin') return null;
+    // Approval buttons for all approval roles (not pengusul/admin)
+    final role = widget.currentUser.role;
+    if (role == 'pengusul' || role == 'admin' || role.isEmpty) return null;
 
     return Container(
       padding: const EdgeInsets.all(16),
