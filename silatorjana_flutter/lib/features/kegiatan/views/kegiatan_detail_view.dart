@@ -10,6 +10,7 @@ import 'submit_ppk_view.dart';
 import '../../lpj/views/lpj_upload_view.dart';
 import '../../lpj/viewmodels/lpj_viewmodel.dart';
 import '../../bendahara/views/pencairan_view.dart';
+import '../../lpj/views/components/spk_score_card_widget.dart';
 
 /// Detail view for a single Kegiatan/Usulan proposal.
 /// Mirrors the web's DetailUsulanPage.tsx layout: header, progress tracker,
@@ -340,6 +341,12 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+
+          // ═══════════════════════════════════════════
+          // SPK MOORA Score Card
+          // ═══════════════════════════════════════════
+          SpkScoreCardWidget(kegiatanId: k.id),
           const SizedBox(height: 16),
 
           // ═══════════════════════════════════════════
