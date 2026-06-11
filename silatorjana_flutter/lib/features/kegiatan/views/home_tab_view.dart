@@ -155,8 +155,11 @@ class _HomeTabViewState extends State<HomeTabView> {
                         items: revisiItems,
                         actionLabel: 'Perbaiki',
                         actionColor: const Color(0xFFE11D48),
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => EditKegiatanView(kegiatanId: item.id)));
+                        onAction: (item) async {
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => EditKegiatanView(kegiatanId: item.id)));
+                          if (context.mounted) {
+                            context.read<KegiatanViewModel>().fetchKegiatan();
+                          }
                         },
                       ),
                       const SizedBox(height: 16),
@@ -174,10 +177,13 @@ class _HomeTabViewState extends State<HomeTabView> {
                         actionLabel: 'Upload',
                         actionColor: const Color(0xFF2563EB),
                         subtitle: 'Telah disetujui Wadir. Silakan unggah LPJ.',
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(
+                        onAction: (item) async {
+                          await Navigator.push(context, MaterialPageRoute(
                             builder: (_) => KegiatanDetailView(kegiatan: item, currentUser: widget.user),
                           ));
+                          if (context.mounted) {
+                            context.read<KegiatanViewModel>().fetchKegiatan();
+                          }
                         },
                       ),
                       const SizedBox(height: 16),
@@ -195,10 +201,13 @@ class _HomeTabViewState extends State<HomeTabView> {
                         items: menungguVerifikasiItems,
                         actionLabel: 'Verifikasi',
                         actionColor: const Color(0xFF2563EB),
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(
+                        onAction: (item) async {
+                          await Navigator.push(context, MaterialPageRoute(
                             builder: (_) => KegiatanDetailView(kegiatan: item, currentUser: widget.user),
                           ));
+                          if (context.mounted) {
+                            context.read<KegiatanViewModel>().fetchKegiatan();
+                          }
                         },
                       ),
                       const SizedBox(height: 16),
@@ -216,10 +225,13 @@ class _HomeTabViewState extends State<HomeTabView> {
                         actionLabel: 'Lihat',
                         actionColor: const Color(0xFF047857),
                         isOutlined: true,
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(
+                        onAction: (item) async {
+                          await Navigator.push(context, MaterialPageRoute(
                             builder: (_) => KegiatanDetailView(kegiatan: item, currentUser: widget.user),
                           ));
+                          if (context.mounted) {
+                            context.read<KegiatanViewModel>().fetchKegiatan();
+                          }
                         },
                       ),
                       const SizedBox(height: 16),
@@ -237,10 +249,13 @@ class _HomeTabViewState extends State<HomeTabView> {
                         items: menungguPpkItems,
                         actionLabel: 'Review',
                         actionColor: const Color(0xFF2563EB),
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(
+                        onAction: (item) async {
+                          await Navigator.push(context, MaterialPageRoute(
                             builder: (_) => KegiatanDetailView(kegiatan: item, currentUser: widget.user),
                           ));
+                          if (context.mounted) {
+                            context.read<KegiatanViewModel>().fetchKegiatan();
+                          }
                         },
                       ),
                       const SizedBox(height: 16),
@@ -258,10 +273,13 @@ class _HomeTabViewState extends State<HomeTabView> {
                         items: menungguWadirItems,
                         actionLabel: 'Review',
                         actionColor: const Color(0xFF2563EB),
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(
+                        onAction: (item) async {
+                          await Navigator.push(context, MaterialPageRoute(
                             builder: (_) => KegiatanDetailView(kegiatan: item, currentUser: widget.user),
                           ));
+                          if (context.mounted) {
+                            context.read<KegiatanViewModel>().fetchKegiatan();
+                          }
                         },
                       ),
                       const SizedBox(height: 16),
@@ -279,10 +297,13 @@ class _HomeTabViewState extends State<HomeTabView> {
                         items: menungguBendaharaItems,
                         actionLabel: 'Proses',
                         actionColor: const Color(0xFF2563EB),
-                        onAction: (item) {
-                          Navigator.push(context, MaterialPageRoute(
+                        onAction: (item) async {
+                          await Navigator.push(context, MaterialPageRoute(
                             builder: (_) => KegiatanDetailView(kegiatan: item, currentUser: widget.user),
                           ));
+                          if (context.mounted) {
+                            context.read<KegiatanViewModel>().fetchKegiatan();
+                          }
                         },
                       ),
                       const SizedBox(height: 16),

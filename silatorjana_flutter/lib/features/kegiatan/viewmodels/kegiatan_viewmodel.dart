@@ -82,9 +82,10 @@ class KegiatanViewModel extends ChangeNotifier {
   }
 
   /// Submit approve/reject action using PUT /kegiatan/{id}.
+  /// [oldStatus] is the current status before this action.
   /// [newStatus] is the exact target status string (e.g. 'verified', 'revision_requested', 'approved_ppk').
   /// [catatan] is the revision note (required for reject, optional for approve).
-  Future<bool> submitAction(int id, String newStatus, String catatan) async {
+  Future<bool> submitAction(int id, String oldStatus, String newStatus, String catatan) async {
     isActionLoading = true;
     notifyListeners();
 
@@ -105,10 +106,6 @@ class KegiatanViewModel extends ChangeNotifier {
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Record to status history for timeline
-        final responseData = jsonDecode(response.body);
-        final oldStatus = responseData['status'] != newStatus
-            ? (body['_old_status']?.toString() ?? '')
-            : '';
         await _recordStatusHistory(
           kegiatanId: id,
           statusLama: oldStatus,
@@ -141,7 +138,7 @@ class KegiatanViewModel extends ChangeNotifier {
   }
 
   /// Submit action with custom body (for Kode MAK, etc.)
-  Future<bool> submitActionWithBody(int id, Map<String, dynamic> body) async {
+  Future<bool> submitActionWithBody(int id, String oldStatus, Map<String, dynamic> body) async {
     isActionLoading = true;
     notifyListeners();
 
@@ -153,10 +150,10 @@ class KegiatanViewModel extends ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Record to status history for timeline
         final newStatus = body['status']?.toString() ?? '';
-        if (newStatus.isNotEmpty) {
+        if (newStatus.isNotEmpty && newStatus != oldStatus) {
           await _recordStatusHistory(
             kegiatanId: id,
-            statusLama: '',
+            statusLama: oldStatus,
             statusBaru: newStatus,
             catatan: body['catatan_revisi']?.toString(),
           );

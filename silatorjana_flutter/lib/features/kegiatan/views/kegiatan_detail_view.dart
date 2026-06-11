@@ -11,6 +11,8 @@ import '../../lpj/views/lpj_upload_view.dart';
 import '../../lpj/viewmodels/lpj_viewmodel.dart';
 import '../../bendahara/views/pencairan_view.dart';
 import '../../lpj/views/components/spk_score_card_widget.dart';
+import '../../../core/constants/api_config.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Detail view for a single Kegiatan/Usulan proposal.
 /// Mirrors the web's DetailUsulanPage.tsx layout: header, progress tracker,
@@ -203,7 +205,7 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
       body['kode_mak'] = kodeMakCtrl.text.trim();
     }
 
-    final success = await _vm.submitActionWithBody(widget.kegiatan.id, body);
+    final success = await _vm.submitActionWithBody(widget.kegiatan.id, widget.kegiatan.status, body);
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Status berhasil diperbarui!'), backgroundColor: _emerald700),
@@ -354,6 +356,20 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
           // ═══════════════════════════════════════════
           if (kak != null) ...[
             _buildKakSection(kak),
+            const SizedBox(height: 16),
+          ],
+
+          // ═══════════════════════════════════════════
+          // Dokumen Lampiran (Surat Pengantar)
+          // ═══════════════════════════════════════════
+          if (k.suratPengantarPath != null && k.suratPengantarPath!.isNotEmpty) ...[
+            _buildCard(
+              title: 'Dokumen Lampiran',
+              child: _buildAttachmentLink(
+                filename: k.suratPengantarFilename ?? 'Surat Pengantar',
+                path: k.suratPengantarPath!,
+              ),
+            ),
             const SizedBox(height: 16),
           ],
 
@@ -754,6 +770,61 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
           ]),
         )),
       ],
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  ATTACHMENT LINK
+  // ════════════════════════════════════════════════════════════════
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka link tersebut.')),
+        );
+      }
+    }
+  }
+
+  Widget _buildAttachmentLink({required String filename, required String path}) {
+    // Format full URL
+    final url = '${ApiConfig.baseUrl.replaceAll('/api', '')}/storage/$path';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _emerald50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _emerald100),
+      ),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.fileText, color: _emerald700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              filename,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _emerald700),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () => _launchUrl(url),
+            icon: const Icon(LucideIcons.download, size: 16),
+            label: const Text('Unduh'),
+            style: TextButton.styleFrom(
+              foregroundColor: _emerald700,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
