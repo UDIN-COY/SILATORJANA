@@ -45,11 +45,17 @@ class _BendaharaDashboardViewState extends State<BendaharaDashboardView> {
           return RefreshIndicator(
             onRefresh: () => viewModel.fetchKegiatanList(),
             color: const Color(0xFF047857),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: LayoutBuilder(
+              builder: (context, viewportConstraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                  padding: const EdgeInsets.all(16.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: viewportConstraints.maxHeight,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Header
                   Column(
@@ -199,7 +205,10 @@ class _BendaharaDashboardViewState extends State<BendaharaDashboardView> {
                     ),
                   ),
                 ],
-              ),
+                    ),
+                  ),
+                );
+              },
             ),
           );
         },

@@ -52,12 +52,18 @@ class _BendaharaLaporanViewState extends State<BendaharaLaporanView> {
         ? const Center(child: CircularProgressIndicator(color: Color(0xFF047857)))
         : RefreshIndicator(
             onRefresh: _fetchData,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+            child: LayoutBuilder(
+              builder: (context, viewportConstraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                  padding: const EdgeInsets.all(16),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: viewportConstraints.maxHeight,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                   // Header
                   Row(
                     children: [
@@ -139,8 +145,8 @@ class _BendaharaLaporanViewState extends State<BendaharaLaporanView> {
                       ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
     );
