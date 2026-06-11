@@ -27,10 +27,8 @@ class _SubmitPpkViewState extends State<SubmitPpkView> {
   static const _emerald50 = Color(0xFFECFDF5);
   static const _emerald100 = Color(0xFFD1FAE5);
   static const _slate50 = Color(0xFFF8FAFC);
-  static const _slate100 = Color(0xFFF1F5F9);
   static const _slate400 = Color(0xFF94A3B8);
   static const _slate500 = Color(0xFF64748B);
-  static const _slate600 = Color(0xFF475569);
   static const _slate800 = Color(0xFF1E293B);
 
   @override

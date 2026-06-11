@@ -866,9 +866,117 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
 
   Widget? _buildActionButtons() {
     final role = widget.currentUser.role;
-    // Only verifikator, ppk, wadir* roles can approve/reject
-    if (role == 'pengusul' || role == 'admin' || role == 'bendahara' || role == 'rektorat' || role.isEmpty) return null;
-    // Only show action buttons if the current role can act on this status
+    final status = widget.kegiatan.status.toLowerCase();
+    final k = widget.kegiatan;
+
+    // ── PENGUSUL ──────────────────────────────────────────────────────
+    if (role == 'pengusul') {
+      // Submit ke PPK setelah diverifikasi
+      if (status == 'verified' || status == 'diverifikasi') {
+        return _buildSingleActionBar(
+          icon: LucideIcons.sendHorizontal,
+          label: 'Teruskan ke PPK',
+          color: _emerald700,
+          onPressed: () async {
+            final result = await Navigator.push<bool>(context, MaterialPageRoute(
+              builder: (_) => SubmitPpkView(kegiatan: k),
+            ));
+            if (result == true && mounted) Navigator.pop(context, true);
+          },
+        );
+      }
+      // Input LPJ setelah dana dicairkan
+      if (status == 'funds_disbursed' || status == 'accepted_funds' ||
+          status == 'lpj_revision' || status == 'lpj_pending') {
+        return _buildSingleActionBar(
+          icon: LucideIcons.clipboardList,
+          label: 'Input LPJ & Realisasi',
+          color: _emerald700,
+          onPressed: () async {
+            final result = await Navigator.push<bool>(context, MaterialPageRoute(
+              builder: (_) => LpjUploadView(kegiatan: k),
+            ));
+            if (result == true && mounted) Navigator.pop(context, true);
+          },
+        );
+      }
+      return null;
+    }
+
+    // ── VERIFIKATOR ────────────────────────────────────────────────────
+    if (role == 'verifikator') {
+      final canVerify = ['submitted', 'revisi_done', 'revision_requested'].contains(status);
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, -2))],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            // Kode MAK button — always visible for verifikator
+            OutlinedButton.icon(
+              onPressed: () async {
+                final newKode = await showKodeMakInputSheet(context, k.id, k.kodeMak);
+                if (newKode != null && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Kode MAK disimpan: $newKode'), backgroundColor: _emerald700),
+                  );
+                  _vm.fetchKegiatanDetail(k.id);
+                }
+              },
+              icon: const Icon(LucideIcons.hash, size: 16),
+              label: Text(k.kodeMak != null ? 'Edit Kode MAK (${k.kodeMak})' : 'Input Kode MAK'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _emerald700,
+                side: const BorderSide(color: Color(0xFFD1FAE5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                minimumSize: const Size(double.infinity, 0),
+              ),
+            ),
+            if (canVerify) ...[
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _vm.isActionLoading ? null : () => _submitAction('reject'),
+                    icon: const Icon(LucideIcons.alertTriangle, size: 16),
+                    label: const Text('Minta Revisi', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: Color(0xFFFCA5A5)),
+                      foregroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _vm.isActionLoading ? null : () => _submitAction('approve'),
+                    icon: _vm.isActionLoading
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Icon(LucideIcons.checkCircle, size: 16),
+                    label: const Text('Verifikasi', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: _emerald700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+          ]),
+        ),
+      );
+    }
+
+    // ── OTHER APPROVER ROLES (PPK, Wadir, Rektorat) ────────────────────
+    if (role == 'admin' || role == 'bendahara' || role.isEmpty) return null;
     if (!_canActOnStatus()) return null;
 
     return Container(
@@ -917,6 +1025,34 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
       ),
     );
   }
+
+  /// Helper: single action button bar
+  Widget _buildSingleActionBar({required IconData icon, required String label, required Color color, required VoidCallback onPressed}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, -2))],
+      ),
+      child: SafeArea(
+        top: false,
+        child: ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            elevation: 2,
+            shadowColor: color.withValues(alpha: 0.3),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   String _formatCurrency(dynamic amount) {
     final n = amount is num ? amount : num.tryParse(amount.toString()) ?? 0;
