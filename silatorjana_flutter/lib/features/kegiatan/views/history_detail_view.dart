@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/network/api_service.dart';
+import '../../lpj/views/components/spk_score_card_widget.dart';
 import '../models/kegiatan.dart';
 
 /// HistoryDetailView — mirrors web's HistoryDetailPage.tsx
@@ -133,6 +134,10 @@ class _HistoryDetailViewState extends State<HistoryDetailView> {
                   _buildRabCard(),
                   const SizedBox(height: 16),
                 ],
+
+                // SPK MOORA Kualitas LPJ (displays only if relevant/exists)
+                SpkScoreCardWidget(kegiatanId: k.id),
+                const SizedBox(height: 16),
 
                 // Timeline
                 _buildTimelineCard(),

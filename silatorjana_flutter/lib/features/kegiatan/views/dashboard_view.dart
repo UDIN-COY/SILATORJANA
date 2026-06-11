@@ -462,6 +462,11 @@ class _DashboardViewState extends State<DashboardView> {
   Widget _buildTopNavbar() {
     final activeRoleLabel = _roleLabels[widget.user.role] ?? widget.user.role.toUpperCase();
 
+    // Find indices for shortcuts
+    final profileIndex = _allItems.indexWhere((item) => item.label == 'Profil' || item.page is ProfileView);
+    final janaIndex = _allItems.indexWhere((item) => item.label == 'Jana AI' || item.page is JanaChatView);
+    final panduanIndex = _allItems.indexWhere((item) => item.label == 'Panduan' || item.page is PanduanView);
+
     return Container(
       height: 72,
       decoration: const BoxDecoration(
@@ -474,7 +479,7 @@ class _DashboardViewState extends State<DashboardView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // PANEL IDENTITY
+          // PANEL IDENTITY (Web Style)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -491,7 +496,8 @@ class _DashboardViewState extends State<DashboardView> {
               ),
             ),
           ),
-          // USER PROFILE SUMMARY
+          
+          // MIDDLE & RIGHT CONTROLS
           Row(
             children: [
               // Calendar Info
@@ -501,33 +507,143 @@ class _DashboardViewState extends State<DashboardView> {
                 'Tahun Ajaran 2025/2026',
                 style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
               ),
-              const SizedBox(width: 24),
-              // Vertical Divider
-              Container(width: 1, height: 24, color: const Color(0xFFE2E8F0)),
-              const SizedBox(width: 24),
-              // Profile Box
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    widget.user.nama,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              const SizedBox(width: 20),
+              
+              // Jana AI Assistant Shortcut (Web Style)
+              IconButton(
+                icon: const Icon(LucideIcons.bot, size: 20, color: Color(0xFF047857)),
+                tooltip: 'Jana AI Assistant',
+                onPressed: () {
+                  if (janaIndex >= 0) {
+                    setState(() => _currentIndex = janaIndex);
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const JanaChatView()));
+                  }
+                },
+              ),
+              
+              // Interactive Guide Help (Web Style)
+              IconButton(
+                icon: const Icon(LucideIcons.helpCircle, size: 20, color: Color(0xFF64748B)),
+                tooltip: 'Panduan Interaktif',
+                onPressed: () {
+                  if (panduanIndex >= 0) {
+                    setState(() => _currentIndex = panduanIndex);
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PanduanView()));
+                  }
+                },
+              ),
+              
+              // Notification Bell (Web Style)
+              PopupMenuButton<String>(
+                icon: const Icon(LucideIcons.bell, size: 20, color: Color(0xFF64748B)),
+                tooltip: 'Notifikasi',
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    enabled: false,
+                    child: Text('Notifikasi Terbaru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
                   ),
-                  Text(
-                    widget.user.email,
-                    style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.checkCircle, color: Color(0xFF047857), size: 16),
+                        SizedBox(width: 8),
+                        Expanded(child: Text('LPJ kegiatan #10 telah disetujui', style: TextStyle(fontSize: 12))),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.alertTriangle, color: Colors.orange, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(child: Text('Ada 1 usulan perlu revisi segera', style: TextStyle(fontSize: 12))),
+                      ],
+                    ),
                   ),
                 ],
               ),
+              
               const SizedBox(width: 12),
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: const Color(0xFFECFDF5),
-                child: Text(
-                  widget.user.nama[0].toUpperCase(),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+              Container(width: 1, height: 24, color: const Color(0xFFE2E8F0)),
+              const SizedBox(width: 16),
+              
+              // Profile Summary Button with Dropdown (Web Style)
+              PopupMenuButton<String>(
+                onSelected: (val) {
+                  if (val == 'profile') {
+                    if (profileIndex >= 0) {
+                      setState(() => _currentIndex = profileIndex);
+                    } else {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileView(user: widget.user)));
+                    }
+                  } else if (val == 'logout') {
+                    _logout();
+                  }
+                },
+                offset: const Offset(0, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(LucideIcons.user, color: Color(0xFF047857), size: 16),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.user.nama,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          Text(
+                            activeRoleLabel,
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(LucideIcons.chevronDown, size: 14, color: Color(0xFF64748B)),
+                    ],
+                  ),
                 ),
+                itemBuilder: (ctx) => [
+                  PopupMenuItem(
+                    value: 'profile',
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.user, size: 16, color: Color(0xFF64748B)),
+                        const SizedBox(width: 8),
+                        const Text('Profil Lengkap', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.logOut, size: 16, color: Colors.red),
+                        const SizedBox(width: 8),
+                        const Text('Keluar Sesi', style: TextStyle(fontSize: 13, color: Colors.red, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           )

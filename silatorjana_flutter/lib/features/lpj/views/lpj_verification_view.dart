@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../kegiatan/models/kegiatan.dart';
 import '../viewmodels/lpj_viewmodel.dart';
+import 'components/spk_score_card_widget.dart';
 
 /// LPJ Verification — bendahara reviews LPJ.
 /// Mirrors web's LpjVerificationPage.tsx.
@@ -131,6 +132,8 @@ class _LpjVerificationViewState extends State<LpjVerificationView> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  SpkScoreCardWidget(kegiatanId: widget.kegiatan.id),
                   const SizedBox(height: 16),
                 ],
                 // Catatan bendahara
