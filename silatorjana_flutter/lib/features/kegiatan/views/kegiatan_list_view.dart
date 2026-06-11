@@ -123,12 +123,7 @@ class _KegiatanListViewState extends State<KegiatanListView> {
         itemCount: _kegiatanViewModel.kegiatanList.length,
         itemBuilder: (context, index) {
           final item = _kegiatanViewModel.kegiatanList[index];
-          
-          // Simple date parsing assuming ISO string like "2026-06-05T..."
-          String formattedDate = item.createdAt;
-          if (item.createdAt.length >= 10) {
-            formattedDate = item.createdAt.substring(0, 10);
-          }
+          final String formattedDate = item.formattedDate;
 
           final bool isEditable = item.status == 'draft' || item.status == 'revisi' || item.status == 'revision_requested';
 

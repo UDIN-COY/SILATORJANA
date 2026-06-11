@@ -167,7 +167,7 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
     }
 
     final detailData = _kegiatanViewModel.detailData!;
-    final totalAnggaran = detailData['total_anggaran'] ?? 0;
+    final k = widget.kegiatan;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -185,18 +185,26 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.kegiatan.judul,
+                  k.judul,
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 16),
-                _buildInfoRow(LucideIcons.calendar, 'Tanggal Dibuat', widget.kegiatan.createdAt),
-                _buildInfoRow(LucideIcons.user, 'Pengusul', widget.kegiatan.namaPengusul),
-                _buildInfoRow(LucideIcons.banknote, 'Total RAB', 'Rp $totalAnggaran'),
-                _buildInfoRow(LucideIcons.activity, 'Status Terkini', widget.kegiatan.status.toUpperCase()),
-                if (widget.kegiatan.namaJurusan != null)
-                  _buildInfoRow(LucideIcons.building2, 'Jurusan', widget.kegiatan.namaJurusan!),
-                if (widget.kegiatan.catatanRevisi != null && widget.kegiatan.catatanRevisi!.isNotEmpty)
-                  _buildInfoRow(LucideIcons.messageCircle, 'Catatan Revisi', widget.kegiatan.catatanRevisi!),
+                _buildInfoRow(LucideIcons.calendar, 'Tanggal Dibuat', k.formattedDate),
+                _buildInfoRow(LucideIcons.user, 'Pengusul', k.namaPengusul),
+                _buildInfoRow(LucideIcons.banknote, 'Total RAB', k.formattedAnggaran),
+                _buildInfoRow(LucideIcons.activity, 'Status', k.status.replaceAll('_', ' ').toUpperCase()),
+                if (k.namaJurusan != null)
+                  _buildInfoRow(LucideIcons.building2, 'Jurusan', k.namaJurusan!),
+                if (k.jenisKegiatan != null)
+                  _buildInfoRow(LucideIcons.tag, 'Jenis', k.jenisKegiatan!),
+                if (k.tempat != null)
+                  _buildInfoRow(LucideIcons.mapPin, 'Tempat', k.tempat!),
+                if (k.pengusulOrganisasi != null)
+                  _buildInfoRow(LucideIcons.users, 'Organisasi', k.pengusulOrganisasi!),
+                if (k.kodeMak != null)
+                  _buildInfoRow(LucideIcons.hash, 'Kode MAK', k.kodeMak!),
+                if (k.catatanRevisi != null && k.catatanRevisi!.isNotEmpty)
+                  _buildInfoRow(LucideIcons.messageCircle, 'Catatan Revisi', k.catatanRevisi!),
               ],
             ),
           ),
@@ -211,7 +219,7 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Text(
-              detailData['kak']?['latar_belakang'] ?? 'Belum ada deskripsi KAK.',
+              detailData['deskripsi']?.toString() ?? detailData['kak']?['latar_belakang']?.toString() ?? 'Belum ada deskripsi.',
               style: const TextStyle(color: Color(0xFF475569)),
             ),
           ),

@@ -12,6 +12,13 @@ class Kegiatan {
   final String? catatanRevisi;
   final num? totalAnggaran;
   final int? pengusulId;
+  final String? deskripsi;
+  final String? tempat;
+  final String? tanggalKegiatan;
+  final String? pengusulOrganisasi;
+  final String? kodeMak;
+  final String? suratPengantarFilename;
+  final bool uangMukaDiambil;
 
   Kegiatan({
     required this.id,
@@ -27,23 +34,94 @@ class Kegiatan {
     this.catatanRevisi,
     this.totalAnggaran,
     this.pengusulId,
+    this.deskripsi,
+    this.tempat,
+    this.tanggalKegiatan,
+    this.pengusulOrganisasi,
+    this.kodeMak,
+    this.suratPengantarFilename,
+    this.uangMukaDiambil = false,
   });
 
+  /// Safe int parser
+  static int _toInt(dynamic value, [int fallback = 0]) {
+    if (value == null) return fallback;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  /// Safe num parser
+  static num? _toNum(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value;
+    if (value is String) return num.tryParse(value);
+    return null;
+  }
+
+  /// Format tanggal dari ISO ke "dd/MM/yyyy"
+  String get formattedDate {
+    if (createdAt.length >= 10) {
+      final parts = createdAt.substring(0, 10).split('-');
+      if (parts.length == 3) return '${parts[2]}/${parts[1]}/${parts[0]}';
+    }
+    return createdAt;
+  }
+
+  /// Format anggaran ke "Rp 462.442"
+  String get formattedAnggaran {
+    if (totalAnggaran == null) return 'Rp 0';
+    final amount = totalAnggaran!.toInt();
+    final str = amount.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(str[i]);
+    }
+    return 'Rp $buffer';
+  }
+
   factory Kegiatan.fromJson(Map<String, dynamic> json) {
+    // Handle pengusul name from multiple possible fields
+    String pengusulNama = 'Pengusul';
+    if (json['pengusul_nama'] != null) {
+      pengusulNama = json['pengusul_nama'].toString();
+    } else if (json['pengusul'] != null && json['pengusul'] is Map) {
+      pengusulNama = json['pengusul']['nama']?.toString() ?? 'Pengusul';
+    } else if (json['user'] != null && json['user'] is Map) {
+      pengusulNama = json['user']['nama']?.toString() ?? 'Pengusul';
+    }
+
+    // Handle jurusan from multiple fields
+    String? jurusan;
+    if (json['nama_jurusan'] != null) {
+      jurusan = json['nama_jurusan'].toString();
+    } else if (json['pengusul'] != null && json['pengusul'] is Map) {
+      jurusan = json['pengusul']['jurusan']?.toString();
+    }
+
     return Kegiatan(
-      id: json['id'],
-      judul: json['nama_kegiatan'] ?? 'Tanpa Judul',
-      status: json['status'] ?? 'draft',
-      createdAt: json['created_at'] ?? '',
-      updatedAt: json['updated_at'] ?? json['created_at'] ?? '',
-      namaPengusul: json['user']?['nama'] ?? json['pengusul_nama'] ?? 'Pengusul',
-      namaKegiatan: json['nama_kegiatan'] ?? 'Tanpa Judul',
-      namaJurusan: json['nama_jurusan'] ?? json['jurusan']?['nama_jurusan'],
-      jenisKegiatan: json['jenis_kegiatan'],
-      verifikatorTarget: json['verifikator_target'],
-      catatanRevisi: json['catatan_revisi'],
-      totalAnggaran: json['total_anggaran'],
-      pengusulId: json['pengusul_id'],
+      id: _toInt(json['id']),
+      judul: json['nama_kegiatan']?.toString() ?? 'Tanpa Judul',
+      status: json['status']?.toString() ?? 'draft',
+      createdAt: json['created_at']?.toString() ?? '',
+      updatedAt: json['updated_at']?.toString() ?? json['created_at']?.toString() ?? '',
+      namaPengusul: pengusulNama,
+      namaKegiatan: json['nama_kegiatan']?.toString() ?? 'Tanpa Judul',
+      namaJurusan: jurusan,
+      jenisKegiatan: json['jenis_kegiatan']?.toString(),
+      verifikatorTarget: json['verifikator_target']?.toString(),
+      catatanRevisi: json['catatan_revisi']?.toString(),
+      totalAnggaran: _toNum(json['total_anggaran']),
+      pengusulId: json['pengusul_id'] != null ? _toInt(json['pengusul_id']) : null,
+      deskripsi: json['deskripsi']?.toString(),
+      tempat: json['tempat']?.toString(),
+      tanggalKegiatan: json['tanggal_kegiatan']?.toString(),
+      pengusulOrganisasi: json['pengusul_organisasi']?.toString(),
+      kodeMak: json['kode_mak']?.toString(),
+      suratPengantarFilename: json['surat_pengantar_filename']?.toString(),
+      uangMukaDiambil: json['uang_muka_diambil'] == true || json['uang_muka_diambil'] == 1,
     );
   }
 }

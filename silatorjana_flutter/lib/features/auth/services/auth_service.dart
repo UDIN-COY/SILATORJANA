@@ -1,21 +1,19 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
 import '../../../core/constants/api_config.dart';
 
 class AuthService {
-  final _storage = const FlutterSecureStorage();
-  static const _tokenKey = 'auth_token';
 
-  // On web, flutter_secure_storage might have issues.
-  // Use in-memory fallback for web.
-  static String? _webToken;
+  // Use in-memory token storage — works reliably on all platforms
+  // (flutter_secure_storage has issues on Linux desktop and Web)
+  static String? _token;
+  static User? _cachedUser;
 
   Future<bool> login(String email, String password) async {
     try {
-      debugPrint('AUTH: Attempting login to ${ApiConfig.baseUrl}/login');
+      debugPrint('AUTH: Login to ${ApiConfig.baseUrl}/login');
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/login'),
         headers: <String, String>{
@@ -28,27 +26,29 @@ class AuthService {
         }),
       );
 
-      debugPrint('AUTH: Login response status=${response.statusCode}');
-      debugPrint('AUTH: Login response body=${response.body}');
+      debugPrint('AUTH: Login status=${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['token'];
-        
+
         if (token != null && token.toString().isNotEmpty) {
-          await _saveToken(token.toString());
-          debugPrint('AUTH: Token saved successfully');
-          return true;
+          _token = token.toString();
+          debugPrint('AUTH: Token saved: ${_token!.substring(0, 10)}...');
         } else {
-          // Token is null — Sanctum might not be installed.
-          // Still save user data from login response for session.
-          debugPrint('AUTH: No token in response, but login succeeded');
-          // Store a placeholder token so getMe can try cookie-based auth
-          await _saveToken('session-login');
-          return true;
+          _token = 'no-token';
+          debugPrint('AUTH: No token from server');
         }
+
+        // Cache user from login response
+        if (data['user'] != null) {
+          _cachedUser = User.fromJson(data['user']);
+          debugPrint('AUTH: User cached: ${_cachedUser!.nama}');
+        }
+
+        return true;
       }
-      debugPrint('AUTH: Login failed with status ${response.statusCode}');
+      debugPrint('AUTH: Login failed ${response.statusCode}: ${response.body}');
       return false;
     } catch (e) {
       debugPrint('AUTH ERROR login: $e');
@@ -58,12 +58,11 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      final token = await getToken();
-      if (token != null && token != 'session-login') {
+      if (_token != null && _token != 'no-token') {
         await http.post(
           Uri.parse('${ApiConfig.baseUrl}/logout'),
           headers: <String, String>{
-            'Authorization': 'Bearer $token',
+            'Authorization': 'Bearer $_token',
             'Accept': 'application/json',
           },
         );
@@ -71,55 +70,39 @@ class AuthService {
     } catch (e) {
       debugPrint('AUTH ERROR logout: $e');
     }
-    await _deleteToken();
+    _token = null;
+    _cachedUser = null;
   }
 
   Future<String?> getToken() async {
-    if (kIsWeb) {
-      return _webToken;
-    }
-    return await _storage.read(key: _tokenKey);
-  }
-
-  Future<void> _saveToken(String token) async {
-    if (kIsWeb) {
-      _webToken = token;
-    } else {
-      await _storage.write(key: _tokenKey, value: token);
-    }
-  }
-
-  Future<void> _deleteToken() async {
-    if (kIsWeb) {
-      _webToken = null;
-    } else {
-      await _storage.delete(key: _tokenKey);
-    }
+    return _token;
   }
 
   Future<User?> getMe() async {
-    try {
-      final token = await getToken();
-      debugPrint('AUTH: getMe called, token=$token');
+    // Return cached user from login if available
+    if (_cachedUser != null) {
+      debugPrint('AUTH: Returning cached user: ${_cachedUser!.nama}');
+      return _cachedUser;
+    }
 
-      if (token == null) return null;
+    try {
+      if (_token == null || _token == 'no-token') return null;
 
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/me'),
         headers: <String, String>{
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $_token',
           'Accept': 'application/json',
         },
       );
 
-      debugPrint('AUTH: /me response status=${response.statusCode}');
-      debugPrint('AUTH: /me response body=${response.body}');
+      debugPrint('AUTH: /me status=${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Backend returns { user: {...} } — extract the nested user
         final userData = data['user'] ?? data;
-        return User.fromJson(userData);
+        _cachedUser = User.fromJson(userData);
+        return _cachedUser;
       }
     } catch (e) {
       debugPrint('AUTH ERROR getMe: $e');
