@@ -1560,6 +1560,13 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
         TextField(
           controller: ctrl,
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          inputFormatters: isNumber
+              ? [
+                  FilteringTextInputFormatter.allow(
+                    allowDecimal ? RegExp(r'^\d*\.?\d*') : RegExp(r'^\d*'),
+                  ),
+                ]
+              : null,
           onChanged: onChanged,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A)),
           decoration: _inputDecoration(label, icon, hint: hint, commentFields: commentFields),

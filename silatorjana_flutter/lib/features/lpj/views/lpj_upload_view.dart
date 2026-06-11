@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../kegiatan/models/kegiatan.dart';
@@ -532,6 +533,7 @@ class _LpjUploadViewState extends State<LpjUploadView> {
               TextField(
                 controller: qty1Ctrl,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style: const TextStyle(fontSize: 13),
                 decoration: _inputDecoration(),
                 onChanged: (_) => setState(() {}),
@@ -563,6 +565,7 @@ class _LpjUploadViewState extends State<LpjUploadView> {
               TextField(
                 controller: qty2Ctrl,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style: const TextStyle(fontSize: 13),
                 decoration: _inputDecoration(),
                 onChanged: (_) => setState(() {}),
@@ -595,6 +598,7 @@ class _LpjUploadViewState extends State<LpjUploadView> {
                 TextField(
                   controller: qty3Ctrl,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   style: const TextStyle(fontSize: 13),
                   decoration: _inputDecoration(),
                   onChanged: (_) => setState(() {}),
@@ -628,6 +632,7 @@ class _LpjUploadViewState extends State<LpjUploadView> {
               TextField(
                 controller: hargaCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                 style: const TextStyle(fontSize: 13),
                 decoration: _inputDecoration(prefixText: 'Rp '),
                 onChanged: (_) => setState(() {}),
@@ -785,6 +790,7 @@ class _LpjUploadViewState extends State<LpjUploadView> {
               TextField(
                 controller: ctrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   labelText: 'Capaian (%)',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -261,6 +262,7 @@ class _PencairanViewState extends State<PencairanView> {
                         TextField(
                           controller: _persentaseCtrl,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                           onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
                             labelText: 'Persentase (%)',
