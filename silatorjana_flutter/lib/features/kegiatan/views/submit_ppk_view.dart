@@ -73,7 +73,7 @@ class _SubmitPpkViewState extends State<SubmitPpkView> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx'],
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
       );
 
       if (result == null || result.files.single.path == null) return;

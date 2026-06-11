@@ -165,7 +165,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // File upload (surat pengantar, file KAK)
     Route::post('/upload', function (Request $request) {
         $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx|max:10240', // max 10MB
+            'file' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,xls,xlsx|max:10240', // max 10MB
             'type' => 'required|string|in:surat_pengantar,file_kak,lpj_file',
         ]);
 
