@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_logo.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import '../../auth/models/user.dart';
@@ -256,15 +257,7 @@ class _DashboardViewState extends State<DashboardView> {
             ),
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: const [BoxShadow(color: Color(0x1A000000), blurRadius: 4, offset: Offset(0, 1))],
-                  ),
-                  child: const Icon(LucideIcons.graduationCap, color: _emerald400, size: 24),
-                ),
+                AppLogo(size: _sidebarCollapsed ? 32 : 32),
                 if (!_sidebarCollapsed) ...[
                   const SizedBox(height: 12),
                   const Text(
@@ -587,17 +580,7 @@ class _DashboardViewState extends State<DashboardView> {
                     onTap: () => setState(() => _currentIndex = 0),
                     child: Row(
                       children: [
-                        Container(
-                          width: 28, height: 28,
-                          decoration: BoxDecoration(
-                            color: _emerald700,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: const [BoxShadow(color: Color(0x1A000000), blurRadius: 4)],
-                          ),
-                          child: const Center(
-                            child: Text('S', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                          ),
-                        ),
+                        const AppLogo(size: 28),
                         const SizedBox(width: 8),
                         const Text(
                           'LATORJANA',
@@ -644,20 +627,65 @@ class _DashboardViewState extends State<DashboardView> {
                     ],
                   ),
                   const SizedBox(width: 2),
-                  // Profile avatar
-                  GestureDetector(
-                    onTap: () {
-                      final idx = _allItems.indexWhere((i) => i.page is ProfileView);
-                      if (idx >= 0) setState(() => _currentIndex = idx);
+                  // Profile avatar with dropdown (matching web's tour-profile)
+                  PopupMenuButton<String>(
+                    tooltip: 'Profil',
+                    offset: const Offset(0, 45),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    onSelected: (val) {
+                      if (val == 'profile') {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileView(user: widget.user)));
+                      } else if (val == 'logout') {
+                        _logout();
+                      }
                     },
                     child: Container(
-                      width: 32, height: 32,
+                      width: 36, height: 36,
                       decoration: BoxDecoration(
                         color: _emerald50, borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0x80D1FAE5)),
+                        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 2)],
                       ),
                       child: const Center(child: Icon(LucideIcons.user, color: _emerald700, size: 16)),
                     ),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        enabled: false,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('AKUN SAYA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 1.5)),
+                              const SizedBox(height: 4),
+                              Text(widget.user.nama, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _slate800)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'profile',
+                        child: Row(children: [
+                          Icon(LucideIcons.user, size: 16, color: _slate500),
+                          SizedBox(width: 8),
+                          Text('Profil Lengkap', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        ]),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'logout',
+                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Icon(LucideIcons.logOut, size: 16, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Keluar Sesi', style: TextStyle(fontSize: 13, color: Colors.red, fontWeight: FontWeight.bold)),
+                        ]),
+                      ),
+                    ],
                   ),
                 ],
               ),
