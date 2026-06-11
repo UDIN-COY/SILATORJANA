@@ -142,16 +142,17 @@ class _BendaharaLaporanViewState extends State<BendaharaLaporanView> {
                               ],
                             ),
                           )),
-                      ], // End of Container Column
-                    ),
-                  ), // End of Container
-                ], // End of Main Column
-              ), // End of ConstrainedBox
-            ), // End of SingleChildScrollView
-          ); // End of LayoutBuilder return
-        },
-      ),
-    );
+                      ], // table children
+                    ), // table Column
+                  ), // table Container
+                ], // MAIN children
+              ), // MAIN Column
+            ), // ConstrainedBox
+          ); // SingleChildScrollView
+        }, // LayoutBuilder builder
+      ), // LayoutBuilder
+    ), // RefreshIndicator
+); // Scaffold
   }
 
   Widget _buildMiniStat(String label, String value, IconData icon, Color color, Color bgColor) {

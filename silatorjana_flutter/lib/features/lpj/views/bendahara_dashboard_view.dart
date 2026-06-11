@@ -201,16 +201,19 @@ class _BendaharaDashboardViewState extends State<BendaharaDashboardView> {
                               ),
                             ),
                           )),
-                      ], // End of Container Column
-                    ),
-                  ), // End of Container
-                ], // End of Main Column
-              ), // End of ConstrainedBox
-            ), // End of SingleChildScrollView
-          ); // End of LayoutBuilder builder
-        },
-      ),
-    );
+                      ], // table children
+                    ), // table Column
+                  ), // table Container
+                ], // MAIN children
+              ), // MAIN Column
+            ), // ConstrainedBox
+          ); // SingleChildScrollView
+        }, // LayoutBuilder builder
+      ), // LayoutBuilder
+    ); // RefreshIndicator
+  }, // Consumer builder
+), // Consumer
+); // Scaffold
   }
 
   Widget _buildTabCard({
