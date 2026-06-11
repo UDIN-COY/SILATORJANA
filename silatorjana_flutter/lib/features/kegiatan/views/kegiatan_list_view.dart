@@ -97,7 +97,17 @@ class _KegiatanListViewState extends State<KegiatanListView> {
       );
     }
 
-    if (_kegiatanViewModel.kegiatanList.isEmpty) {
+    final filteredList = _kegiatanViewModel.kegiatanList.where((item) {
+      if (widget.currentUser.role == 'verifikator') {
+        return item.verifikatorTarget == null || item.verifikatorTarget == widget.currentUser.wadirTarget;
+      } else if (widget.currentUser.role.startsWith('wadir')) {
+        if (widget.currentUser.wadirTarget == 'wadir2' && item.verifikatorTarget == null) return true;
+        return item.verifikatorTarget == widget.currentUser.wadirTarget;
+      }
+      return true;
+    }).toList();
+
+    if (filteredList.isEmpty) {
       return const Center(
         child: Text('Belum ada data pengajuan.', style: TextStyle(fontSize: 16, color: Colors.grey)),
       );
@@ -108,9 +118,9 @@ class _KegiatanListViewState extends State<KegiatanListView> {
       color: const Color(0xFF047857),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _kegiatanViewModel.kegiatanList.length,
+        itemCount: filteredList.length,
         itemBuilder: (context, index) {
-          final item = _kegiatanViewModel.kegiatanList[index];
+          final item = filteredList[index];
           final String formattedDate = item.formattedDate;
 
           final bool isPengusulOrAdmin = widget.currentUser.role == 'pengusul' || widget.currentUser.role == 'admin';
@@ -232,7 +242,50 @@ class _KegiatanListViewState extends State<KegiatanListView> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: isEditable ? () {} : null,
+                        onPressed: isEditable ? () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Row(
+                                children: [
+                                  Icon(LucideIcons.trash2, color: Colors.red),
+                                  SizedBox(width: 8),
+                                  Text('Hapus Draft', style: TextStyle(fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              content: const Text('Apakah Anda yakin ingin menghapus draft usulan ini secara permanen?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  child: const Text('Hapus', style: TextStyle(fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            final success = await _kegiatanViewModel.deleteKegiatan(item.id);
+                            if (success && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Draft usulan berhasil dihapus')),
+                              );
+                              _kegiatanViewModel.fetchKegiatanList();
+                            } else if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Gagal menghapus draft usulan')),
+                              );
+                            }
+                          }
+                        } : null,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFFDC2626),
                           side: BorderSide(color: isEditable ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0)),

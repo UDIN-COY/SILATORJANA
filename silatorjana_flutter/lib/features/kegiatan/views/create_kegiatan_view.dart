@@ -454,6 +454,45 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
         _showError('Minimal 1 item RAB harus diisi lengkap (uraian dan harga satuan)');
         return false;
       }
+
+      // Validate positive qty and non-negative price for all filled items
+      for (final cat in ['barang', 'jasa', 'perjalanan']) {
+        final list = cat == 'barang' ? _rabBarang : (cat == 'jasa' ? _rabJasa : _rabPerjalanan);
+        final label = cat == 'barang' ? 'Belanja Barang' : (cat == 'jasa' ? 'Belanja Jasa' : 'Belanja Perjalanan');
+        for (int i = 0; i < list.length; i++) {
+          final item = list[i];
+          final uraian = item['uraian']!.text.trim();
+          if (uraian.isNotEmpty) {
+            final q1 = double.tryParse(item['qty1']!.text);
+            if (q1 == null || q1 <= 0) {
+              _showError('Jumlah 1 pada item $label #${i + 1} harus lebih dari 0');
+              return false;
+            }
+            final q2Text = item['qty2']!.text;
+            if (q2Text.isNotEmpty) {
+              final q2 = double.tryParse(q2Text);
+              if (q2 == null || q2 <= 0) {
+                _showError('Jumlah 2 pada item $label #${i + 1} harus lebih dari 0');
+                return false;
+              }
+            }
+            final q3Text = item['qty3']!.text;
+            if (q3Text.isNotEmpty) {
+              final q3 = double.tryParse(q3Text);
+              if (q3 == null || q3 <= 0) {
+                _showError('Jumlah 3 pada item $label #${i + 1} harus lebih dari 0');
+                return false;
+              }
+            }
+            final h = double.tryParse(item['harga_satuan']!.text);
+            if (h == null || h < 0) {
+              _showError('Harga satuan pada item $label #${i + 1} tidak boleh negatif');
+              return false;
+            }
+          }
+        }
+      }
+
       if (_getGrandTotal() <= 0) {
         _showError('Total anggaran harus lebih dari Rp 0');
         return false;
@@ -466,7 +505,7 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
     setState(() => _isSubmitting = true);
 
     try {
-      final Map<String, dynamic> body = {
+      final fields = <String, String>{
         'nama_kegiatan': _namaKegiatanCtrl.text.trim(),
         'jenis_kegiatan': _jenisKegiatanCtrl.text.trim(),
         'tanggal_kegiatan': _tanggalKegiatanCtrl.text,
@@ -476,7 +515,7 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
         if (verifikatorTarget != null) 'verifikator_target': verifikatorTarget,
       };
 
-      body['kak'] = {
+      final kak = {
         'gambaran_umum': _gambaranUmumCtrl.text.trim(),
         'penerima_manfaat': _penerimaManfaatCtrl.text.trim(),
         'metode_pelaksanaan': _metodePelaksanaanCtrl.text.trim(),
@@ -490,11 +529,13 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
           'target': double.tryParse(row['target']!.text) ?? 0.0,
         }).toList(),
       };
+      fields['kak'] = jsonEncode(kak);
 
-      body['iku'] = _ikuItems.where((item) => item['nama_indikator'].toString().isNotEmpty).map((item) => {
+      final iku = _ikuItems.where((item) => item['nama_indikator'].toString().isNotEmpty).map((item) => {
         'nama_iku': item['nama_indikator'],
         'target_persen': double.tryParse(item['target_persen']!.text) ?? 0.0,
       }).toList();
+      fields['iku'] = jsonEncode(iku);
 
       List<Map<String, dynamic>> mapRabItems(List<Map<String, dynamic>> list, String category) {
         return list.where((it) => it['uraian']!.text.trim().isNotEmpty).map((it) => {
@@ -510,15 +551,29 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
         }).toList();
       }
 
-      body['rab'] = [
+      final rab = [
         ...mapRabItems(_rabBarang, 'barang'),
         ...mapRabItems(_rabJasa, 'jasa'),
         ...mapRabItems(_rabPerjalanan, 'perjalanan'),
       ];
+      fields['rab'] = jsonEncode(rab);
 
-      final response = _isEditMode
-          ? await _apiService.put('/kegiatan/${widget.editId}', body: body)
-          : await _apiService.post('/kegiatan', body: body);
+      final files = <String, String>{};
+      if (_suratPengantarFile != null) {
+        files['surat_pengantar'] = _suratPengantarFile!.path;
+      }
+
+      String endpoint = '/kegiatan';
+      if (_isEditMode) {
+        endpoint = '/kegiatan/${widget.editId}';
+        fields['_method'] = 'PUT';
+      }
+
+      final response = await _apiService.postMultipart(
+        endpoint,
+        fields: fields,
+        files: files.isNotEmpty ? files : null,
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (mounted) {
@@ -1497,27 +1552,8 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
       children: [
         TextField(
           controller: ctrl,
-          keyboardType: isNumber
-              ? (allowDecimal ? TextInputType.numberWithOptions(decimal: true) : TextInputType.number)
-              : TextInputType.text,
-          inputFormatters: isNumber
-              ? [
-                  FilteringTextInputFormatter.allow(allowDecimal ? RegExp(r'^\d*\.?\d*$') : RegExp(r'^\d*$')),
-                  if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
-                ]
-              : null,
-          onChanged: (value) {
-            if (isNumber) {
-              final sanitized = value.replaceAll(RegExp(r'[^0-9.]'), '');
-              if (sanitized != value) {
-                ctrl.value = ctrl.value.copyWith(
-                  text: sanitized,
-                  selection: TextSelection.collapsed(offset: sanitized.length),
-                );
-              }
-            }
-            onChanged?.call(value);
-          },
+          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          onChanged: onChanged,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A)),
           decoration: _inputDecoration(label, icon, hint: hint, commentFields: commentFields),
         ),

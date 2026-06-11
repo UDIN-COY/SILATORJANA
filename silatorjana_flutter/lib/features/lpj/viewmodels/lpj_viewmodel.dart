@@ -177,11 +177,9 @@ class LpjViewModel extends ChangeNotifier {
         'iku_capaian': jsonEncode(ikuCapaian),
       };
 
-      final filesMap = <String, String>{};
+      final filesMap = <String, dynamic>{};
       files.forEach((rabId, filePaths) {
-        for (int i = 0; i < filePaths.length; i++) {
-          filesMap['item_files[$rabId][$i]'] = filePaths[i];
-        }
+        filesMap['item_files[$rabId][]'] = filePaths;
       });
 
       final response = await _apiService.postMultipart(
@@ -210,9 +208,10 @@ class LpjViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.post('/kegiatan/$kegiatanId/status', body: {
-        'action': action,
-        'catatan': catatan,
+      final String targetStatus = action == 'approve' ? 'lpj_approved' : 'lpj_revision';
+      final response = await _apiService.put('/kegiatan/$kegiatanId', body: {
+        'status': targetStatus,
+        'catatan_revisi': catatan,
       });
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
