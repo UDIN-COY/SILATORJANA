@@ -46,28 +46,57 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
     super.dispose();
   }
 
-  /// Action dialog for approve/reject
+  /// Resolve the target status when this role approves.
+  String? _getApproveStatus() {
+    final role = widget.currentUser.role;
+    if (role == 'verifikator') return 'verified';
+    if (role == 'ppk') return 'approved_ppk';
+    if (role.startsWith('wadir')) return 'approved_wadir';
+    return null;
+  }
+
+  /// Check if this role can act on the current kegiatan status.
+  bool _canActOnStatus() {
+    if (_vm.detailData == null) return false;
+    final role = widget.currentUser.role;
+    final status = (_vm.detailData!['status'] ?? '').toString().toLowerCase();
+
+    if (role == 'verifikator') {
+      return ['submitted', 'revisi_done', 'diajukan'].contains(status);
+    } else if (role == 'ppk') {
+      return ['verified', 'pending_ppk', 'diverifikasi'].contains(status);
+    } else if (role.startsWith('wadir')) {
+      return status == 'approved_ppk';
+    }
+    return false;
+  }
+
+  /// Action dialog for approve/reject.
+  /// Uses exact target status strings for the backend PUT /kegiatan/{id}.
   Future<void> _submitAction(String action) async {
     final catatanCtrl = TextEditingController();
+    final isApprove = action == 'approve';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(children: [
           Icon(
-            action == 'approve' ? LucideIcons.checkCircle : LucideIcons.alertTriangle,
-            color: action == 'approve' ? _emerald700 : Colors.red,
+            isApprove ? LucideIcons.checkCircle : LucideIcons.alertTriangle,
+            color: isApprove ? _emerald700 : Colors.red,
             size: 22,
           ),
           const SizedBox(width: 10),
-          Text(action == 'approve' ? 'Setujui Proposal' : 'Minta Revisi',
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(isApprove ? 'Setujui Proposal' : 'Minta Revisi',
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+          ),
         ]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              action == 'approve'
+              isApprove
                   ? 'Apakah Anda yakin menyetujui proposal ini?'
                   : 'Berikan catatan revisi untuk pengusul:',
               style: const TextStyle(fontSize: 14, color: _slate500),
@@ -77,7 +106,7 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
               controller: catatanCtrl,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: action == 'approve' ? 'Catatan (opsional)' : 'Catatan revisi *',
+                hintText: isApprove ? 'Catatan (opsional)' : 'Catatan revisi *',
                 hintStyle: const TextStyle(color: _slate400),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: OutlineInputBorder(
@@ -95,7 +124,7 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (action == 'reject' && catatanCtrl.text.isEmpty) {
+              if (!isApprove && catatanCtrl.text.isEmpty) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(content: Text('Catatan wajib diisi'), backgroundColor: Colors.orange),
                 );
@@ -104,11 +133,11 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
               Navigator.pop(ctx, true);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: action == 'approve' ? _emerald700 : Colors.red,
+              backgroundColor: isApprove ? _emerald700 : Colors.red,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text(action == 'approve' ? 'Setujui' : 'Minta Revisi',
+            child: Text(isApprove ? 'Setujui' : 'Minta Revisi',
                 style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
@@ -116,11 +145,20 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
     );
 
     if (confirmed != true) return;
+
+    // Resolve the exact target status for the backend
+    final String targetStatus;
+    if (isApprove) {
+      targetStatus = _getApproveStatus() ?? 'verified';
+    } else {
+      targetStatus = 'revision_requested';
+    }
+
     final catatan = catatanCtrl.text.isNotEmpty
         ? catatanCtrl.text
         : 'Disetujui oleh ${widget.currentUser.nama} (${widget.currentUser.role})';
 
-    final success = await _vm.submitAction(widget.kegiatan.id, action, catatan);
+    final success = await _vm.submitAction(widget.kegiatan.id, targetStatus, catatan);
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Status berhasil diperbarui!'), backgroundColor: _emerald700),
@@ -825,7 +863,10 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
 
   Widget? _buildActionButtons() {
     final role = widget.currentUser.role;
-    if (role == 'pengusul' || role == 'admin' || role.isEmpty) return null;
+    // Only verifikator, ppk, wadir* roles can approve/reject
+    if (role == 'pengusul' || role == 'admin' || role == 'bendahara' || role == 'rektorat' || role.isEmpty) return null;
+    // Only show action buttons if the current role can act on this status
+    if (!_canActOnStatus()) return null;
 
     return Container(
       padding: const EdgeInsets.all(16),

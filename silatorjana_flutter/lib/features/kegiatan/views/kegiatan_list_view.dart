@@ -113,7 +113,8 @@ class _KegiatanListViewState extends State<KegiatanListView> {
           final item = _kegiatanViewModel.kegiatanList[index];
           final String formattedDate = item.formattedDate;
 
-          final bool isEditable = item.status == 'draft' || item.status == 'revisi' || item.status == 'revision_requested';
+          final bool isPengusulOrAdmin = widget.currentUser.role == 'pengusul' || widget.currentUser.role == 'admin';
+          final bool isEditable = isPengusulOrAdmin && (item.status == 'draft' || item.status == 'revisi' || item.status == 'revision_requested');
 
           return Container(
             margin: const EdgeInsets.only(bottom: 16),

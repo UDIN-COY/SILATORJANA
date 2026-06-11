@@ -61,20 +61,34 @@ class KegiatanViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> submitAction(int id, String action, String catatan) async {
+  /// Submit approve/reject action using PUT /kegiatan/{id}.
+  /// [newStatus] is the exact target status string (e.g. 'verified', 'revision_requested', 'approved_ppk').
+  /// [catatan] is the revision note (required for reject, optional for approve).
+  Future<bool> submitAction(int id, String newStatus, String catatan) async {
     isActionLoading = true;
     notifyListeners();
 
     try {
-      final response = await _apiService.post(
-        '/kegiatan/$id/status',
-        body: {'action': action, 'catatan': catatan},
+      final body = <String, dynamic>{
+        'status': newStatus,
+      };
+      // Only include catatan_revisi for rejection/revision statuses
+      if (newStatus == 'revision_requested' || newStatus == 'lpj_revision') {
+        body['catatan_revisi'] = catatan;
+      } else if (catatan.isNotEmpty) {
+        body['catatan_revisi'] = catatan;
+      }
+
+      final response = await _apiService.put(
+        '/kegiatan/$id',
+        body: body,
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         isActionLoading = false;
         notifyListeners();
         
-        final actionText = action == 'approve' ? 'Disetujui' : 'Direvisi';
+        final isApprove = !newStatus.contains('revision') && newStatus != 'rejected';
+        final actionText = isApprove ? 'Disetujui' : 'Diminta Revisi';
         _notificationService.showNotification(
           id: id,
           title: 'Status Proposal Diperbarui',

@@ -96,15 +96,24 @@ class NeedsWorkView extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton.icon(
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => EditKegiatanView(kegiatanId: item.id)))
-                                .then((result) { if (result == true) vm.fetchKegiatanList(); });
-                            },
+                            onPressed: (currentUser.role == 'pengusul' || currentUser.role == 'admin')
+                                ? () {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => EditKegiatanView(kegiatanId: item.id)))
+                                      .then((result) { if (result == true) vm.fetchKegiatanList(); });
+                                  }
+                                : null,
                             icon: const Icon(LucideIcons.edit2, size: 16),
-                            label: const Text('Perbaiki Sekarang', style: TextStyle(fontWeight: FontWeight.bold)),
+                            label: Text(
+                              (currentUser.role == 'pengusul' || currentUser.role == 'admin')
+                                  ? 'Perbaiki Sekarang'
+                                  : 'Menunggu Perbaikan Pengusul',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFFE11D48),
                               foregroundColor: Colors.white,
+                              disabledBackgroundColor: const Color(0xFFE2E8F0),
+                              disabledForegroundColor: const Color(0xFF94A3B8),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
