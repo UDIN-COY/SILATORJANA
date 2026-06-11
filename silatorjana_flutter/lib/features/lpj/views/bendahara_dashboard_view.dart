@@ -201,16 +201,13 @@ class _BendaharaDashboardViewState extends State<BendaharaDashboardView> {
                               ),
                             ),
                           )),
-                      ],
+                      ], // End of Container Column
                     ),
-                  ),
-                ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
+                  ), // End of Container
+                ], // End of Main Column
+              ), // End of ConstrainedBox
+            ), // End of SingleChildScrollView
+          ); // End of LayoutBuilder builder
         },
       ),
     );

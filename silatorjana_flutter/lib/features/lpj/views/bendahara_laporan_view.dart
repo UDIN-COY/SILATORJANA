@@ -142,13 +142,15 @@ class _BendaharaLaporanViewState extends State<BendaharaLaporanView> {
                               ],
                             ),
                           )),
-                      ],
+                      ], // End of Container Column
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
+                  ), // End of Container
+                ], // End of Main Column
+              ), // End of ConstrainedBox
+            ), // End of SingleChildScrollView
+          ); // End of LayoutBuilder return
+        },
+      ),
     );
   }
 
