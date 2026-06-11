@@ -133,6 +133,8 @@ class _LpjVerificationViewState extends State<LpjVerificationView> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  _buildLpjDetails(_viewModel.lpjDetail!),
+                  const SizedBox(height: 16),
                   SpkScoreCardWidget(kegiatanId: widget.kegiatan.id),
                   const SizedBox(height: 16),
                 ],
@@ -187,6 +189,172 @@ class _LpjVerificationViewState extends State<LpjVerificationView> {
           );
         },
       ),
+    );
+  }
+
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return 'Rp 0';
+    final n = amount is num ? amount : num.tryParse(amount.toString()) ?? 0;
+    final str = n.toInt().toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = str.length - 1; i >= 0; i--) {
+      buffer.write(str[i]);
+      count++;
+      if (count % 3 == 0 && i > 0 && str[i] != '-') buffer.write('.');
+    }
+    return 'Rp ${buffer.toString().split('').reversed.join()}';
+  }
+
+  Widget _buildLpjDetails(Map<String, dynamic> detail) {
+    final rabGroups = detail['rab'] as Map<String, dynamic>? ?? {};
+    if (rabGroups.isEmpty) {
+      return const Text('Tidak ada berkas LPJ.', style: TextStyle(fontSize: 13, color: Colors.grey));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: rabGroups.entries.map<Widget>((entry) {
+        final group = entry.value;
+        final label = group['label']?.toString() ?? entry.key;
+        final items = (group['items'] as List?) ?? [];
+        if (items.isEmpty) return const SizedBox.shrink();
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
+                ),
+                child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155))),
+              ),
+              // Items
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: items.map<Widget>((item) {
+                    final files = (item['existing_files'] as List?) ?? [];
+                    final isImageReg = RegExp(r'\.(jpeg|jpg|gif|png|webp)$', caseSensitive: false);
+
+                    final qty1 = item['qty1'] ?? 1;
+                    final qty2 = item['qty2'];
+                    final qty3 = item['qty3'];
+                    final harga = item['harga_satuan'] ?? 0;
+                    final total = item['total'] ?? 0;
+
+                    final realQty1 = item['real_qty1'];
+                    final realQty2 = item['real_qty2'];
+                    final realQty3 = item['real_qty3'];
+                    final realHarga = item['real_harga_satuan'];
+
+                    // Calculate real total
+                    num realTotal = 0;
+                    if (realQty1 != null && realHarga != null) {
+                      final q1 = realQty1 as num;
+                      final q2 = (realQty2 ?? 1) as num;
+                      final q3 = (realQty3 ?? 1) as num;
+                      final h = realHarga as num;
+                      realTotal = q1 * q2 * q3 * h;
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item['uraian'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Target Anggaran', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${qty1}${qty2 != null && qty2 != 1 ? ' x $qty2' : ''}${qty3 != null && qty3 != 0 ? ' x $qty3' : ''} @ ${_formatCurrency(harga)}',
+                                    style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
+                                  ),
+                                  Text('Total: ${_formatCurrency(total)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  const Text('Realisasi', style: TextStyle(fontSize: 11, color: Color(0xFF047857))),
+                                  const SizedBox(height: 2),
+                                  if (realQty1 != null) ...[
+                                    Text(
+                                      '${realQty1}${realQty2 != null && realQty2 != 1 ? ' x $realQty2' : ''}${realQty3 != null && realQty3 != 0 ? ' x $realQty3' : ''} @ ${_formatCurrency(realHarga)}',
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF047857)),
+                                    ),
+                                    Text('Total: ${_formatCurrency(realTotal)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF047857))),
+                                  ] else ...[
+                                    const Text('Belum diisi', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.orange)),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          const Text('Berkas Bukti / Kuitansi:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                          const SizedBox(height: 6),
+                          if (files.isEmpty)
+                            const Text('Tidak ada berkas bukti.', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey))
+                          else
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: files.map<Widget>((file) {
+                                final filename = file['original_name']?.toString() ?? 'File';
+                                final fileUrl = file['url']?.toString() ?? '';
+                                final isImage = isImageReg.hasMatch(filename) || isImageReg.hasMatch(fileUrl);
+
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFECFDF5),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFD1FAE5)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(isImage ? LucideIcons.image : LucideIcons.fileText, size: 14, color: const Color(0xFF047857)),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        filename,
+                                        style: const TextStyle(fontSize: 12, color: Color(0xFF047857), fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }

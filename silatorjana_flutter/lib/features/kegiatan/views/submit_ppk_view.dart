@@ -48,10 +48,7 @@ class _SubmitPpkViewState extends State<SubmitPpkView> {
     }
     // Existing surat pengantar
     _uploadedFileName = widget.kegiatan.suratPengantarFilename;
-    // Compat setting
-    if (widget.kegiatan.suratPengantarFilename != null) {
-      _uploadedFilePath = widget.kegiatan.suratPengantarFilename;
-    }
+    _uploadedFilePath = widget.kegiatan.suratPengantarPath;
   }
 
   @override

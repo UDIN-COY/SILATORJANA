@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../constants/api_config.dart';
 import '../../features/auth/services/auth_service.dart';
 
@@ -56,6 +57,25 @@ class ApiService {
     );
   }
 
+  MediaType _getMediaType(String path) {
+    final ext = path.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return MediaType('application', 'pdf');
+      case 'doc':
+        return MediaType('application', 'msword');
+      case 'docx':
+        return MediaType('application', 'vnd.openxmlformats-officedocument.wordprocessingml.document');
+      case 'png':
+        return MediaType('image', 'png');
+      case 'jpg':
+      case 'jpeg':
+        return MediaType('image', 'jpeg');
+      default:
+        return MediaType('application', 'octet-stream');
+    }
+  }
+
   /// Upload file(s) via multipart/form-data
   /// [fields] — text fields to include
   /// [files] — map of field_name -> File path
@@ -81,14 +101,24 @@ class ApiService {
           for (final path in entry.value) {
             final file = File(path.toString());
             if (await file.exists()) {
-              final mf = await http.MultipartFile.fromPath(entry.key, path.toString());
+              final contentType = _getMediaType(path.toString());
+              final mf = await http.MultipartFile.fromPath(
+                entry.key,
+                path.toString(),
+                contentType: contentType,
+              );
               request.files.add(mf);
             }
           }
         } else {
           final file = File(entry.value.toString());
           if (await file.exists()) {
-            final mf = await http.MultipartFile.fromPath(entry.key, entry.value.toString());
+            final contentType = _getMediaType(entry.value.toString());
+            final mf = await http.MultipartFile.fromPath(
+              entry.key,
+              entry.value.toString(),
+              contentType: contentType,
+            );
             request.files.add(mf);
           }
         }

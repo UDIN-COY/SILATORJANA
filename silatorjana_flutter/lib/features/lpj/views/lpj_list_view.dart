@@ -19,6 +19,8 @@ class LpjListView extends StatefulWidget {
 
 class _LpjListViewState extends State<LpjListView> {
   final LpjViewModel _viewModel = LpjViewModel();
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -29,6 +31,7 @@ class _LpjListViewState extends State<LpjListView> {
   @override
   void dispose() {
     _viewModel.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -71,14 +74,67 @@ class _LpjListViewState extends State<LpjListView> {
             );
           }
 
-          return RefreshIndicator(
-            onRefresh: () => _viewModel.fetchLpjList(),
-            color: const Color(0xFF047857),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _viewModel.lpjList.length,
-              itemBuilder: (context, index) => _buildLpjCard(_viewModel.lpjList[index]),
-            ),
+          final query = _searchQuery.trim().toLowerCase();
+          final searchFiltered = _viewModel.lpjList.where((item) {
+            if (query.isEmpty) return true;
+            final matchJudul = item.namaKegiatan.toLowerCase().contains(query);
+            final matchPengusul = item.namaPengusul.toLowerCase().contains(query);
+            final matchId = item.id.toString().contains(query);
+            return matchJudul || matchPengusul || matchId;
+          }).toList();
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: TextField(
+                  controller: _searchCtrl,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Cari data (Kegiatan, Pengusul, ID)...',
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                    prefixIcon: const Icon(LucideIcons.search, size: 18, color: Color(0xFF64748B)),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(LucideIcons.x, size: 16, color: Color(0xFF64748B)),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF047857), width: 2)),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      _searchQuery = val;
+                    });
+                  },
+                ),
+              ),
+              Expanded(
+                child: searchFiltered.isEmpty
+                    ? const Center(
+                        child: Text('Pencarian tidak ditemukan.', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () => _viewModel.fetchLpjList(),
+                        color: const Color(0xFF047857),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: searchFiltered.length,
+                          itemBuilder: (context, index) => _buildLpjCard(searchFiltered[index]),
+                        ),
+                      ),
+              ),
+            ],
           );
         },
       ),

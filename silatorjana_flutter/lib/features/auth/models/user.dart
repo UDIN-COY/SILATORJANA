@@ -4,8 +4,19 @@ class User {
   final String nama;
   final String email;
   final String role;
+  final String? verifikatorUnit; // from users.verifikator_unit (e.g. 'wadir1')
+  final String? jurusan;
+  final String? nip;
 
-  User({required this.id, required this.nama, required this.email, required this.role});
+  User({
+    required this.id,
+    required this.nama,
+    required this.email,
+    required this.role,
+    this.verifikatorUnit,
+    this.jurusan,
+    this.nip,
+  });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -13,24 +24,22 @@ class User {
       nama: json['nama'] ?? json['name'] ?? '',
       email: json['email'] ?? '',
       role: json['role'] ?? '',
+      verifikatorUnit: json['verifikator_unit']?.toString(),
+      jurusan: json['jurusan']?.toString(),
+      nip: json['nip']?.toString(),
     );
   }
 
+  /// Returns the wadir unit this user belongs to.
+  /// - For verifikator: uses `verifikator_unit` from DB (e.g. 'wadir1')
+  /// - For wadir roles: the role itself IS the unit (e.g. 'wadir2')
   String get wadirTarget {
-    final n = nama.toLowerCase();
-    final e = email.toLowerCase();
-    if (n.contains('wadir i') && !n.contains('ii') && !n.contains('iv')) return 'wadir1';
-    if (n.contains('1') || n.contains('satu') || e.contains('1')) return 'wadir1';
-
-    if (n.contains('wadir ii') && !n.contains('iii')) return 'wadir2';
-    if (n.contains('2') || n.contains('dua') || e.contains('2')) return 'wadir2';
-
-    if (n.contains('wadir iii')) return 'wadir3';
-    if (n.contains('3') || n.contains('tiga') || e.contains('3')) return 'wadir3';
-
-    if (n.contains('wadir iv')) return 'wadir4';
-    if (n.contains('4') || n.contains('empat') || e.contains('4')) return 'wadir4';
-
+    if (role == 'verifikator' && verifikatorUnit != null && verifikatorUnit!.isNotEmpty) {
+      return verifikatorUnit!;
+    }
+    if (role.startsWith('wadir')) {
+      return role; // wadir1, wadir2, etc.
+    }
     return '';
   }
 }

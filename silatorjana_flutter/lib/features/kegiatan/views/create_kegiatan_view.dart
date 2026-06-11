@@ -33,6 +33,7 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
   final ApiService _apiService = ApiService();
   Map<String, String> _revisiComments = {};
   File? _suratPengantarFile;
+  String? _verifikatorTarget;
 
   Map<String, String> _parseRevisiComments(String? catatan) {
     final result = <String, String>{};
@@ -144,6 +145,7 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
             _revisiComments = _parseRevisiComments(data['catatan_revisi']?.toString());
             _tempatCtrl.text = data['tempat'] ?? '';
             _tanggalKegiatanCtrl.text = data['tanggal_kegiatan'] ?? '';
+            _verifikatorTarget = data['verifikator_target']?.toString();
 
             final kak = data['kak'];
             if (kak != null) {
@@ -156,7 +158,7 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
               _kurunWaktuSampaiCtrl.text = kak['kurun_waktu_selesai'] ?? '';
 
               _indikatorRows.clear();
-              final indicators = kak['indikator'];
+              final indicators = kak['indikator'] ?? kak['indikator_kinerja'];
               if (indicators != null) {
                 dynamic parsedInds = indicators;
                 if (indicators is String) {
@@ -514,7 +516,10 @@ class _CreateKegiatanViewState extends State<CreateKegiatanView> {
         'tempat': _tempatCtrl.text.trim(),
         'pengusul_organisasi': _pengusulOrganisasiCtrl.text.trim(),
         'status': status,
-        if (verifikatorTarget != null) 'verifikator_target': verifikatorTarget,
+        if (verifikatorTarget != null)
+          'verifikator_target': verifikatorTarget
+        else if (_verifikatorTarget != null)
+          'verifikator_target': _verifikatorTarget!,
       };
 
       final kak = {

@@ -246,4 +246,14 @@ class LpjViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Delete an existing LPJ evidence file from the server
+  Future<bool> deleteLpjFile(int fileId) async {
+    try {
+      final response = await _apiService.delete('/lpj/file/$fileId');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
 }

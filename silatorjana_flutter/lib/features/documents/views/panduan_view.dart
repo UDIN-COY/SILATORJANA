@@ -8,8 +8,17 @@ class PanduanView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      appBar: canPop
+          ? AppBar(
+              title: const Text('Panduan Penggunaan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF0F172A),
+              elevation: 1,
+            )
+          : null,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

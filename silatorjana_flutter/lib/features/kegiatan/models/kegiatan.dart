@@ -18,6 +18,7 @@ class Kegiatan {
   final String? pengusulOrganisasi;
   final String? kodeMak;
   final String? suratPengantarFilename;
+  final String? suratPengantarPath;
   final bool uangMukaDiambil;
   final List<Map<String, dynamic>> pencairanDana;
   final String? deadlineLpj;
@@ -43,6 +44,7 @@ class Kegiatan {
     this.pengusulOrganisasi,
     this.kodeMak,
     this.suratPengantarFilename,
+    this.suratPengantarPath,
     this.uangMukaDiambil = false,
     this.pencairanDana = const [],
     this.deadlineLpj,
@@ -127,6 +129,7 @@ class Kegiatan {
       pengusulOrganisasi: json['pengusul_organisasi']?.toString(),
       kodeMak: json['kode_mak']?.toString(),
       suratPengantarFilename: json['surat_pengantar_filename']?.toString(),
+      suratPengantarPath: json['surat_pengantar_path']?.toString() ?? json['surat_pengantar']?.toString(),
       uangMukaDiambil: json['uang_muka_diambil'] == true || json['uang_muka_diambil'] == 1,
       pencairanDana: (json['pencairan_dana'] as List?)?.cast<Map<String, dynamic>>() ?? [],
       deadlineLpj: json['deadline_lpj']?.toString(),

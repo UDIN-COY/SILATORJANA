@@ -8,6 +8,7 @@ class TemplateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
     final templates = [
       {'title': 'Template KAK', 'desc': 'Kerangka Acuan Kerja standar kegiatan', 'icon': LucideIcons.fileText, 'color': const Color(0xFF3B82F6)},
       {'title': 'Template RAB', 'desc': 'Rencana Anggaran Biaya format Excel', 'icon': LucideIcons.table, 'color': const Color(0xFF10B981)},
@@ -18,6 +19,14 @@ class TemplateView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      appBar: canPop
+          ? AppBar(
+              title: const Text('Unduh Template', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF0F172A),
+              elevation: 1,
+            )
+          : null,
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: templates.length,

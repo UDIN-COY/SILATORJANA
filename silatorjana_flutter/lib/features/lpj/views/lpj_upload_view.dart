@@ -22,8 +22,13 @@ class _LpjUploadViewState extends State<LpjUploadView> {
   final LpjViewModel _vm = LpjViewModel();
   final _catatanCtrl = TextEditingController();
 
-  // realisasiMap: rabId -> {qty1, harga_satuan}
-  final Map<String, TextEditingController> _qtyControllers = {};
+  // realisasiMap: rabId -> {qty1, satuan1, qty2, satuan2, qty3, satuan3, harga_satuan}
+  final Map<String, TextEditingController> _qtyControllers = {}; // tracks qty1
+  final Map<String, TextEditingController> _satuan1Controllers = {};
+  final Map<String, TextEditingController> _qty2Controllers = {};
+  final Map<String, TextEditingController> _satuan2Controllers = {};
+  final Map<String, TextEditingController> _qty3Controllers = {};
+  final Map<String, TextEditingController> _satuan3Controllers = {};
   final Map<String, TextEditingController> _hargaControllers = {};
   // ikuCapaian: ikuId -> capaian %
   final Map<String, TextEditingController> _ikuControllers = {};
@@ -66,6 +71,21 @@ class _LpjUploadViewState extends State<LpjUploadView> {
           _qtyControllers[rabId] = TextEditingController(
             text: item['real_qty1']?.toString() ?? item['qty1']?.toString() ?? '1',
           );
+          _satuan1Controllers[rabId] = TextEditingController(
+            text: item['real_satuan1']?.toString() ?? item['satuan1']?.toString() ?? '',
+          );
+          _qty2Controllers[rabId] = TextEditingController(
+            text: item['real_qty2']?.toString() ?? item['qty2']?.toString() ?? '1',
+          );
+          _satuan2Controllers[rabId] = TextEditingController(
+            text: item['real_satuan2']?.toString() ?? item['satuan2']?.toString() ?? '',
+          );
+          _qty3Controllers[rabId] = TextEditingController(
+            text: item['real_qty3']?.toString() ?? item['qty3']?.toString() ?? '',
+          );
+          _satuan3Controllers[rabId] = TextEditingController(
+            text: item['real_satuan3']?.toString() ?? item['satuan3']?.toString() ?? '',
+          );
           _hargaControllers[rabId] = TextEditingController(
             text: item['real_harga_satuan']?.toString() ?? item['harga_satuan']?.toString() ?? '0',
           );
@@ -92,9 +112,27 @@ class _LpjUploadViewState extends State<LpjUploadView> {
     _vm.dispose();
     _catatanCtrl.dispose();
     for (final c in _qtyControllers.values) c.dispose();
+    for (final c in _satuan1Controllers.values) c.dispose();
+    for (final c in _qty2Controllers.values) c.dispose();
+    for (final c in _satuan2Controllers.values) c.dispose();
+    for (final c in _qty3Controllers.values) c.dispose();
+    for (final c in _satuan3Controllers.values) c.dispose();
     for (final c in _hargaControllers.values) c.dispose();
     for (final c in _ikuControllers.values) c.dispose();
     super.dispose();
+  }
+
+  InputDecoration _inputDecoration({String? prefixText}) {
+    return InputDecoration(
+      prefixText: prefixText,
+      prefixStyle: const TextStyle(fontSize: 13, color: _slate500),
+      filled: true,
+      fillColor: _slate50,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _emerald600, width: 2)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+    );
   }
 
   String _formatCurrency(dynamic amount) {
@@ -155,11 +193,33 @@ class _LpjUploadViewState extends State<LpjUploadView> {
       final q1 = int.tryParse(entry.value.text);
       if (q1 == null || q1 <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Kuantitas realisasi harus lebih dari 0'),
+          content: Text('Kuantitas realisasi 1 harus lebih dari 0'),
           backgroundColor: Colors.red,
         ));
         return;
       }
+
+      final q2 = int.tryParse(_qty2Controllers[rabId]?.text ?? '');
+      if (q2 == null || q2 <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Kuantitas realisasi 2 harus lebih dari 0'),
+          backgroundColor: Colors.red,
+        ));
+        return;
+      }
+
+      final q3Text = _qty3Controllers[rabId]?.text ?? '';
+      if (q3Text.isNotEmpty) {
+        final q3 = int.tryParse(q3Text);
+        if (q3 == null || q3 <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Kuantitas realisasi 3 harus lebih dari 0'),
+            backgroundColor: Colors.red,
+          ));
+          return;
+        }
+      }
+
       final h = double.tryParse(_hargaControllers[rabId]?.text ?? '');
       if (h == null || h < 0) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -186,10 +246,15 @@ class _LpjUploadViewState extends State<LpjUploadView> {
     final Map<String, Map<String, dynamic>> realisasi = {};
     for (final entry in _qtyControllers.entries) {
       final rabId = entry.key;
+      final q3Text = _qty3Controllers[rabId]?.text ?? '';
+      final q3Val = q3Text.isNotEmpty ? (int.tryParse(q3Text) ?? 1) : null;
       realisasi[rabId] = {
         'qty1': int.tryParse(entry.value.text) ?? 1,
-        'qty2': 1,
-        'qty3': 1,
+        'satuan1': _satuan1Controllers[rabId]?.text ?? '',
+        'qty2': int.tryParse(_qty2Controllers[rabId]?.text ?? '1') ?? 1,
+        'satuan2': _satuan2Controllers[rabId]?.text ?? '',
+        'qty3': q3Val,
+        'satuan3': _satuan3Controllers[rabId]?.text ?? '',
         'harga_satuan': double.tryParse(_hargaControllers[rabId]?.text ?? '0') ?? 0,
       };
     }
@@ -423,10 +488,28 @@ class _LpjUploadViewState extends State<LpjUploadView> {
     final uraian = item['uraian']?.toString() ?? '-';
     final hargaTarget = item['harga_satuan'];
     final totalTarget = item['total'];
-    final qtyCtrl = _qtyControllers[rabId];
+    final qty1Ctrl = _qtyControllers[rabId];
+    final satuan1Ctrl = _satuan1Controllers[rabId];
+    final qty2Ctrl = _qty2Controllers[rabId];
+    final satuan2Ctrl = _satuan2Controllers[rabId];
+    final qty3Ctrl = _qty3Controllers[rabId];
+    final satuan3Ctrl = _satuan3Controllers[rabId];
     final hargaCtrl = _hargaControllers[rabId];
 
-    if (qtyCtrl == null || hargaCtrl == null) return const SizedBox.shrink();
+    if (qty1Ctrl == null || satuan1Ctrl == null || qty2Ctrl == null || satuan2Ctrl == null ||
+        qty3Ctrl == null || satuan3Ctrl == null || hargaCtrl == null) {
+      return const SizedBox.shrink();
+    }
+
+    final hasQty3 = item['qty3'] != null && item['qty3'] != 0;
+
+    // Calculate real total for display
+    final q1 = int.tryParse(qty1Ctrl.text) ?? 0;
+    final q2 = int.tryParse(qty2Ctrl.text) ?? 1;
+    final q3Text = qty3Ctrl.text;
+    final q3 = hasQty3 && q3Text.isNotEmpty ? (int.tryParse(q3Text) ?? 1) : 1;
+    final h = double.tryParse(hargaCtrl.text) ?? 0.0;
+    final realTotal = q1 * q2 * q3 * h;
 
     return Container(
       padding: const EdgeInsets.only(bottom: 16, top: 4),
@@ -435,47 +518,140 @@ class _LpjUploadViewState extends State<LpjUploadView> {
         Text(uraian, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _slate800)),
         const SizedBox(height: 4),
         Text(
-          'Target: ${_formatCurrency(hargaTarget)} × ${item['qty1'] ?? 1} = ${_formatCurrency(totalTarget)}',
+          'Target: ${_formatCurrency(hargaTarget)} × ${item['qty1'] ?? 1}${item['qty2'] != null && item['qty2'] != 1 ? ' × ${item['qty2']}' : ''}${item['qty3'] != null && item['qty3'] != 0 ? ' × ${item['qty3']}' : ''} = ${_formatCurrency(totalTarget)}',
           style: const TextStyle(fontSize: 11, color: _slate500),
         ),
         const SizedBox(height: 10),
+        
+        // Row 1: Qty 1 & Satuan 1
         Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Qty Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+              const Text('Vol 1 Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
               const SizedBox(height: 4),
               TextField(
-                controller: qtyCtrl,
+                controller: qty1Ctrl,
                 keyboardType: TextInputType.number,
                 style: const TextStyle(fontSize: 13),
-                decoration: InputDecoration(
-                  filled: true, fillColor: _slate50,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _emerald600, width: 2)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                ),
+                decoration: _inputDecoration(),
+                onChanged: (_) => setState(() {}),
               ),
             ]),
           ),
           const SizedBox(width: 12),
           Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Satuan 1 Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: satuan1Ctrl,
+                style: const TextStyle(fontSize: 13),
+                decoration: _inputDecoration(),
+                onChanged: (_) => setState(() {}),
+              ),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 10),
+
+        // Row 2: Qty 2 & Satuan 2
+        Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Vol 2 Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: qty2Ctrl,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(fontSize: 13),
+                decoration: _inputDecoration(),
+                onChanged: (_) => setState(() {}),
+              ),
+            ]),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Satuan 2 Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: satuan2Ctrl,
+                style: const TextStyle(fontSize: 13),
+                decoration: _inputDecoration(),
+                onChanged: (_) => setState(() {}),
+              ),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 10),
+
+        // Row 3: Qty 3 & Satuan 3 (if applicable)
+        if (hasQty3) ...[
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Vol 3 Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: qty3Ctrl,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: _inputDecoration(),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ]),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Satuan 3 Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: satuan3Ctrl,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: _inputDecoration(),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 10),
+        ],
+
+        // Row 4: Harga Satuan Realisasi & Total Realisasi
+        Row(children: [
+          Expanded(
             flex: 2,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Harga Satuan Realisasi (Rp)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+              const Text('Harga Satuan Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
               const SizedBox(height: 4),
               TextField(
                 controller: hargaCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 style: const TextStyle(fontSize: 13),
-                decoration: InputDecoration(
-                  prefixText: 'Rp ',
-                  prefixStyle: const TextStyle(fontSize: 13, color: _slate500),
-                  filled: true, fillColor: _slate50,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _emerald600, width: 2)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: _inputDecoration(prefixText: 'Rp '),
+                onChanged: (_) => setState(() {}),
+              ),
+            ]),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 1,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Total Realisasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+              const SizedBox(height: 4),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _emerald50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFD1FAE5)),
+                ),
+                child: Text(
+                  _formatCurrency(realTotal),
+                  style: const TextStyle(fontSize: 12, color: _emerald700, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ]),
@@ -505,6 +681,39 @@ class _LpjUploadViewState extends State<LpjUploadView> {
                     Text(
                       file['original_name']?.toString() ?? 'File',
                       style: const TextStyle(fontSize: 12, color: _emerald700, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: () async {
+                        final fileId = file['file_id'];
+                        if (fileId == null) return;
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Hapus File'),
+                            content: Text('Hapus file "${file['original_name']}"?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          final ok = await _vm.deleteLpjFile(fileId);
+                          if (ok && mounted) {
+                            _vm.fetchLpjDetail(widget.kegiatan.id);
+                          } else if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text('Gagal menghapus file'),
+                              backgroundColor: Colors.red,
+                            ));
+                          }
+                        }
+                      },
+                      child: const Icon(LucideIcons.x, size: 14, color: Colors.red),
                     ),
                   ],
                 ),

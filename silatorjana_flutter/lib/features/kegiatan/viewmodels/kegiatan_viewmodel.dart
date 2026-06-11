@@ -61,6 +61,26 @@ class KegiatanViewModel extends ChangeNotifier {
     }
   }
 
+  /// Record status change in the status_history table for timeline tracking.
+  Future<void> _recordStatusHistory({
+    required int kegiatanId,
+    required String statusLama,
+    required String statusBaru,
+    String? catatan,
+  }) async {
+    try {
+      await _apiService.post('/status-history', body: {
+        'ref_type': 'kegiatan',
+        'ref_id': kegiatanId,
+        'status_lama': statusLama,
+        'status_baru': statusBaru,
+        'catatan': catatan ?? '',
+      });
+    } catch (_) {
+      // Non-critical — don't block the main action
+    }
+  }
+
   /// Submit approve/reject action using PUT /kegiatan/{id}.
   /// [newStatus] is the exact target status string (e.g. 'verified', 'revision_requested', 'approved_ppk').
   /// [catatan] is the revision note (required for reject, optional for approve).
@@ -84,6 +104,18 @@ class KegiatanViewModel extends ChangeNotifier {
         body: body,
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Record to status history for timeline
+        final responseData = jsonDecode(response.body);
+        final oldStatus = responseData['status'] != newStatus
+            ? (body['_old_status']?.toString() ?? '')
+            : '';
+        await _recordStatusHistory(
+          kegiatanId: id,
+          statusLama: oldStatus,
+          statusBaru: newStatus,
+          catatan: catatan.isNotEmpty ? catatan : null,
+        );
+
         isActionLoading = false;
         notifyListeners();
         
@@ -119,6 +151,17 @@ class KegiatanViewModel extends ChangeNotifier {
         body: body,
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Record to status history for timeline
+        final newStatus = body['status']?.toString() ?? '';
+        if (newStatus.isNotEmpty) {
+          await _recordStatusHistory(
+            kegiatanId: id,
+            statusLama: '',
+            statusBaru: newStatus,
+            catatan: body['catatan_revisi']?.toString(),
+          );
+        }
+
         isActionLoading = false;
         notifyListeners();
         

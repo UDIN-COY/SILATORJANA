@@ -16,6 +16,8 @@ class KegiatanListView extends StatefulWidget {
 
 class _KegiatanListViewState extends State<KegiatanListView> {
   final KegiatanViewModel _kegiatanViewModel = KegiatanViewModel();
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -26,6 +28,7 @@ class _KegiatanListViewState extends State<KegiatanListView> {
   @override
   void dispose() {
     _kegiatanViewModel.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -97,7 +100,7 @@ class _KegiatanListViewState extends State<KegiatanListView> {
       );
     }
 
-    final filteredList = _kegiatanViewModel.kegiatanList.where((item) {
+    final roleFiltered = _kegiatanViewModel.kegiatanList.where((item) {
       if (widget.currentUser.role == 'verifikator') {
         return item.verifikatorTarget == null || item.verifikatorTarget == widget.currentUser.wadirTarget;
       } else if (widget.currentUser.role.startsWith('wadir')) {
@@ -107,21 +110,69 @@ class _KegiatanListViewState extends State<KegiatanListView> {
       return true;
     }).toList();
 
-    if (filteredList.isEmpty) {
-      return const Center(
-        child: Text('Belum ada data pengajuan.', style: TextStyle(fontSize: 16, color: Colors.grey)),
-      );
-    }
+    final query = _searchQuery.trim().toLowerCase();
+    final searchFiltered = roleFiltered.where((item) {
+      if (query.isEmpty) return true;
+      final matchJudul = item.judul.toLowerCase().contains(query);
+      final matchPengusul = item.namaPengusul.toLowerCase().contains(query);
+      final matchId = item.id.toString().contains(query);
+      return matchJudul || matchPengusul || matchId;
+    }).toList();
 
-    return RefreshIndicator(
-      onRefresh: _kegiatanViewModel.fetchKegiatanList,
-      color: const Color(0xFF047857),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: filteredList.length,
-        itemBuilder: (context, index) {
-          final item = filteredList[index];
-          final String formattedDate = item.formattedDate;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: TextField(
+            controller: _searchCtrl,
+            style: const TextStyle(fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Cari proposal (Judul, Pengusul, ID)...',
+              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+              prefixIcon: const Icon(LucideIcons.search, size: 18, color: Color(0xFF64748B)),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(LucideIcons.x, size: 16, color: Color(0xFF64748B)),
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF047857), width: 2)),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            ),
+            onChanged: (val) {
+              setState(() {
+                _searchQuery = val;
+              });
+            },
+          ),
+        ),
+        Expanded(
+          child: roleFiltered.isEmpty
+              ? const Center(
+                  child: Text('Belum ada data pengajuan.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                )
+              : searchFiltered.isEmpty
+                  ? const Center(
+                      child: Text('Pencarian tidak ditemukan.', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _kegiatanViewModel.fetchKegiatanList,
+                      color: const Color(0xFF047857),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: searchFiltered.length,
+                        itemBuilder: (context, index) {
+                          final item = searchFiltered[index];
+                          final String formattedDate = item.formattedDate;
 
           final bool isPengusulOrAdmin = widget.currentUser.role == 'pengusul' || widget.currentUser.role == 'admin';
           final bool isEditable = isPengusulOrAdmin && (item.status == 'draft' || item.status == 'revisi' || item.status == 'revision_requested');
@@ -302,7 +353,10 @@ class _KegiatanListViewState extends State<KegiatanListView> {
             ),
           );
         },
-      ),
+                      ),
+                    ),
+        ),
+      ],
     );
   }
 }

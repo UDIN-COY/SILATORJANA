@@ -606,6 +606,7 @@ class _DashboardViewState extends State<DashboardView> {
                   _buildMobileIconBtn(LucideIcons.helpCircle, () {
                     final idx = _allItems.indexWhere((i) => i.page is PanduanView);
                     if (idx >= 0) setState(() => _currentIndex = idx);
+                    else Navigator.push(context, MaterialPageRoute(builder: (_) => const PanduanView()));
                   }, color: _emerald600),
                   const SizedBox(width: 2),
                   // Notification
