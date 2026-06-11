@@ -408,9 +408,9 @@ class KegiatanController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
-        // Update status and deadline_lpj if reaching 100%
+        // Update status and deadline_lpj if reaching maxPencairan (70%)
         $newTotal = $totalDisbursed + $validated['persentase'];
-        if ($newTotal >= 100) {
+        if ($newTotal >= $maxPencairan) {
             $kegiatan->update([
                 'status' => 'funds_disbursed',
                 'deadline_lpj' => $this->calculateDeadlineLPJ(),
@@ -479,14 +479,23 @@ class KegiatanController extends Controller
             ], 403);
         }
 
+        $isTaken = filter_var($request->input('is_taken', true), FILTER_VALIDATE_BOOLEAN);
+
         $kegiatan->update([
-            'uang_muka_diambil' => true,
+            'uang_muka_diambil' => $isTaken,
         ]);
 
-        $kegiatan->pencairanDana()->where('is_taken', false)->update([
-            'is_taken' => true,
-            'tanggal_pengambilan' => now(),
-        ]);
+        if ($isTaken) {
+            $kegiatan->pencairanDana()->where('is_taken', false)->update([
+                'is_taken' => true,
+                'tanggal_pengambilan' => now(),
+            ]);
+        } else {
+            $kegiatan->pencairanDana()->update([
+                'is_taken' => false,
+                'tanggal_pengambilan' => null,
+            ]);
+        }
 
         return response()->json($kegiatan->fresh()->load(['kak', 'iku', 'rab', 'pencairanDana']));
     }

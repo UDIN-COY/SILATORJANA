@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../viewmodels/lpj_viewmodel.dart';
 import '../../kegiatan/models/kegiatan.dart';
+import '../../auth/models/user.dart';
 import 'lpj_upload_view.dart';
 import 'lpj_verification_view.dart';
 import 'pencairan_view.dart';
@@ -9,7 +10,8 @@ import 'pencairan_view.dart';
 /// LPJ List view — shows all kegiatan in LPJ/pencairan workflow.
 /// Mirrors web's BendaharaProposalList.tsx + LpjPage.tsx
 class LpjListView extends StatefulWidget {
-  const LpjListView({super.key});
+  final User? currentUser;
+  const LpjListView({super.key, this.currentUser});
 
   @override
   State<LpjListView> createState() => _LpjListViewState();
@@ -145,14 +147,21 @@ class _LpjListViewState extends State<LpjListView> {
 
   void _navigateToAction(Kegiatan item) {
     final s = item.status.toLowerCase();
+    final isPengusul = widget.currentUser?.role == 'pengusul';
     Widget? page;
 
-    if (s == 'approved_wadir' || s == 'accepted_funds') {
-      page = PencairanView(kegiatan: item);
-    } else if (s == 'funds_disbursed') {
-      page = LpjUploadView(kegiatan: item);
-    } else if (s == 'lpj_submitted') {
-      page = LpjVerificationView(kegiatan: item);
+    if (isPengusul) {
+      if (['accepted_funds', 'funds_disbursed', 'lpj_revision'].contains(s)) {
+        page = LpjUploadView(kegiatan: item);
+      }
+    } else {
+      if (s == 'approved_wadir' || s == 'accepted_funds') {
+        page = PencairanView(kegiatan: item);
+      } else if (s == 'funds_disbursed') {
+        page = LpjUploadView(kegiatan: item);
+      } else if (s == 'lpj_submitted') {
+        page = LpjVerificationView(kegiatan: item);
+      }
     }
 
     if (page != null) {
@@ -187,11 +196,20 @@ class _LpjListViewState extends State<LpjListView> {
   }
 
   String? _getActionLabel(String status) {
-    switch (status.toLowerCase()) {
-      case 'approved_wadir': case 'accepted_funds': return 'Cairkan Dana';
-      case 'funds_disbursed': return 'Upload LPJ';
-      case 'lpj_submitted': return 'Verifikasi LPJ';
-      default: return null;
+    final s = status.toLowerCase();
+    final isPengusul = widget.currentUser?.role == 'pengusul';
+
+    if (isPengusul) {
+      if (s == 'lpj_revision') return 'Revisi LPJ';
+      if (['accepted_funds', 'funds_disbursed'].contains(s)) return 'Upload LPJ';
+      return null;
+    } else {
+      switch (s) {
+        case 'approved_wadir': case 'accepted_funds': return 'Cairkan Dana';
+        case 'funds_disbursed': return 'Upload LPJ';
+        case 'lpj_submitted': return 'Verifikasi LPJ';
+        default: return null;
+      }
     }
   }
 }

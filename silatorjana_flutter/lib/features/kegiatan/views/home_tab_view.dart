@@ -58,7 +58,7 @@ class _HomeTabViewState extends State<HomeTabView> {
           // Filter alerts per role (mirroring web)
           final role = widget.user.role;
           final revisiItems = list.where((i) => i.status.toLowerCase() == 'revision_requested').toList();
-          final needLpjItems = list.where((i) => i.status.toLowerCase() == 'approved_wadir').toList();
+          final needLpjItems = list.where((i) => ['accepted_funds', 'funds_disbursed', 'lpj_revision'].contains(i.status.toLowerCase())).toList();
           final verifiedItems = list.where((i) => ['verified', 'diverifikasi'].contains(i.status.toLowerCase())).toList();
           final menungguVerifikasiItems = list.where((i) => ['submitted', 'revisi_done'].contains(i.status.toLowerCase())).toList();
           final menungguPpkItems = list.where((i) => ['pending_ppk', 'verified'].contains(i.status.toLowerCase())).toList();

@@ -239,7 +239,7 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
     }
 
     final d = _vm.detailData!;
-    final k = widget.kegiatan;
+    final k = Kegiatan.fromJson(d);
 
     // Extract sub-data
     final kak = d['kak'] as Map<String, dynamic>?;
@@ -865,9 +865,10 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
   // ════════════════════════════════════════════════════════════════
 
   Widget? _buildActionButtons() {
+    if (_vm.detailData == null) return null;
+    final k = Kegiatan.fromJson(_vm.detailData!);
     final role = widget.currentUser.role;
-    final status = widget.kegiatan.status.toLowerCase();
-    final k = widget.kegiatan;
+    final status = k.status.toLowerCase();
 
     // ── PENGUSUL ──────────────────────────────────────────────────────
     if (role == 'pengusul') {

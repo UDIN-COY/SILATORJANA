@@ -30,7 +30,6 @@ class _PencairanViewState extends State<PencairanView> {
   static const _slate50 = Color(0xFFF8FAFC);
   static const _slate100 = Color(0xFFF1F5F9);
   static const _slate500 = Color(0xFF64748B);
-  static const _slate600 = Color(0xFF475569);
   static const _slate800 = Color(0xFF1E293B);
 
   @override
@@ -85,44 +84,7 @@ class _PencairanViewState extends State<PencairanView> {
     }
   }
 
-  Future<void> _handleTandaiDiambil() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(children: [
-          Icon(LucideIcons.checkCircle, color: _emerald700, size: 22),
-          SizedBox(width: 10),
-          Text('Tandai Dana Diambil', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        ]),
-        content: const Text(
-          'Konfirmasi bahwa pengusul sudah mengambil dana yang dicairkan. Tindakan ini tidak dapat dibatalkan.',
-          style: TextStyle(fontSize: 14, color: _slate600, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal', style: TextStyle(color: _slate500)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _emerald700,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Ya, Dana Sudah Diambil'),
-          ),
-        ],
-      ),
-    );
 
-    if (confirmed != true) return;
-    final success = await _vm.tandaiDanaDiambil(widget.kegiatan.id);
-    if (mounted) {
-      _showSnackBar(success ? 'Dana berhasil ditandai sudah diambil!' : 'Gagal memperbarui.', isError: !success);
-    }
-  }
 
   void _showSnackBar(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -163,7 +125,7 @@ class _PencairanViewState extends State<PencairanView> {
                 const SizedBox(height: 16),
                 if (_vm.pencairanData != null) _buildPencairanList(),
                 const SizedBox(height: 16),
-                if (!_isDanaDiambil) _buildDanaDiambilButton(),
+                _buildDanaDiambilToggle(),
                 if (!_isFundsDisbursed) ...[
                   const SizedBox(height: 16),
                   _buildFormPencairan(),
@@ -239,6 +201,9 @@ class _PencairanViewState extends State<PencairanView> {
     final progressRatio = (totalPersen / maxPersen).clamp(0.0, 1.0);
     final isTaken = _isDanaDiambil;
 
+    final maxNominal = totalAnggaran * (maxPersen / 100);
+    final sisaNominal = totalAnggaran * (sisaPersen / 100);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -298,10 +263,10 @@ class _PencairanViewState extends State<PencairanView> {
           ),
           const SizedBox(height: 12),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('${totalPersen.toStringAsFixed(1)}% dari maks ${maxPersen.toInt()}%',
+            Text('${totalPersen.toStringAsFixed(1)}% dari maks ${maxPersen.toInt()}% (${_formatCurrency(maxNominal)})',
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _slate800)),
-            Text('Sisa: ${sisaPersen.toStringAsFixed(1)}%',
-                style: TextStyle(fontSize: 12, color: sisaPersen <= 0 ? Colors.orange : _slate500)),
+            Text('Sisa: ${sisaPersen.toStringAsFixed(1)}% (${_formatCurrency(sisaNominal)})',
+                style: TextStyle(fontSize: 12, color: sisaPersen <= 0 ? Colors.orange : _slate500, fontWeight: FontWeight.w600)),
           ]),
           const SizedBox(height: 16),
           const Divider(color: Color(0xFFF1F5F9)),
@@ -311,8 +276,8 @@ class _PencairanViewState extends State<PencairanView> {
             Expanded(child: _buildStatBox('Sudah Dicairkan', _formatCurrency(totalNominal), _emerald700, _emerald50)),
             const SizedBox(width: 12),
             Expanded(child: _buildStatBox(
-              'Sisa Dana (30%)',
-              _formatCurrency(totalAnggaran * 0.30),
+              'Sisa Uang Muka',
+              _formatCurrency(sisaNominal),
               _amber600, _amber50,
             )),
           ]),
@@ -421,22 +386,33 @@ class _PencairanViewState extends State<PencairanView> {
     );
   }
 
-  Widget _buildDanaDiambilButton() {
+  Widget _buildDanaDiambilToggle() {
     final list = (_vm.pencairanData?['pencairan_list'] as List?) ?? [];
     if (list.isEmpty) return const SizedBox.shrink();
-    return ElevatedButton.icon(
-      onPressed: _vm.isSubmitting ? null : _handleTandaiDiambil,
-      icon: _vm.isSubmitting
-          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-          : const Icon(LucideIcons.handCoins, size: 18),
-      label: const Text('Tandai Dana Sudah Diambil', style: TextStyle(fontWeight: FontWeight.bold)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _emerald700,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        elevation: 2,
-        shadowColor: const Color(0x33047857),
+    final isTaken = _isDanaDiambil;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: SwitchListTile(
+        title: const Text('Status Pengambilan Uang Muka', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _slate800)),
+        subtitle: Text(
+          isTaken ? 'Uang muka sudah diambil oleh pengusul' : 'Belum diambil / diserahkan',
+          style: const TextStyle(fontSize: 12, color: _slate500),
+        ),
+        activeColor: _emerald700,
+        value: isTaken,
+        onChanged: _vm.isSubmitting ? null : (value) async {
+          final success = await _vm.tandaiDanaDiambil(widget.kegiatan.id, value);
+          if (mounted) {
+            _showSnackBar(success ? 'Status pengambilan dana diperbarui!' : 'Gagal memperbarui.', isError: !success);
+          }
+        },
       ),
     );
   }

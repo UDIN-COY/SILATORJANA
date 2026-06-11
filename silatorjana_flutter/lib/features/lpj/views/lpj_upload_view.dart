@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../kegiatan/models/kegiatan.dart';
 import '../viewmodels/lpj_viewmodel.dart';
 
 /// LPJ Upload/Input view — for pengusul to submit LPJ after funds disbursed.
 /// - Fetch LPJ detail (RAB + IKU)
 /// - Input realisasi per RAB item (qty, harga satuan)
+/// - Pick and upload kuitansi/bukti files for each RAB item
 /// - Input capaian per IKU (%)
-/// - Submit ke /lpj/submit
+/// - Submit ke /lpj/submit via multipart
 class LpjUploadView extends StatefulWidget {
   final Kegiatan kegiatan;
   const LpjUploadView({super.key, required this.kegiatan});
@@ -25,6 +27,11 @@ class _LpjUploadViewState extends State<LpjUploadView> {
   final Map<String, TextEditingController> _hargaControllers = {};
   // ikuCapaian: ikuId -> capaian %
   final Map<String, TextEditingController> _ikuControllers = {};
+
+  // pickedFiles: rabId -> list of local paths
+  final Map<String, List<String>> _pickedFiles = {};
+  // pickedFileNames: rabId -> list of original filenames
+  final Map<String, List<String>> _pickedFileNames = {};
 
   static const _emerald700 = Color(0xFF047857);
   static const _emerald600 = Color(0xFF059669);
@@ -103,6 +110,44 @@ class _LpjUploadViewState extends State<LpjUploadView> {
     return 'Rp ${buffer.toString().split('').reversed.join()}';
   }
 
+  Future<void> _pickFileForRab(String rabId) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx', 'xls', 'xlsx'],
+        allowMultiple: true,
+      );
+
+      if (result == null) return;
+
+      setState(() {
+        if (!_pickedFiles.containsKey(rabId)) {
+          _pickedFiles[rabId] = [];
+          _pickedFileNames[rabId] = [];
+        }
+
+        for (final file in result.files) {
+          if (file.path != null) {
+            _pickedFiles[rabId]!.add(file.path!);
+            _pickedFileNames[rabId]!.add(file.name);
+          }
+        }
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Gagal memilih file: $e'),
+        backgroundColor: Colors.red,
+      ));
+    }
+  }
+
+  void _removePickedFile(String rabId, int index) {
+    setState(() {
+      _pickedFiles[rabId]?.removeAt(index);
+      _pickedFileNames[rabId]?.removeAt(index);
+    });
+  }
+
   Future<void> _handleSubmit() async {
     // Build realisasi map
     final Map<String, Map<String, dynamic>> realisasi = {};
@@ -123,11 +168,44 @@ class _LpjUploadViewState extends State<LpjUploadView> {
       if (val != null) ikuCapaian[entry.key] = val;
     }
 
-    final result = await _vm.submitLpjRealisasi(
+    // Check if at least one file is picked
+    int fileCount = 0;
+    for (final list in _pickedFiles.values) {
+      fileCount += list.length;
+    }
+
+    final detail = _vm.lpjDetail;
+    final existingLpj = detail?['lpj'];
+    
+    // Check if we have at least one file or if files already exist on backend
+    bool hasExistingFiles = false;
+    if (detail != null && detail['rab'] != null) {
+      final rabGroups = detail['rab'] as Map<String, dynamic>;
+      for (final group in rabGroups.values) {
+        final items = (group['items'] as List?) ?? [];
+        for (final item in items) {
+          if (item['existing_files'] != null && (item['existing_files'] as List).isNotEmpty) {
+            hasExistingFiles = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (fileCount == 0 && !hasExistingFiles && existingLpj == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Minimal upload 1 file bukti kuitansi'),
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
+
+    final result = await _vm.submitLpjMultipart(
       kegiatanId: widget.kegiatan.id,
       catatan: _catatanCtrl.text,
       realisasi: realisasi,
       ikuCapaian: ikuCapaian,
+      files: _pickedFiles,
     );
 
     if (mounted) {
@@ -370,6 +448,68 @@ class _LpjUploadViewState extends State<LpjUploadView> {
             ]),
           ),
         ]),
+        const SizedBox(height: 12),
+        const Text('File Bukti / Kuitansi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _slate500)),
+        const SizedBox(height: 6),
+        // Display existing files from server
+        if (item['existing_files'] != null && (item['existing_files'] as List).isNotEmpty) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: (item['existing_files'] as List).map<Widget>((file) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _emerald50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFD1FAE5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(LucideIcons.fileText, size: 14, color: _emerald700),
+                    const SizedBox(width: 6),
+                    Text(
+                      file['original_name']?.toString() ?? 'File',
+                      style: const TextStyle(fontSize: 12, color: _emerald700, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 8),
+        ],
+        // Display picked files
+        if (_pickedFileNames[rabId] != null && _pickedFileNames[rabId]!.isNotEmpty) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: List.generate(_pickedFileNames[rabId]!.length, (idx) {
+              final name = _pickedFileNames[rabId]![idx];
+              return Chip(
+                label: Text(name, style: const TextStyle(fontSize: 11)),
+                onDeleted: () => _removePickedFile(rabId, idx),
+                backgroundColor: _slate50,
+                deleteIconColor: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: EdgeInsets.zero,
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+        ],
+        OutlinedButton.icon(
+          onPressed: () => _pickFileForRab(rabId),
+          icon: const Icon(LucideIcons.plus, size: 14),
+          label: const Text('Tambah File Bukti / Kuitansi', style: TextStyle(fontSize: 12)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: _emerald700,
+            side: const BorderSide(color: Color(0xFFD1FAE5)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          ),
+        ),
       ]),
     );
   }

@@ -95,6 +95,7 @@ class _DashboardViewState extends State<DashboardView> {
           _NavItem(icon: LucideIcons.home, label: 'Dashboard', page: HomeTabView(user: widget.user)),
           _NavItem(icon: LucideIcons.fileText, label: 'Usulan Saya', page: KegiatanListView(currentUser: widget.user)),
           _NavItem(icon: LucideIcons.alertTriangle, label: 'Perlu Revisi', page: NeedsWorkView(currentUser: widget.user)),
+          _NavItem(icon: LucideIcons.dollarSign, label: 'LPJ & Realisasi', page: LpjListView(currentUser: widget.user)),
           _NavItem(icon: LucideIcons.archive, label: 'Riwayat', page: const KegiatanHistoryView()),
           _NavItem(icon: LucideIcons.activity, label: 'Monitoring', page: const MonitoringDashboardView()),
           _NavItem(icon: LucideIcons.settings, label: 'Panduan', page: const PanduanView()),
@@ -124,7 +125,7 @@ class _DashboardViewState extends State<DashboardView> {
       case 'bendahara':
         return [
           _NavItem(icon: LucideIcons.home, label: 'Dashboard', page: HomeTabView(user: widget.user)),
-          _NavItem(icon: LucideIcons.dollarSign, label: 'Pencairan & LPJ', page: const LpjListView()),
+          _NavItem(icon: LucideIcons.dollarSign, label: 'Pencairan & LPJ', page: LpjListView(currentUser: widget.user)),
           _NavItem(icon: LucideIcons.checkCircle, label: 'Laporan LPJ', page: const BendaharaLaporanView()),
           _NavItem(icon: LucideIcons.activity, label: 'Monitoring', page: const MonitoringDashboardView()),
         ];

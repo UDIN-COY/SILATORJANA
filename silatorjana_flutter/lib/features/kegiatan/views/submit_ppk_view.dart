@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import '../../kegiatan/models/kegiatan.dart';
 import '../../../core/network/api_service.dart';
 
 /// Submit ke PPK View — for pengusul to submit proposal to PPK after verified.
-/// - Upload surat pengantar (text path / link)
+/// - Upload surat pengantar (via file picker & API upload)
 /// - Input daftar penanggung jawab
 /// Calls: POST /kegiatan/{id}/submit-ppk
 class SubmitPpkView extends StatefulWidget {
@@ -18,9 +19,12 @@ class SubmitPpkView extends StatefulWidget {
 
 class _SubmitPpkViewState extends State<SubmitPpkView> {
   final ApiService _api = ApiService();
-  final _suratCtrl = TextEditingController();
   final List<TextEditingController> _pjControllers = [TextEditingController()];
   bool _isSubmitting = false;
+
+  String? _uploadedFilePath;
+  String? _uploadedFileName;
+  bool _isUploadingFile = false;
 
   static const _emerald700 = Color(0xFF047857);
   static const _emerald600 = Color(0xFF059669);
@@ -43,14 +47,15 @@ class _SubmitPpkViewState extends State<SubmitPpkView> {
       }
     }
     // Existing surat pengantar
+    _uploadedFileName = widget.kegiatan.suratPengantarFilename;
+    // Compat setting
     if (widget.kegiatan.suratPengantarFilename != null) {
-      _suratCtrl.text = widget.kegiatan.suratPengantarFilename!;
+      _uploadedFilePath = widget.kegiatan.suratPengantarFilename;
     }
   }
 
   @override
   void dispose() {
-    _suratCtrl.dispose();
     for (final c in _pjControllers) c.dispose();
     super.dispose();
   }
@@ -65,6 +70,41 @@ class _SubmitPpkViewState extends State<SubmitPpkView> {
       _pjControllers[index].dispose();
       _pjControllers.removeAt(index);
     });
+  }
+
+  Future<void> _pickAndUploadFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+      );
+
+      if (result == null || result.files.single.path == null) return;
+
+      setState(() => _isUploadingFile = true);
+
+      final filePath = result.files.single.path!;
+      final response = await _api.postMultipart(
+        '/upload',
+        fields: {'type': 'surat_pengantar'},
+        files: {'file': filePath},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _uploadedFilePath = data['path'];
+          _uploadedFileName = data['original_name'] ?? result.files.single.name;
+        });
+        _showSnackBar('Surat pengantar berhasil diupload!');
+      } else {
+        _showSnackBar('Gagal mengupload file.', isError: true);
+      }
+    } catch (e) {
+      _showSnackBar('Gagal mengupload file: $e', isError: true);
+    } finally {
+      setState(() => _isUploadingFile = false);
+    }
   }
 
   Future<void> _handleSubmit() async {
@@ -84,9 +124,9 @@ class _SubmitPpkViewState extends State<SubmitPpkView> {
       final body = <String, dynamic>{
         'penanggung_jawab': pjList,
       };
-      if (_suratCtrl.text.trim().isNotEmpty) {
-        body['surat_pengantar_path'] = _suratCtrl.text.trim();
-        body['surat_pengantar_filename'] = _suratCtrl.text.trim().split('/').last;
+      if (_uploadedFilePath != null) {
+        body['surat_pengantar_path'] = _uploadedFilePath;
+        body['surat_pengantar_filename'] = _uploadedFileName;
       }
 
       final response = await _api.post(
@@ -191,26 +231,63 @@ class _SubmitPpkViewState extends State<SubmitPpkView> {
             // Surat pengantar
             _buildCard(
               title: 'Surat Pengantar',
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text(
-                  'Upload surat pengantar dari Ketua Jurusan / Wakil Direktur',
-                  style: TextStyle(fontSize: 12, color: _slate500, height: 1.4),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _suratCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Nama / Path File Surat Pengantar',
-                    hintText: 'Contoh: surat_pengantar_kegiatan.pdf',
-                    hintStyle: const TextStyle(fontSize: 12, color: _slate400),
-                    prefixIcon: const Icon(LucideIcons.fileText, size: 18, color: _slate400),
-                    filled: true, fillColor: _slate50,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _emerald600, width: 2)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Upload surat pengantar dari Ketua Jurusan / Wakil Direktur (PDF, DOC, DOCX)',
+                    style: TextStyle(fontSize: 12, color: _slate500, height: 1.4),
                   ),
-                ),
-              ]),
+                  const SizedBox(height: 16),
+                  if (_uploadedFileName != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _emerald50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: _emerald100),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(LucideIcons.fileText, color: _emerald700),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _uploadedFileName!,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _emerald700),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(LucideIcons.trash2, color: Colors.red),
+                            onPressed: () {
+                              setState(() {
+                                _uploadedFileName = null;
+                                _uploadedFilePath = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  OutlinedButton.icon(
+                    onPressed: _isUploadingFile ? null : _pickAndUploadFile,
+                    icon: _isUploadingFile
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _emerald700))
+                        : const Icon(LucideIcons.upload, size: 16),
+                    label: Text(_uploadedFileName != null ? 'Ganti File' : 'Pilih & Upload File'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _emerald700,
+                      side: const BorderSide(color: _emerald100),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      minimumSize: const Size(double.infinity, 0),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
