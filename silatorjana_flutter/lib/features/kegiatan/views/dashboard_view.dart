@@ -715,70 +715,227 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  MOBILE BOTTOM NAVBAR — web: overflow-x-auto, flex, ALL items scrollable
-  //  web CSS: flex flex-row overflow-x-auto px-2 py-2 gap-1 hide-scrollbar
+  //  MOBILE BOTTOM NAVBAR — Max 4 items, swipe up or tap "More" for remainder
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _buildMobileBottomNavbar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: _navbarBorder)),
-        boxShadow: [BoxShadow(color: Color(0x0D000000), blurRadius: 10, offset: Offset(0, -4))],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            children: _allItems.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              final isActive = _currentIndex == index;
+    const int maxVisible = 4;
+    final bool hasMore = _allItems.length > maxVisible;
+    final int visibleCount = hasMore ? maxVisible - 1 : _allItems.length;
 
-              return GestureDetector(
-                onTap: () => setState(() => _currentIndex = index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  constraints: const BoxConstraints(minWidth: 72),
-                  decoration: BoxDecoration(
-                    color: isActive ? _emerald50 : Colors.transparent,
-                    border: Border.all(
-                      color: isActive ? _emerald100 : Colors.transparent,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: isActive
-                        ? const [BoxShadow(color: Color(0x0D000000), blurRadius: 4)]
-                        : null,
+    final visibleItems = _allItems.sublist(0, visibleCount);
+    final hiddenItems = hasMore ? _allItems.sublist(visibleCount) : <_NavItem>[];
+
+    // If current index is in the hidden items, the "More" tab is active.
+    final int activeNavIndex = _currentIndex < visibleCount ? _currentIndex : visibleCount;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragEnd: (details) {
+        // Swipe up
+        if (details.primaryVelocity != null && details.primaryVelocity! < -200 && hasMore) {
+          _showMoreMenu(hiddenItems, visibleCount);
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: const Border(top: BorderSide(color: _navbarBorder)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF047857).withValues(alpha: 0.04),
+              blurRadius: 24,
+              offset: const Offset(0, -8),
+              spreadRadius: 0,
+            )
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ...visibleItems.asMap().entries.map((entry) {
+                  return _buildBottomNavItem(
+                    icon: entry.value.icon,
+                    label: entry.value.label,
+                    isActive: activeNavIndex == entry.key,
+                    onTap: () => setState(() => _currentIndex = entry.key),
+                  );
+                }),
+                if (hasMore)
+                  _buildBottomNavItem(
+                    icon: LucideIcons.layoutGrid,
+                    label: 'Menu',
+                    isActive: activeNavIndex == visibleCount,
+                    onTap: () => _showMoreMenu(hiddenItems, visibleCount),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(item.icon, size: 20, color: isActive ? _emerald600 : _slate500),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.label,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                          color: isActive ? _emerald700 : _slate500,
-                          height: 1.2,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildBottomNavItem({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minWidth: 64),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Material 3 Animated Pill for Icon
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.fastOutSlowIn,
+                width: isActive ? 64 : 40,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isActive ? const Color(0xFFD1FAE5) : Colors.transparent, // emerald-100
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  icon,
+                  size: isActive ? 22 : 20,
+                  color: isActive ? const Color(0xFF047857) : const Color(0xFF64748B), // emerald-700 : slate-500
+                ),
+              ),
+              const SizedBox(height: 6),
+              // Label with subtle animated bolding/color
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontFamily: 'Inter',
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: isActive ? const Color(0xFF065F46) : const Color(0xFF64748B), // emerald-800 : slate-500
+                  letterSpacing: 0.2,
+                ),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMoreMenu(List<_NavItem> hiddenItems, int offset) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.only(top: 12, left: 24, right: 24, bottom: 32),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1), // slate-300
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Menu Lainnya',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A), // slate-900
+                ),
+              ),
+              const SizedBox(height: 24),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 24,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.85,
+                ),
+                itemCount: hiddenItems.length,
+                itemBuilder: (context, idx) {
+                  final item = hiddenItems[idx];
+                  final globalIndex = offset + idx;
+                  final isActive = _currentIndex == globalIndex;
+
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() => _currentIndex = globalIndex);
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: isActive ? const Color(0xFFD1FAE5) : const Color(0xFFF8FAFC),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isActive ? const Color(0xFF34D399) : const Color(0xFFE2E8F0),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            item.icon,
+                            size: 24,
+                            color: isActive ? const Color(0xFF047857) : const Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          item.label,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                            color: isActive ? const Color(0xFF065F46) : const Color(0xFF475569),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              SafeArea(child: const SizedBox(height: 16)),
+            ],
+          ),
+        );
+      },
     );
   }
 }
