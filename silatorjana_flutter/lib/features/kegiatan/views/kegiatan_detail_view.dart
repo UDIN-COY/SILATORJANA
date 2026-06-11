@@ -1046,6 +1046,39 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
       );
     }
 
+    // ── BENDAHARA ──────────────────────────────────────────────────────
+    if (role == 'bendahara') {
+      if (['approved_wadir', 'accepted_funds', 'funds_disbursed', 'lpj_submitted', 'lpj_revision', 'lpj_approved', 'lpj_verified'].contains(status)) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, -2))],
+          ),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => PencairanView(kegiatan: widget.kegiatan)))
+                    .then((_) => _vm.fetchKegiatanDetail(widget.kegiatan.id));
+                },
+                icon: const Icon(LucideIcons.dollarSign, size: 16),
+                label: const Text('Proses Pencairan Dana', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
     // ── OTHER APPROVER ROLES (PPK, Wadir, Rektorat) ────────────────────
     if (role == 'admin' || role == 'bendahara' || role.isEmpty) return null;
     if (!_canActOnStatus()) return null;
@@ -1124,6 +1157,66 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
     );
   }
 
+
+  Widget _buildPengusulPpkSubmissionCard(Kegiatan k, Map<String, dynamic> d) {
+    return _buildCard(
+      title: 'Tindakan Pengusul: Teruskan ke PPK',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Usulan telah diverifikasi. Anda perlu meneruskan usulan ke PPK beserta Surat Pengantar dan KAK.',
+            style: TextStyle(fontSize: 13, color: _slate600),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => SubmitPpkView(kegiatan: k)))
+                .then((_) => _vm.fetchKegiatanDetail(widget.kegiatan.id));
+            },
+            icon: const Icon(LucideIcons.send, size: 16),
+            label: const Text('Teruskan ke PPK', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          )
+        ],
+      )
+    );
+  }
+
+  Widget _buildPengusulLpjCard(Kegiatan k, Map<String, dynamic> d) {
+    return _buildCard(
+      title: 'Laporan Pertanggungjawaban (LPJ)',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Silakan isi realisasi dana, realisasi IKU, dan unggah bukti kuitansi.',
+            style: TextStyle(fontSize: 13, color: _slate600),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => LpjUploadView(kegiatan: k)))
+                .then((_) => _vm.fetchKegiatanDetail(widget.kegiatan.id));
+            },
+            icon: const Icon(LucideIcons.fileText, size: 16),
+            label: const Text('Isi & Upload LPJ', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _emerald700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          )
+        ],
+      )
+    );
+  }
 
   String _formatCurrency(dynamic amount) {
     final n = amount is num ? amount : num.tryParse(amount.toString()) ?? 0;
