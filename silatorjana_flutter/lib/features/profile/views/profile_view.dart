@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../auth/models/user.dart';
 import '../viewmodels/profile_viewmodel.dart';
 
@@ -228,12 +229,23 @@ class _ProfileViewState extends State<ProfileView> {
                       Navigator.pop(dialogContext);
                     }
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(success ? (viewModel.successMessage ?? 'Biometrik aktif!') : (viewModel.errorMessage ?? 'Gagal')),
-                          backgroundColor: success ? Colors.green : Colors.red,
-                        ),
-                      );
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(viewModel.successMessage ?? 'Biometrik aktif!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else if (viewModel.errorMessage?.contains('belum mendaftarkan') == true) {
+                        _showNoBiometricsDialog();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(viewModel.errorMessage ?? 'Gagal'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                   },
                   child: const Text('Verifikasi'),
@@ -243,6 +255,55 @@ class _ProfileViewState extends State<ProfileView> {
           }
         );
       },
+    );
+  }
+
+  void _showNoBiometricsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(LucideIcons.fingerprint, color: Color(0xFFD97706), size: 24),
+            SizedBox(width: 12),
+            Expanded(child: Text('Biometrik Belum Terdaftar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: const Text(
+          'HP Anda belum mendaftarkan sidik jari atau wajah.\n\n'
+          'Untuk menggunakan fitur ini:\n'
+          '1. Buka Pengaturan HP Anda\n'
+          '2. Masuk ke menu Keamanan / Biometrik\n'
+          '3. Daftarkan Sidik Jari atau Wajah\n'
+          '4. Kembali ke aplikasi dan coba lagi\n\n'
+          'Tekan "Buka Pengaturan" untuk langsung menuju Pengaturan HP.',
+          style: TextStyle(fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Nanti Saja', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(LucideIcons.settings, size: 18),
+            label: const Text('Buka Pengaturan'),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF047857), foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                // Open device settings
+                await launchUrl(Uri.parse('app-settings:'));
+              } catch (_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Buka Pengaturan HP > Keamanan > Sidik Jari secara manual.')),
+                  );
+                }
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 

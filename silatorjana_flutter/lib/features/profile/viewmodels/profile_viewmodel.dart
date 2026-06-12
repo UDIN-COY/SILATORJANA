@@ -54,15 +54,21 @@ class ProfileViewModel extends ChangeNotifier {
       }
 
       debugPrint('BIOMETRIC: Requesting fingerprint/face scan...');
-      final authenticated = await _biometricService.authenticate();
-      debugPrint('BIOMETRIC: authenticate result=$authenticated');
-      if (authenticated) {
+      final authResult = await _biometricService.authenticateWithStatus();
+      debugPrint('BIOMETRIC: authenticate result=$authResult');
+      
+      if (authResult == 'success') {
         await _authService.saveCredentials(email, password);
         isBiometricEnabled = true;
         successMessage = 'Login Biometrik berhasil diaktifkan!';
         isLoading = false;
         notifyListeners();
         return true;
+      } else if (authResult == 'no_biometrics_enrolled') {
+        isLoading = false;
+        errorMessage = 'HP Anda belum mendaftarkan sidik jari/wajah. Silakan daftarkan dulu di Pengaturan HP > Keamanan > Sidik Jari / Face Unlock.';
+        notifyListeners();
+        return false;
       } else {
         isLoading = false;
         errorMessage = 'Otentikasi biometrik dibatalkan/gagal.';

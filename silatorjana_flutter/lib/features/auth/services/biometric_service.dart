@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:local_auth/error_codes.dart' as auth_error;
 
 class BiometricService {
   final LocalAuthentication _auth = LocalAuthentication();
@@ -18,23 +19,34 @@ class BiometricService {
     }
   }
 
-  Future<bool> authenticate() async {
-    if (kIsWeb) return false;
-    
+  /// Returns: 'success', 'no_biometrics_enrolled', 'cancelled', or 'error:...'
+  Future<String> authenticateWithStatus() async {
+    if (kIsWeb) return 'error:Web not supported';
+
     final bool isAvailable = await hasBiometrics();
-    if (!isAvailable) return false;
+    if (!isAvailable) return 'error:Device not supported';
 
     try {
-      return await _auth.authenticate(
+      final result = await _auth.authenticate(
         localizedReason: 'Gunakan sidik jari atau wajah Anda untuk login ke Si-LATORJANA',
         biometricOnly: true,
       );
+      return result ? 'success' : 'cancelled';
     } on PlatformException catch (e) {
-      debugPrint('Biometric PlatformException: $e');
-      return false;
+      debugPrint('Biometric PlatformException: ${e.code} ${e.message}');
+      if (e.code == auth_error.notEnrolled) {
+        return 'no_biometrics_enrolled';
+      }
+      return 'error:${e.message}';
     } catch (e) {
       debugPrint('Biometric error: $e');
-      return false;
+      return 'error:$e';
     }
+  }
+
+  /// Legacy method for login page
+  Future<bool> authenticate() async {
+    final result = await authenticateWithStatus();
+    return result == 'success';
   }
 }
