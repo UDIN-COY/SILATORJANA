@@ -77,6 +77,20 @@ class AuthService {
     await _storage.write(key: _accountsKey, value: jsonEncode(accounts));
   }
 
+  /// Save multiple credentials at once to avoid race conditions
+  Future<void> saveCredentialsBulk(List<Map<String, String>> newAccounts) async {
+    if (_useMemory) return;
+    final accounts = await getAllAccounts();
+    for (final newAcc in newAccounts) {
+      final email = newAcc['email'];
+      if (email != null) {
+        accounts.removeWhere((a) => a['email'] == email);
+        accounts.add(newAcc);
+      }
+    }
+    await _storage.write(key: _accountsKey, value: jsonEncode(accounts));
+  }
+
   /// Delete credentials for a specific email, or all if email is null
   Future<void> deleteCredentials([String? email]) async {
     if (_useMemory) return;
@@ -93,6 +107,18 @@ class AuthService {
       } else {
         await _storage.write(key: _accountsKey, value: jsonEncode(accounts));
       }
+    }
+  }
+
+  /// Delete multiple credentials at once to avoid race conditions
+  Future<void> deleteCredentialsBulk(List<String> emails) async {
+    if (_useMemory) return;
+    final accounts = await getAllAccounts();
+    accounts.removeWhere((a) => emails.contains(a['email']));
+    if (accounts.isEmpty) {
+      await _storage.delete(key: _accountsKey);
+    } else {
+      await _storage.write(key: _accountsKey, value: jsonEncode(accounts));
     }
   }
 

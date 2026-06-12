@@ -111,22 +111,29 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
     final authService = AuthService();
     final accounts = await authService.getAllAccounts();
     
-    if (accounts.length > 1) {
-      // Show bottom sheet to pick account
-      _showBiometricAccountPicker(accounts);
-    } else if (accounts.length == 1) {
-      // Only 1 account, just use default
-      final success = await _authViewModel.loginWithBiometricAccount(accounts.first);
-      if (success) {
-        await _handleLoginSuccess();
-      }
-    } else {
-      // No accounts
+    if (accounts.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tidak ada akun terdaftar untuk biometrik.')),
         );
       }
+      return;
+    }
+
+    // 1. Scan fingerprint first
+    final authenticated = await _authViewModel.authenticateBiometricOnly();
+    if (!authenticated) return;
+
+    // 2. Decide based on accounts count
+    if (accounts.length == 1) {
+      // Only 1 account, use pre-authenticated login
+      final success = await _authViewModel.loginWithPreAuthenticatedAccount(accounts.first);
+      if (success) {
+        await _handleLoginSuccess();
+      }
+    } else {
+      // Multiple accounts, show picker bottom sheet
+      _showBiometricAccountPicker(accounts);
     }
   }
 
@@ -139,37 +146,48 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
           padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
                 'Pilih Akun',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Pilih akun untuk masuk dengan biometrik',
+                'Pilih akun untuk masuk',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 16),
-              ...accounts.map((account) {
-                final initial = account['nama']?.isNotEmpty == true ? account['nama']![0].toUpperCase() : 'U';
-                final role = account['role']?.toUpperCase() ?? 'USER';
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFFECFDF5),
-                    child: Text(initial, style: const TextStyle(color: Color(0xFF047857), fontWeight: FontWeight.bold)),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: accounts.map((account) {
+                      final initial = account['nama']?.isNotEmpty == true ? account['nama']![0].toUpperCase() : 'U';
+                      final role = account['role']?.toUpperCase() ?? 'USER';
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: const Color(0xFFECFDF5),
+                          child: Text(initial, style: const TextStyle(color: Color(0xFF047857), fontWeight: FontWeight.bold)),
+                        ),
+                        title: Text(account['nama'] ?? account['email']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(role, style: const TextStyle(fontSize: 12)),
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          if (_isSuccessTransitioning) return;
+                          // Already scanned fingerprint, login immediately
+                          final success = await _authViewModel.loginWithPreAuthenticatedAccount(account);
+                          if (success) {
+                            await _handleLoginSuccess();
+                          }
+                        },
+                      );
+                    }).toList(),
                   ),
-                  title: Text(account['nama'] ?? account['email']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(role, style: const TextStyle(fontSize: 12)),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    if (_isSuccessTransitioning) return;
-                    final success = await _authViewModel.loginWithBiometricAccount(account);
-                    if (success) {
-                      await _handleLoginSuccess();
-                    }
-                  },
-                );
-              }),
+                ),
+              ),
             ],
           ),
         );

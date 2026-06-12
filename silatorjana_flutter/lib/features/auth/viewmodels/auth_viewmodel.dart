@@ -64,7 +64,23 @@ class AuthViewModel extends ChangeNotifier {
     try {
       final authenticated = await _biometricService.authenticate();
       if (!authenticated) return false;
+      return loginWithPreAuthenticatedAccount(account);
+    } catch (e) {
+      isLoading = false;
+      errorMessage = 'Gagal autentikasi biometrik: $e';
+      notifyListeners();
+      return false;
+    }
+  }
 
+  /// Perform biometric authentication without logging in immediately
+  Future<bool> authenticateBiometricOnly() async {
+    return await _biometricService.authenticate();
+  }
+
+  /// Log in with a specific account that has already been biometrically authenticated
+  Future<bool> loginWithPreAuthenticatedAccount(Map<String, String> account) async {
+    try {
       isLoading = true;
       notifyListeners();
 
@@ -107,7 +123,7 @@ class AuthViewModel extends ChangeNotifier {
       return true;
     } catch (e) {
       isLoading = false;
-      errorMessage = 'Gagal autentikasi biometrik: $e';
+      errorMessage = 'Gagal login biometrik: $e';
       notifyListeners();
       return false;
     }

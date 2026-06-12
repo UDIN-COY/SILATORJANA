@@ -76,19 +76,23 @@ class _BiometricManagementViewState extends State<BiometricManagementView> {
         'user_ids': _selectedIds.toList(),
       });
 
+      debugPrint('Biometric Assign Response: status=${res.statusCode}, body=${res.body}');
+
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final assigned = List<Map<String, dynamic>>.from(data['assigned'] ?? []);
 
-        // 3. Save biometric tokens to local secure storage
+        // 3. Save biometric tokens to local secure storage in bulk
+        final List<Map<String, String>> newAccounts = [];
         for (final account in assigned) {
-          await _authService.saveCredentials(
-            account['email'],
-            '__biometric_token__:${account['biometric_token']}',
-            nama: account['nama'],
-            role: account['role'],
-          );
+          newAccounts.add({
+            'email': (account['email'] ?? '').toString(),
+            'password': '__biometric_token__:${account['biometric_token']}',
+            'nama': (account['nama'] ?? '').toString(),
+            'role': (account['role'] ?? '').toString(),
+          });
         }
+        await _authService.saveCredentialsBulk(newAccounts);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -103,7 +107,7 @@ class _BiometricManagementViewState extends State<BiometricManagementView> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gagal mendaftarkan biometrik.'), backgroundColor: Colors.red),
+            SnackBar(content: Text('Gagal mendaftarkan biometrik (status ${res.statusCode}): ${res.body}'), backgroundColor: Colors.red),
           );
         }
       }
@@ -146,13 +150,18 @@ class _BiometricManagementViewState extends State<BiometricManagementView> {
       });
 
       if (res.statusCode == 200) {
-        // Remove from local storage
+        // Remove from local storage in bulk
+        final List<String> emailsToDelete = [];
         for (final id in _selectedIds) {
-          final user = _users.firstWhere((u) => u['id'] == id, orElse: () => {});
-          if (user.isNotEmpty) {
-            await _authService.deleteCredentials(user['email']);
+          final userList = _users.where((u) => u['id'] == id);
+          if (userList.isNotEmpty) {
+            final email = userList.first['email'];
+            if (email != null) {
+              emailsToDelete.add(email.toString());
+            }
           }
         }
+        await _authService.deleteCredentialsBulk(emailsToDelete);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
