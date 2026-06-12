@@ -68,7 +68,18 @@ class AuthViewModel extends ChangeNotifier {
       isLoading = true;
       notifyListeners();
 
-      final success = await _authService.login(account['email']!, account['password']!);
+      final email = account['email']!;
+      final password = account['password']!;
+      bool success;
+
+      // Check if this is a biometric token or actual password
+      if (password.startsWith('__biometric_token__:')) {
+        final biometricToken = password.replaceFirst('__biometric_token__:', '');
+        success = await _authService.biometricLogin(email, biometricToken);
+      } else {
+        success = await _authService.login(email, password);
+      }
+
       if (!success) {
         isLoading = false;
         errorMessage = 'Kredensial kedaluwarsa. Silakan login manual dan daftarkan ulang biometrik.';

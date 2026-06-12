@@ -20,11 +20,13 @@ class User extends Authenticatable
         'nip',
         'verifikator_unit',
         'allow_biometric',
+        'biometric_token',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'biometric_token',
     ];
 
     protected function casts(): array

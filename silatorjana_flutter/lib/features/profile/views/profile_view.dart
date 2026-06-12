@@ -20,6 +20,15 @@ class _ProfileViewState extends State<ProfileView> {
   bool _obscureNew = true;
 
   @override
+  void initState() {
+    super.initState();
+    // Check biometric status for THIS specific user/email
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileViewModel>().checkBiometricForUser(widget.user.email);
+    });
+  }
+
+  @override
   void dispose() {
     _currentPasswordController.dispose();
     _newPasswordController.dispose();

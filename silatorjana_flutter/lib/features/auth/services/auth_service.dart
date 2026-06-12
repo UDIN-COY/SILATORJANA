@@ -177,6 +177,49 @@ class AuthService {
     }
   }
 
+  /// Login using biometric token (no password needed)
+  Future<bool> biometricLogin(String email, String biometricToken) async {
+    try {
+      debugPrint('AUTH: Biometric login to ${ApiConfig.baseUrl}/biometric-login');
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/biometric-login'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: jsonEncode(<String, String>{
+          'email': email,
+          'biometric_token': biometricToken,
+        }),
+      );
+
+      debugPrint('AUTH: Biometric login status=${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+
+        if (token != null && token.toString().isNotEmpty) {
+          await _saveToken(token.toString());
+          debugPrint('AUTH: Token saved (biometric)');
+        }
+
+        if (data['user'] != null) {
+          _cachedUser = User.fromJson(data['user']);
+          debugPrint('AUTH: User cached (biometric): ${_cachedUser!.nama}');
+        }
+
+        return true;
+      }
+      debugPrint('AUTH: Biometric login failed ${response.statusCode}: ${response.body}');
+      return false;
+    } catch (e) {
+      debugPrint('AUTH ERROR biometric login: $e');
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     try {
       final token = await getToken();

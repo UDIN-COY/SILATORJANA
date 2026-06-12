@@ -13,18 +13,18 @@ class ProfileViewModel extends ChangeNotifier {
   String? successMessage;
   
   bool isBiometricEnabled = false;
+  String? _currentEmail;
 
-  ProfileViewModel() {
-    _checkBiometricStatus();
-  }
-
-  Future<void> _checkBiometricStatus() async {
-    final creds = await _authService.getCredentials();
-    isBiometricEnabled = creds != null;
+  /// Call this with the current user's email to check if THIS account has biometric
+  Future<void> checkBiometricForUser(String email) async {
+    _currentEmail = email;
+    final accounts = await _authService.getAllAccounts();
+    isBiometricEnabled = accounts.any((a) => a['email'] == email);
     notifyListeners();
   }
 
   Future<bool> enableBiometric(String email, String password, {String? nama, String? role}) async {
+    _currentEmail = email;
     isLoading = true;
     errorMessage = null;
     successMessage = null;
@@ -88,7 +88,10 @@ class ProfileViewModel extends ChangeNotifier {
   }
 
   Future<void> disableBiometric() async {
-    await _authService.deleteCredentials();
+    // Only delete credentials for the current account, not all
+    if (_currentEmail != null) {
+      await _authService.deleteCredentials(_currentEmail);
+    }
     isBiometricEnabled = false;
     successMessage = 'Login Biometrik dinonaktifkan.';
     notifyListeners();
