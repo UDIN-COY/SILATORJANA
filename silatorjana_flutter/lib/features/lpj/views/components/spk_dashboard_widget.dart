@@ -295,10 +295,14 @@ class _SpkDashboardWidgetState extends State<SpkDashboardWidget> {
               ],
             ),
           ),
-          Expanded(
-            child: _riwayat.isEmpty
-              ? const Center(child: Text('Belum ada data evaluasi SPK.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic)))
+          _riwayat.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: Text('Belum ada data evaluasi SPK.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic))),
+                )
               : ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                   itemCount: _riwayat.length > 4 ? 4 : _riwayat.length,
                   separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -347,7 +351,6 @@ class _SpkDashboardWidgetState extends State<SpkDashboardWidget> {
                     );
                   },
                 ),
-          ),
           const SizedBox(height: 10),
         ],
       ),

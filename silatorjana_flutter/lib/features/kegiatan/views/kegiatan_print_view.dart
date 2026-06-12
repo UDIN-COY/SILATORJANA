@@ -1,10 +1,18 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:printing/printing.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:pdf/pdf.dart';
+
 import '../../../core/network/api_service.dart';
+import '../services/pdf_generator_service.dart';
 
 /// Print/Preview proposal — mirrors web's PrintProposalPage.tsx.
-/// Shows a formatted preview of the full proposal for printing or sharing.
+/// Shows a formatted PDF preview of the full proposal for printing or sharing.
 class KegiatanPrintView extends StatefulWidget {
   final int kegiatanId;
   const KegiatanPrintView({super.key, required this.kegiatanId});
@@ -17,6 +25,7 @@ class _KegiatanPrintViewState extends State<KegiatanPrintView> {
   final ApiService _apiService = ApiService();
   Map<String, dynamic>? _data;
   bool _isLoading = true;
+  Uint8List? _pdfDataCache;
 
   @override
   void initState() {
@@ -30,121 +39,136 @@ class _KegiatanPrintViewState extends State<KegiatanPrintView> {
       final response = await _apiService.get('/kegiatan/${widget.kegiatanId}');
       if (response.statusCode == 200) {
         _data = jsonDecode(response.body);
+        final pdfDoc = await PdfGeneratorService.generatePdf(_data!);
+        _pdfDataCache = await pdfDoc.save();
       }
     } catch (e) {
-      // Handle error
+      debugPrint('Error fetch/generate PDF: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _savePdf() async {
+    if (_pdfDataCache == null) return;
+
+    // 1. Meminta Izin Storage
+    var storageStatus = await Permission.storage.status;
+    if (!storageStatus.isGranted) {
+      storageStatus = await Permission.storage.request();
+    }
+    
+    // Android 11+
+    if (Platform.isAndroid && await Permission.manageExternalStorage.isDenied) {
+      await Permission.manageExternalStorage.request();
+    }
+
+    try {
+      final fileName = 'KGT_${widget.kegiatanId}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      
+      // 2. Membuka dialog pemilihan lokasi simpan (SAF)
+      String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Simpan PDF Proposal',
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      // 3. Menyimpan file
+      if (outputFile != null) {
+        final file = File(outputFile);
+        await file.writeAsBytes(_pdfDataCache!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('File berhasil disimpan!\n$outputFile'), backgroundColor: const Color(0xFF047857)));
+        }
+      }
+    } catch (e) {
+      // Jika error (misal perangkat tidak support SAF picker), gunakan fallback share PDF
+      debugPrint('Save file error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Menggunakan fitur berbagi alternatif...')));
+      }
+      final fileName = 'KGT_${widget.kegiatanId}.pdf';
+      await Printing.sharePdf(bytes: _pdfDataCache!, filename: fileName);
+    }
+  }
+
+  Future<void> _printPdf() async {
+    if (_pdfDataCache == null) return;
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => _pdfDataCache!,
+      name: 'KGT_${widget.kegiatanId}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Text('Pratinjau Proposal'),
+        title: const Text('Pratinjau Dokumen'),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0F172A),
         elevation: 1,
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.share2, size: 20),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur share memerlukan package tambahan')),
-              );
-            },
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF047857)))
-          : _data == null
-              ? const Center(child: Text('Gagal memuat data'))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Center(
-                        child: Column(
-                          children: [
-                            const Text('PROPOSAL KEGIATAN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2, color: Color(0xFF1E293B))),
-                            const SizedBox(height: 4),
-                            const Text('Si-LATORJANA — Politeknik Negeri Jakarta', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                            const SizedBox(height: 16),
-                            const Divider(thickness: 2),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Info Umum
-                      _buildSection('INFORMASI UMUM', [
-                        _buildRow('Nama Kegiatan', _data!['nama_kegiatan'] ?? '-'),
-                        _buildRow('Jenis Kegiatan', _data!['jenis_kegiatan'] ?? '-'),
-                        _buildRow('Status', _data!['status'] ?? '-'),
-                        _buildRow('Jurusan', _data!['nama_jurusan'] ?? '-'),
-                        _buildRow('Tanggal Mulai', _data!['tanggal_mulai'] ?? '-'),
-                        _buildRow('Tanggal Selesai', _data!['tanggal_selesai'] ?? '-'),
-                      ]),
-                      // KAK
-                      if (_data!['kak'] != null) ...[
-                        _buildSection('KERANGKA ACUAN KERJA (KAK)', [
-                          _buildRow('Latar Belakang', _data!['kak']?['latar_belakang'] ?? '-'),
-                          _buildRow('Tujuan', _data!['kak']?['tujuan'] ?? '-'),
-                          _buildRow('Sasaran', _data!['kak']?['sasaran'] ?? '-'),
-                          _buildRow('Target Capaian', _data!['kak']?['target_capaian'] ?? '-'),
-                        ]),
-                      ],
-                      // RAB
-                      if (_data!['total_anggaran'] != null) ...[
-                        _buildSection('RENCANA ANGGARAN BIAYA (RAB)', [
-                          _buildRow('Total Anggaran', 'Rp ${_data!['total_anggaran']}'),
-                        ]),
-                      ],
-                      const SizedBox(height: 32),
-                      const Divider(thickness: 1),
-                      const SizedBox(height: 16),
-                      const Center(
-                        child: Text('— Dokumen dihasilkan dari Aplikasi Si-LATORJANA —', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic)),
-                      ),
-                    ],
-                  ),
+          : _data == null || _pdfDataCache == null
+              ? const Center(child: Text('Gagal memuat dokumen PDF'))
+              : PdfPreview(
+                  build: (format) => _pdfDataCache!,
+                  useActions: false, // Kita buat action custom di bottom bar
+                  allowPrinting: false,
+                  allowSharing: false,
+                  canChangeOrientation: false,
+                  canChangePageFormat: false,
+                  maxPageWidth: 700,
+                  pdfFileName: 'KGT_${widget.kegiatanId}.pdf',
                 ),
+      bottomNavigationBar: _isLoading || _pdfDataCache == null ? null : _buildBottomActions(),
     );
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1, color: Color(0xFF047857))),
-          const SizedBox(height: 8),
-          const Divider(height: 1, thickness: 0.5),
-          const SizedBox(height: 8),
-          ...children,
-        ],
+  Widget _buildBottomActions() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, -4))],
       ),
-    );
-  }
-
-  Widget _buildRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 130,
-            child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-          ),
-          const Text(': ', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
-        ],
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _savePdf,
+                icon: const Icon(LucideIcons.save, size: 18),
+                label: const Text('Simpan PDF'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  foregroundColor: const Color(0xFF047857),
+                  side: const BorderSide(color: Color(0xFF047857), width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _printPdf,
+                icon: const Icon(LucideIcons.printer, size: 18),
+                label: const Text('Cetak'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: const Color(0xFF047857),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
