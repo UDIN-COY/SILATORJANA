@@ -163,8 +163,8 @@ class PdfGeneratorService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Si-LATORJANA — Digenerate pada ${formatDateIndo(DateTime.now().toIso8601String())}', style: const pw.TextStyle(fontSize: 8)),
-                pw.Text('Halaman ${context.pageNumber} dari ${context.pagesCount}', style: const pw.TextStyle(fontSize: 8)),
+                pw.Text('Si-LATORJANA — Digenerate pada ${formatDateIndo(DateTime.now().toIso8601String())}', style: pw.TextStyle(fontSize: 8)),
+                pw.Text('Halaman ${context.pageNumber} dari ${context.pagesCount}', style: pw.TextStyle(fontSize: 8)),
               ],
             ),
           ],
@@ -227,7 +227,7 @@ class PdfGeneratorService {
                 content.add(
                   pw.TableHelper.fromTextArray(
                     headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-                    cellStyle: const pw.TextStyle(fontSize: 10),
+                    cellStyle: pw.TextStyle(fontSize: 10),
                     headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#F8FAFC')),
                     headers: ['No', 'Bulan', 'Indikator Keberhasilan', 'Target (%)'],
                     data: indicators.asMap().entries.map<List<String>>((e) {
@@ -242,7 +242,7 @@ class PdfGeneratorService {
                   ),
                 );
               } else {
-                content.add(pw.Text(kak['indikator_kinerja'] ?? '-', style: const pw.TextStyle(fontSize: 11)));
+                content.add(pw.Text(kak['indikator_kinerja'] ?? '-', style: pw.TextStyle(fontSize: 11)));
               }
             }
             content.add(pw.SizedBox(height: 20));
@@ -316,7 +316,7 @@ class PdfGeneratorService {
             content.add(
               pw.TableHelper.fromTextArray(
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
-                cellStyle: const pw.TextStyle(fontSize: 8),
+                cellStyle: pw.TextStyle(fontSize: 8),
                 headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#F8FAFC')),
                 cellAlignment: pw.Alignment.centerLeft,
                 headers: rabTableData[0].map((e) => e.toString()).toList(),
@@ -356,21 +356,21 @@ class PdfGeneratorService {
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    pw.Text('Mengetahui,', style: const pw.TextStyle(fontSize: 11)),
+                    pw.Text('Mengetahui,', style: pw.TextStyle(fontSize: 11)),
                     pw.Text('Ketua Jurusan', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 60),
                     pw.Text('.......................................', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-                    pw.Text('NIP. ................................', style: const pw.TextStyle(fontSize: 11)),
+                    pw.Text('NIP. ................................', style: pw.TextStyle(fontSize: 11)),
                   ]
                 ),
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    pw.Text('Depok, ${formatDateIndo(DateTime.now().toIso8601String())}', style: const pw.TextStyle(fontSize: 11)),
+                    pw.Text('Depok, ${formatDateIndo(DateTime.now().toIso8601String())}', style: pw.TextStyle(fontSize: 11)),
                     pw.Text('Pengusul,', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 60),
                     pw.Text(userName, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-                    pw.Text('NIP/NIM. ................................', style: const pw.TextStyle(fontSize: 11)),
+                    pw.Text('NIP/NIM. ................................', style: pw.TextStyle(fontSize: 11)),
                   ]
                 ),
               ]
@@ -408,9 +408,9 @@ class PdfGeneratorService {
   static pw.TableRow _buildInfoRow(String label, String value) {
     return pw.TableRow(
       children: [
-        pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 4), child: pw.Text(label, style: const pw.TextStyle(fontSize: 11))),
-        pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 4), child: pw.Text(':', style: const pw.TextStyle(fontSize: 11))),
-        pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 4), child: pw.Text(value, style: const pw.TextStyle(fontSize: 11))),
+        pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 4), child: pw.Text(label, style: pw.TextStyle(fontSize: 11))),
+        pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 4), child: pw.Text(':', style: pw.TextStyle(fontSize: 11))),
+        pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 4), child: pw.Text(value, style: pw.TextStyle(fontSize: 11))),
       ],
     );
   }
@@ -418,7 +418,7 @@ class PdfGeneratorService {
   static List<pw.Widget> _buildKakItem(String title, String content) {
     return [
       pw.Padding(padding: const pw.EdgeInsets.only(top: 8, bottom: 4), child: pw.Text(title, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11))),
-      pw.Text(content, style: const pw.TextStyle(fontSize: 11)),
+      pw.Text(content, style: pw.TextStyle(fontSize: 11)),
     ];
   }
 }

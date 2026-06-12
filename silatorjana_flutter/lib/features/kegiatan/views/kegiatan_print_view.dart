@@ -1,11 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:printing/printing.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
 
 import '../../../core/network/api_service.dart';
@@ -51,45 +48,11 @@ class _KegiatanPrintViewState extends State<KegiatanPrintView> {
 
   Future<void> _savePdf() async {
     if (_pdfDataCache == null) return;
-
-    // 1. Meminta Izin Storage
-    var storageStatus = await Permission.storage.status;
-    if (!storageStatus.isGranted) {
-      storageStatus = await Permission.storage.request();
-    }
-    
-    // Android 11+
-    if (Platform.isAndroid && await Permission.manageExternalStorage.isDenied) {
-      await Permission.manageExternalStorage.request();
-    }
-
     try {
-      final fileName = 'KGT_${widget.kegiatanId}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      
-      // 2. Membuka dialog pemilihan lokasi simpan (SAF)
-      String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Simpan PDF Proposal',
-        fileName: fileName,
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      // 3. Menyimpan file
-      if (outputFile != null) {
-        final file = File(outputFile);
-        await file.writeAsBytes(_pdfDataCache!);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('File berhasil disimpan!\n$outputFile'), backgroundColor: const Color(0xFF047857)));
-        }
-      }
-    } catch (e) {
-      // Jika error (misal perangkat tidak support SAF picker), gunakan fallback share PDF
-      debugPrint('Save file error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Menggunakan fitur berbagi alternatif...')));
-      }
       final fileName = 'KGT_${widget.kegiatanId}.pdf';
       await Printing.sharePdf(bytes: _pdfDataCache!, filename: fileName);
+    } catch (e) {
+      debugPrint('Save file error: $e');
     }
   }
 

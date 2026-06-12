@@ -207,6 +207,56 @@ class _DashboardViewState extends State<DashboardView> with SingleTickerProvider
     }
   }
 
+  void _showCalendarDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _emerald50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(LucideIcons.calendar, color: _emerald700, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text('Kalender Kegiatan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _slate800)),
+            ],
+          ),
+          content: SizedBox(
+            width: 300,
+            height: 320,
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: _emerald700,
+                  onPrimary: Colors.white,
+                  onSurface: _slate800,
+                ),
+              ),
+              child: CalendarDatePicker(
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2030),
+                onDateChanged: (date) {},
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup', style: TextStyle(fontWeight: FontWeight.bold, color: _emerald700)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   //  BUILD
   // ══════════════════════════════════════════════════════════════════════════
@@ -509,9 +559,23 @@ class _DashboardViewState extends State<DashboardView> with SingleTickerProvider
                     style: const TextStyle(color: _slate800, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
               ),
               const Spacer(),
-              const Icon(LucideIcons.calendar, size: 16, color: _slate500),
-              const SizedBox(width: 6),
-              const Text('Tahun Ajaran 2025/2026', style: TextStyle(fontSize: 12, color: _slate500, fontWeight: FontWeight.w500)),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showCalendarDialog(context),
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.calendar, size: 16, color: _slate500),
+                        SizedBox(width: 6),
+                        Text('Tahun Ajaran 2025/2026', style: TextStyle(fontSize: 12, color: _slate500, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(width: 16),
               _buildNavbarIconBtn(LucideIcons.bot, 'Jana AI', _emerald700, () {
                 if (janaIndex >= 0) setState(() => _currentIndex = janaIndex);
@@ -672,15 +736,15 @@ class _DashboardViewState extends State<DashboardView> with SingleTickerProvider
                   const Spacer(),
 
                   // Right icons (web: calendar, bot, help, bell, user)
-                  _buildMobileIconBtn(LucideIcons.calendar, () {}),
+                  _buildMobileIconBtn(LucideIcons.calendar, 'Kalender', () => _showCalendarDialog(context)),
                   const SizedBox(width: 2),
-                  _buildMobileIconBtn(LucideIcons.bot, () {
+                  _buildMobileIconBtn(LucideIcons.bot, 'Jana AI', () {
                     final idx = _allItems.indexWhere((i) => i.page is JanaChatView);
                     if (idx >= 0) setState(() => _currentIndex = idx);
                     else Navigator.push(context, MaterialPageRoute(builder: (_) => const JanaChatView()));
                   }, color: _emerald600),
                   const SizedBox(width: 2),
-                  _buildMobileIconBtn(LucideIcons.helpCircle, () {
+                  _buildMobileIconBtn(LucideIcons.helpCircle, 'Panduan', () {
                     final idx = _allItems.indexWhere((i) => i.page is PanduanView);
                     if (idx >= 0) setState(() => _currentIndex = idx);
                     else Navigator.push(context, MaterialPageRoute(builder: (_) => const PanduanView()));
@@ -776,17 +840,20 @@ class _DashboardViewState extends State<DashboardView> with SingleTickerProvider
     );
   }
 
-  Widget _buildMobileIconBtn(IconData icon, VoidCallback onTap, {Color color = _slate500}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0x99E2E8F0)),
-          boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 2)],
+  Widget _buildMobileIconBtn(IconData icon, String tooltip, VoidCallback onTap, {Color color = _slate500}) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0x99E2E8F0)),
+            boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 2)],
+          ),
+          child: Icon(icon, size: 18, color: color),
         ),
-        child: Icon(icon, size: 18, color: color),
       ),
     );
   }

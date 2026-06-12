@@ -551,8 +551,8 @@ class _KegiatanDetailViewState extends State<KegiatanDetailView> {
     else if (s.contains('ppk') || s == 'pending_ppk' || s == 'approved_ppk') currentStep = 3;
     else if (s.contains('wadir') || s == 'approved_wadir') currentStep = 4;
     else if (s.contains('funds') || s.contains('accepted') || s.contains('pencairan')) currentStep = 5;
+    else if (s == 'lpj_approved' || s == 'lpj_done' || s == 'completed' || s == 'selesai') currentStep = 7;
     else if (s.contains('lpj')) currentStep = 6;
-    else if (s == 'completed' || s == 'selesai') currentStep = 7;
 
     return _buildCard(
       title: 'Alur Persetujuan Dokumen',
