@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../kegiatan/models/kegiatan.dart';
 import '../../../core/network/api_service.dart';
 
@@ -164,7 +165,7 @@ class LpjViewModel extends ChangeNotifier {
     required String catatan,
     required Map<String, Map<String, dynamic>> realisasi, // rabId -> {qty, harga_satuan}
     required Map<String, double> ikuCapaian, // ikuId -> capaian
-    required Map<String, List<String>> files, // rabId -> [filePaths]
+    required Map<String, List<PlatformFile>> files, // rabId -> [PlatformFiles]
   }) async {
     isSubmitting = true;
     notifyListeners();
@@ -178,8 +179,8 @@ class LpjViewModel extends ChangeNotifier {
       };
 
       final filesMap = <String, dynamic>{};
-      files.forEach((rabId, filePaths) {
-        filesMap['item_files[$rabId][]'] = filePaths;
+      files.forEach((rabId, platformFiles) {
+        filesMap['item_files[$rabId][]'] = platformFiles;
       });
 
       final response = await _apiService.postMultipart(

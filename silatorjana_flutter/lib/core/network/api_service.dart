@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../constants/api_config.dart';
@@ -76,13 +78,60 @@ class ApiService {
     }
   }
 
+  Future<void> _addFileToMultipartRequest(
+    http.MultipartRequest request,
+    String key,
+    dynamic item,
+  ) async {
+    if (item is PlatformFile) {
+      if (kIsWeb) {
+        if (item.bytes != null) {
+          final contentType = _getMediaType(item.name);
+          final mf = http.MultipartFile.fromBytes(
+            key,
+            item.bytes!,
+            filename: item.name,
+            contentType: contentType,
+          );
+          request.files.add(mf);
+        }
+      } else {
+        if (item.path != null) {
+          final file = File(item.path!);
+          if (await file.exists()) {
+            final contentType = _getMediaType(item.path!);
+            final mf = await http.MultipartFile.fromPath(
+              key,
+              item.path!,
+              contentType: contentType,
+            );
+            request.files.add(mf);
+          }
+        }
+      }
+    } else if (item is String) {
+      if (!kIsWeb) {
+        final file = File(item);
+        if (await file.exists()) {
+          final contentType = _getMediaType(item);
+          final mf = await http.MultipartFile.fromPath(
+            key,
+            item,
+            contentType: contentType,
+          );
+          request.files.add(mf);
+        }
+      }
+    }
+  }
+
   /// Upload file(s) via multipart/form-data
   /// [fields] — text fields to include
-  /// [files] — map of field_name -> File path
+  /// [files] — map of field_name -> File path, PlatformFile, or list of them
   Future<http.Response> postMultipart(
     String endpoint, {
     Map<String, String>? fields,
-    Map<String, dynamic>? files, // fieldName -> filePath or List<filePath>
+    Map<String, dynamic>? files,
   }) async {
     final token = await AuthService().getToken();
     final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
@@ -98,29 +147,11 @@ class ApiService {
     if (files != null) {
       for (final entry in files.entries) {
         if (entry.value is List) {
-          for (final path in entry.value) {
-            final file = File(path.toString());
-            if (await file.exists()) {
-              final contentType = _getMediaType(path.toString());
-              final mf = await http.MultipartFile.fromPath(
-                entry.key,
-                path.toString(),
-                contentType: contentType,
-              );
-              request.files.add(mf);
-            }
+          for (final item in entry.value) {
+            await _addFileToMultipartRequest(request, entry.key, item);
           }
         } else {
-          final file = File(entry.value.toString());
-          if (await file.exists()) {
-            final contentType = _getMediaType(entry.value.toString());
-            final mf = await http.MultipartFile.fromPath(
-              entry.key,
-              entry.value.toString(),
-              contentType: contentType,
-            );
-            request.files.add(mf);
-          }
+          await _addFileToMultipartRequest(request, entry.key, entry.value);
         }
       }
     }

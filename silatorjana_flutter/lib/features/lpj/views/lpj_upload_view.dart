@@ -34,10 +34,8 @@ class _LpjUploadViewState extends State<LpjUploadView> {
   // ikuCapaian: ikuId -> capaian %
   final Map<String, TextEditingController> _ikuControllers = {};
 
-  // pickedFiles: rabId -> list of local paths
-  final Map<String, List<String>> _pickedFiles = {};
-  // pickedFileNames: rabId -> list of original filenames
-  final Map<String, List<String>> _pickedFileNames = {};
+  // pickedFiles: rabId -> list of PlatformFile
+  final Map<String, List<PlatformFile>> _pickedFiles = {};
 
   static const _emerald700 = Color(0xFF047857);
   static const _emerald600 = Color(0xFF059669);
@@ -162,17 +160,16 @@ class _LpjUploadViewState extends State<LpjUploadView> {
       setState(() {
         if (!_pickedFiles.containsKey(rabId)) {
           _pickedFiles[rabId] = [];
-          _pickedFileNames[rabId] = [];
         }
 
         for (final file in result.files) {
-          if (file.path != null) {
-            _pickedFiles[rabId]!.add(file.path!);
-            _pickedFileNames[rabId]!.add(file.name);
+          if (file.path != null || file.bytes != null) {
+            _pickedFiles[rabId]!.add(file);
           }
         }
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Gagal memilih file: $e'),
         backgroundColor: Colors.red,
@@ -183,7 +180,6 @@ class _LpjUploadViewState extends State<LpjUploadView> {
   void _removePickedFile(String rabId, int index) {
     setState(() {
       _pickedFiles[rabId]?.removeAt(index);
-      _pickedFileNames[rabId]?.removeAt(index);
     });
   }
 
@@ -728,14 +724,14 @@ class _LpjUploadViewState extends State<LpjUploadView> {
           const SizedBox(height: 8),
         ],
         // Display picked files
-        if (_pickedFileNames[rabId] != null && _pickedFileNames[rabId]!.isNotEmpty) ...[
+        if (_pickedFiles[rabId] != null && _pickedFiles[rabId]!.isNotEmpty) ...[
           Wrap(
             spacing: 8,
             runSpacing: 6,
-            children: List.generate(_pickedFileNames[rabId]!.length, (idx) {
-              final name = _pickedFileNames[rabId]![idx];
+            children: List.generate(_pickedFiles[rabId]!.length, (idx) {
+              final file = _pickedFiles[rabId]![idx];
               return Chip(
-                label: Text(name, style: const TextStyle(fontSize: 11)),
+                label: Text(file.name, style: const TextStyle(fontSize: 11)),
                 onDeleted: () => _removePickedFile(rabId, idx),
                 backgroundColor: _slate50,
                 deleteIconColor: Colors.red,

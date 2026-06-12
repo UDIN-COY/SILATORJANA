@@ -76,22 +76,23 @@ class _SubmitPpkViewState extends State<SubmitPpkView> {
         allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
       );
 
-      if (result == null || result.files.single.path == null) return;
+      if (result == null) return;
+      final file = result.files.single;
+      if (file.path == null && file.bytes == null) return;
 
       setState(() => _isUploadingFile = true);
 
-      final filePath = result.files.single.path!;
       final response = await _api.postMultipart(
         '/upload',
         fields: {'type': 'surat_pengantar'},
-        files: {'file': filePath},
+        files: {'file': file},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         setState(() {
           _uploadedFilePath = data['path'];
-          _uploadedFileName = data['original_name'] ?? result.files.single.name;
+          _uploadedFileName = data['original_name'] ?? file.name;
         });
         _showSnackBar('Surat pengantar berhasil diupload!');
       } else {
