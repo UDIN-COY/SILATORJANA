@@ -286,13 +286,37 @@ class _MonitoringDashboardViewState extends State<MonitoringDashboardView> {
   }
 
   Widget _buildProgressBar(String status) {
-    const steps = ['submitted', 'verified', 'approved_ppk', 'approved_wadir', 'funds_disbursed', 'lpj_done'];
-    final currentIndex = steps.indexWhere((s) => s == status.toLowerCase());
-    final progress = currentIndex >= 0 ? (currentIndex + 1) / steps.length : 0.1;
+    final s = status.toLowerCase();
+    int currentStep = 0;
+
+    if (s == 'draft') currentStep = 0;
+    else if (s == 'submitted' || s == 'diajukan') currentStep = 1;
+    else if (s.contains('verif') || s == 'diverifikasi' || s == 'verified') currentStep = 2;
+    else if (s.contains('ppk') || s == 'pending_ppk' || s == 'approved_ppk') currentStep = 3;
+    else if (s.contains('wadir') || s == 'approved_wadir') currentStep = 4;
+    else if (s.contains('funds') || s.contains('accepted') || s.contains('pencairan')) currentStep = 5;
+    else if (s == 'lpj_approved' || s == 'lpj_done' || s == 'completed' || s == 'selesai') currentStep = 7;
+    else if (s.contains('lpj')) currentStep = 6;
+
+    final double progress;
+    switch (currentStep) {
+      case 0: progress = 0.10; break;
+      case 1: progress = 0.25; break;
+      case 2: progress = 0.40; break;
+      case 3: progress = 0.55; break;
+      case 4: progress = 0.70; break;
+      case 5: progress = 0.80; break;
+      case 6: progress = 0.90; break;
+      case 7: progress = 1.00; break;
+      default: progress = 0.10;
+    }
 
     Color progressColor = const Color(0xFF047857);
-    if (status == 'rejected') progressColor = Colors.red;
-    if (status == 'revision_requested') progressColor = Colors.orange;
+    if (s == 'rejected' || s == 'ditolak') {
+      progressColor = Colors.red;
+    } else if (s.contains('revisi') || s == 'revision_requested' || s == 'lpj_revision') {
+      progressColor = Colors.orange;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

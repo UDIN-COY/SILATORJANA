@@ -115,7 +115,7 @@ class KegiatanController extends Controller
     {
         if (!$user) return;
         
-        if ($user->role === 'pengusul' && $kegiatan->pengusul_id !== $user->id) {
+        if ($user->role === 'pengusul' && (int)$kegiatan->pengusul_id !== (int)$user->id) {
             abort(403, 'Unauthorized access: Not the owner');
         }
         
@@ -550,7 +550,7 @@ class KegiatanController extends Controller
     {
         $kegiatan = Kegiatan::findOrFail($id);
 
-        if ($kegiatan->pengusul_id !== $request->user()->id && $request->user()->role !== 'bendahara') {
+        if ((int)$kegiatan->pengusul_id !== (int)$request->user()->id && $request->user()->role !== 'bendahara') {
             return response()->json([
                 'message' => 'Akses ditolak. Anda bukan pengusul atau bendahara kegiatan ini.',
             ], 403);
@@ -611,7 +611,7 @@ class KegiatanController extends Controller
 
         // Pengusul can only access their own
         if ($user->role === 'pengusul') {
-            return $kegiatan->pengusul_id === $user->id;
+            return (int)$kegiatan->pengusul_id === (int)$user->id;
         }
 
         // Verifikator check
