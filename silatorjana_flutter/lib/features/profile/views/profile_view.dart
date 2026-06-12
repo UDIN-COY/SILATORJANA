@@ -63,6 +63,13 @@ class _ProfileViewState extends State<ProfileView> {
               _buildProfileCard(),
               const SizedBox(height: 24),
               const Text(
+                'Pengaturan Keamanan',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 16),
+              _buildSecuritySettings(viewModel),
+              const SizedBox(height: 24),
+              const Text(
                 'Ubah Password',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
               ),
@@ -123,6 +130,119 @@ class _ProfileViewState extends State<ProfileView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSecuritySettings(ProfileViewModel viewModel) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            title: const Text('Login Biometrik', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            subtitle: const Text('Gunakan wajah/sidik jari untuk masuk', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+            secondary: const Icon(LucideIcons.fingerprint, color: Color(0xFF047857)),
+            activeColor: const Color(0xFF047857),
+            value: viewModel.isBiometricEnabled,
+            onChanged: viewModel.isLoading
+                ? null
+                : (val) {
+                    if (val) {
+                      _showEnableBiometricDialog(viewModel);
+                    } else {
+                      viewModel.disableBiometric();
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login Biometrik dinonaktifkan.')));
+                    }
+                  },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEnableBiometricDialog(ProfileViewModel viewModel) {
+    final passwordCtrl = TextEditingController();
+    bool isObscure = true;
+    bool isVerifying = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text('Aktifkan Biometrik', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Masukkan password Anda saat ini untuk mengaktifkan fitur login biometrik.', style: TextStyle(fontSize: 14)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: passwordCtrl,
+                    obscureText: isObscure,
+                    enabled: !isVerifying,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: const Icon(LucideIcons.lock, size: 20),
+                      suffixIcon: IconButton(
+                        icon: Icon(isObscure ? LucideIcons.eyeOff : LucideIcons.eye, size: 20),
+                        onPressed: () => setDialogState(() => isObscure = !isObscure),
+                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  if (isVerifying) ...[
+                    const SizedBox(height: 16),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF047857))),
+                        SizedBox(width: 12),
+                        Text('Memverifikasi...', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isVerifying ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF047857), foregroundColor: Colors.white),
+                  onPressed: isVerifying ? null : () async {
+                    if (passwordCtrl.text.isEmpty) return;
+                    setDialogState(() => isVerifying = true);
+                    
+                    final success = await viewModel.enableBiometric(widget.user.email, passwordCtrl.text);
+                    
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(success ? (viewModel.successMessage ?? 'Biometrik aktif!') : (viewModel.errorMessage ?? 'Gagal')),
+                          backgroundColor: success ? Colors.green : Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Verifikasi'),
+                ),
+              ],
+            );
+          }
+        );
+      },
     );
   }
 

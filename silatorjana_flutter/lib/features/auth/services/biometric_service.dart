@@ -27,10 +27,16 @@ class BiometricService {
     try {
       return await _auth.authenticate(
         localizedReason: 'Gunakan sidik jari atau wajah Anda untuk login ke Si-LATORJANA',
-        biometricOnly: true,
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
       );
     } on PlatformException catch (e) {
-      debugPrint('Error during authentication: $e');
+      debugPrint('Biometric PlatformException: $e');
+      return false;
+    } catch (e) {
+      debugPrint('Biometric error: $e');
       return false;
     }
   }

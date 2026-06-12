@@ -15,8 +15,8 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> initBiometrics() async {
     try {
       final canCheck = await _biometricService.hasBiometrics();
-      final token = await _authService.getToken();
-      canCheckBiometrics = canCheck && token != null;
+      final creds = await _authService.getCredentials();
+      canCheckBiometrics = canCheck && creds != null;
       notifyListeners();
     } catch (e) {
       // Biometrics not available, silently ignore
@@ -65,14 +65,39 @@ class AuthViewModel extends ChangeNotifier {
         isLoading = true;
         notifyListeners();
         
+        final creds = await _authService.getCredentials();
+        if (creds == null) {
+          isLoading = false;
+          errorMessage = 'Kredensial tidak ditemukan. Silakan login manual.';
+          notifyListeners();
+          return false;
+        }
+
+        final success = await _authService.login(creds['email']!, creds['password']!);
+        if (!success) {
+          isLoading = false;
+          errorMessage = 'Sesi habis atau kredensial kedaluwarsa. Silakan login manual.';
+          notifyListeners();
+          return false;
+        }
+
         currentUser = await _authService.getMe();
         
         isLoading = false;
         if (currentUser == null) {
-          errorMessage = 'Sesi habis, silakan login manual.';
+          errorMessage = 'Gagal mengambil data user.';
           notifyListeners();
           return false;
         }
+
+        if (!currentUser!.allowBiometric) {
+          await _authService.deleteCredentials();
+          await logout();
+          errorMessage = 'Akses Biometrik dinonaktifkan oleh Admin. Silakan login menggunakan password.';
+          notifyListeners();
+          return false;
+        }
+
         notifyListeners();
         return true;
       }

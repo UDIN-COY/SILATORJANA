@@ -471,22 +471,30 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
     return SizedBox(
       height: 52,
       width: double.infinity,
-      child: OutlinedButton.icon(
+      child: OutlinedButton(
         onPressed: _loginWithBiometrics,
-        icon: const Icon(LucideIcons.fingerprint, color: Color(0xFF059669)),
-        label: const Text(
-          'Gunakan Sidik Jari',
-          style: TextStyle(
-            color: Color(0xFF059669),
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: Color(0xFFD1FAE5), width: 1.5), // emerald-100
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(LucideIcons.fingerprint, color: Color(0xFF059669), size: 20),
+            SizedBox(width: 6),
+            Icon(LucideIcons.scanFace, color: Color(0xFF059669), size: 20),
+            SizedBox(width: 8),
+            Text(
+              'Biometrik / Face ID',
+              style: TextStyle(
+                color: Color(0xFF059669),
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       ),
     );

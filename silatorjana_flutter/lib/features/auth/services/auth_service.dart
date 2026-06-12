@@ -11,6 +11,8 @@ class AuthService {
   // On Web & Linux desktop, fallback to in-memory (secure storage not supported)
   static const _storage = FlutterSecureStorage();
   static const _tokenKey = 'auth_token';
+  static const _emailKey = 'auth_email';
+  static const _passwordKey = 'auth_password';
 
   // In-memory fallback for Web & Linux (no secure storage support)
   static String? _memoryToken;
@@ -54,6 +56,34 @@ class AuthService {
     } catch (e) {
       debugPrint('AUTH: getToken error (fallback to memory): $e');
       return _memoryToken;
+    }
+  }
+
+  Future<void> saveCredentials(String email, String password) async {
+    if (!_useMemory) {
+      await _storage.write(key: _emailKey, value: email);
+      await _storage.write(key: _passwordKey, value: password);
+    }
+  }
+
+  Future<void> deleteCredentials() async {
+    if (!_useMemory) {
+      await _storage.delete(key: _emailKey);
+      await _storage.delete(key: _passwordKey);
+    }
+  }
+
+  Future<Map<String, String>?> getCredentials() async {
+    if (_useMemory) return null;
+    try {
+      final email = await _storage.read(key: _emailKey);
+      final password = await _storage.read(key: _passwordKey);
+      if (email != null && password != null) {
+        return {'email': email, 'password': password};
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
