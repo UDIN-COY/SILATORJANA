@@ -36,7 +36,7 @@ class SpkKriteriaSeeder extends Seeder
                 'nama'      => 'Waktu Approval LPJ',
                 'tipe'      => 'benefit',
                 'bobot'     => 0.25,
-                'deskripsi' => 'Mengukur kecepatan proses approval LPJ. Dihitung dari selisih hari antara tanggal submit LPJ dengan tanggal saat ini. <= 14 hari = 100, > 14 hari = 100 - (keterlambatan x 5), minimum 0.',
+                'deskripsi' => 'Mengukur kecepatan proses approval LPJ. Dihitung dari tanggal_pengajuan ke tanggal_disetujui. Grace period 14 hari pertama = skor 100. Setelah 14 hari berkurang 1 per hari. Skor 0 di hari ke-114+. Rumus: durasi ≤ 14 → 100; durasi > 14 → max(0, 100 − (durasi − 14)).',
             ],
         ];
 

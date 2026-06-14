@@ -20,6 +20,7 @@ class Lpj extends Model
         'verified_by',
         'catatan_bendahara',
         'catatan_lama',
+        'tanggal_disetujui',
     ];
 
     protected function casts(): array
@@ -28,6 +29,7 @@ class Lpj extends Model
             'tanggal_pengajuan' => 'date',
             'tanggal_pelaksanaan_real' => 'date',
             'deadline' => 'date',
+            'tanggal_disetujui' => 'date',
         ];
     }
 

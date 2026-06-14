@@ -322,12 +322,19 @@ class KegiatanController extends Controller
                     $statusVerifikasi = 'rejected';
                 }
 
-                $lpj->update([
-                    'catatan_bendahara' => $kegiatan->catatan_revisi,
+                $lpjUpdateData = [
+                    'catatan_bendahara'  => $kegiatan->catatan_revisi,
                     'catatan_verifikasi' => $kegiatan->catatan_revisi,
-                    'verified_by' => $request->user()?->nama,
-                    'status_verifikasi' => $statusVerifikasi,
-                ]);
+                    'verified_by'        => $request->user()?->nama,
+                    'status_verifikasi'  => $statusVerifikasi,
+                ];
+
+                // Set tanggal_disetujui agar skor C4 MOORA menjadi statis/final
+                if ($kegiatan->status === 'lpj_approved' && empty($lpj->tanggal_disetujui)) {
+                    $lpjUpdateData['tanggal_disetujui'] = now()->toDateString();
+                }
+
+                $lpj->update($lpjUpdateData);
             }
 
             // Automatically set kegiatan status to completed if LPJ is approved
