@@ -137,10 +137,11 @@ class ApiService {
     final token = await AuthService().getToken();
     final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
     final request = http.MultipartRequest('POST', uri);
+    request.headers['ngrok-skip-browser-warning'] = 'true';
+    request.headers['Accept'] = 'application/json';
 
     if (token != null) {
       request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Accept'] = 'application/json';
     }
 
     if (fields != null) request.fields.addAll(fields);

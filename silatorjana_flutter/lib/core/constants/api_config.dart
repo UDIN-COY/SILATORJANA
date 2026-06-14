@@ -14,8 +14,8 @@ class ApiConfig {
   // Untuk emulator Android → sudah otomatis pakai 10.0.2.2
   // Untuk Web/Desktop → sudah otomatis pakai localhost
   // ──────────────────────────────────────────
-  static const String _customBaseUrl = 'https://luckless-flogging-stimulate.ngrok-free.dev'; // ← Diisi otomatis oleh run_auto_ip.sh jika pakai Ngrok
-  static const String _physicalDeviceIp = '192.168.1.19'; // ← Ganti jika pakai HP fisik (di set otomatis ke IP wlan0 saat ini)
+  static const String _customBaseUrl = ''; // ← Kosongkan jika tidak memakai Ngrok yang aktif, isi jika pakai Ngrok
+  static const String _physicalDeviceIp = '192.168.18.202'; // ← Ganti dengan IP WiFi komputer saat ini jika run di HP fisik
   static const int _port = 8000;
 
   static String get baseUrl {
@@ -35,13 +35,22 @@ class ApiConfig {
       }
 
       if (Platform.isAndroid) {
-        // 10.0.2.2 adalah alias emulator ke host machine
-        // Untuk device fisik, ubah _physicalDeviceIp di atas
+        // Secara default gunakan 10.0.2.2 untuk Android Emulator.
+        // Ubah isEmulator ke false jika menggunakan HP fisik (pastikan satu jaringan WiFi dengan laptop).
+        const bool isEmulator = true;
+        if (isEmulator) {
+          return 'http://10.0.2.2:$_port/api';
+        }
         return 'http://$_physicalDeviceIp:$_port/api';
       }
 
       if (Platform.isIOS) {
-        // iOS simulator → localhost, device fisik → IP WiFi
+        // Secara default gunakan localhost untuk iOS Simulator.
+        // Ubah isSimulator ke false jika menggunakan HP fisik (pastikan satu jaringan WiFi dengan laptop).
+        const bool isSimulator = true;
+        if (isSimulator) {
+          return 'http://localhost:$_port/api';
+        }
         return 'http://$_physicalDeviceIp:$_port/api';
       }
     } catch (_) {
