@@ -31,6 +31,10 @@ export function UserFormPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.email.includes('@')) {
+      alert('Format email salah: Email harus mengandung karakter "@".');
+      return;
+    }
     setIsSaving(true);
     try {
       const data: any = { nama: form.nama, email: form.email, role: form.role };

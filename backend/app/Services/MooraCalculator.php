@@ -415,7 +415,7 @@ class MooraCalculator
         $matriksKeputusan = [[$rubrik['c1'], $rubrik['c2'], $rubrik['c3'], $rubrik['c4']]];
 
         // ── Normalisasi Single Alternatif ──────────────────────────────────────
-        // Untuk 1 alternatif, rumus MOORA baku (÷√(xij²) = ÷xij) selalu
+        // Untuk 1 al   ternatif, rumus MOORA baku (÷√(xij²) = ÷xij) selalu
         // menghasilkan x*ij = 1.0, sehingga Yi = Σbobot = 1.0 (Grade A selalu).
         // Untuk menghindari ini, digunakan normalisasi range ÷100 yang bermakna:
         //   x*ij = xij / 100   →   x*ij ∈ [0, 1]
