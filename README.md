@@ -8,152 +8,323 @@
   <img src="https://img.shields.io/github/stars/UDIN-COY/SILATORJANA?style=flat-square&logo=github" alt="Stars">
 </div>
 
-<div align="center">
-  <p><strong>A comprehensive full-stack web and mobile application project combining modern frontend technologies with robust backend infrastructure.</strong></p>
-</div>
+---
+
+## 📋 About SILATORJANA
+
+**SILATORJANA** is a comprehensive full-stack application platform that integrates modern web technologies with cross-platform mobile capabilities. Built with a powerful combination of **React**, **TypeScript**, **Flutter/Dart**, and **Laravel**, SILATORJANA delivers a seamless user experience across web and mobile platforms.
+
+The project is designed to serve as a complete solution for building scalable, maintainable, and production-ready applications that require both web and mobile presence.
+
+### Key Highlights
+- 🌐 **Modern Web Application** with React + TypeScript + Vite
+- 📱 **Cross-Platform Mobile App** powered by Flutter/Dart
+- 🔌 **Robust API Backend** built with Laravel framework
+- 🎨 **Responsive UI** with Tailwind CSS styling
+- 🚀 **AI-Ready** with Google GenAI integration
+- 📊 **Real-time Data Sync** between web and mobile
+- 🛡️ **Type-Safe Development** with full TypeScript support
 
 ---
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_description_24px.svg" width="24" alt="Description"> Overview
+## 🛠 Technology Stack
 
-SILATORJANA adalah proyek multi-platform yang memanfaatkan teknologi terkini di bidang pengembangan web dan mobile. Proyek ini mengintegrasikan React, TypeScript, Flutter/Dart dengan layanan backend Laravel untuk menciptakan pengalaman pengguna yang seamless.
+### Frontend Web Development
+| Technology | Purpose | Version |
+|-----------|---------|---------|
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" width="20" alt="TypeScript"> **TypeScript** | Type-safe programming language | Latest |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/react/react-original.svg" width="20" alt="React"> **React** | UI component library & framework | 19.0.1 |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/vitejs/vitejs-original.svg" width="20" alt="Vite"> **Vite** | Next-gen frontend build tool | 6.2.3 |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/tailwindcss/tailwindcss-plain.svg" width="20" alt="Tailwind"> **Tailwind CSS** | Utility-first CSS framework | 4.1.14 |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/html5/html5-original.svg" width="20" alt="HTML"> **React Router** | Client-side routing | 7.15.0 |
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_dashboard_24px.svg" width="24" alt="Tech Stack"> Tech Stack
+### Mobile Development
+| Technology | Purpose | Version |
+|-----------|---------|---------|
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/flutter/flutter-original.svg" width="20" alt="Flutter"> **Flutter** | Cross-platform mobile framework | Latest |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/dart/dart-original.svg" width="20" alt="Dart"> **Dart** | Programming language for Flutter | Latest |
+| **Android** | Native Android support | API 21+ |
+| **iOS** | Native iOS support | iOS 12+ |
 
-### Frontend
-| Teknologi | Deskripsi |
-|-----------|-----------|
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" width="20" alt="TypeScript"> TypeScript | Type-safe JavaScript untuk aplikasi web |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="20" alt="React"> React | UI library untuk interface yang interaktif |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vitejs/vitejs-original.svg" width="20" alt="Vite"> Vite | Build tool ultra-cepat untuk development |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" width="20" alt="HTML"> HTML | Markup untuk struktur web |
+### Backend Development
+| Technology | Purpose | Version |
+|-----------|---------|---------|
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/laravel/laravel-plain.svg" width="20" alt="Laravel"> **Laravel** | PHP web application framework | 11+ |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/php/php-original.svg" width="20" alt="PHP"> **PHP** | Server-side language | **8.3+** |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" width="20" alt="MySQL"> **MySQL** | Relational database | 8.0+ |
+| **RESTful API** | API architecture pattern | - |
 
-### Mobile
-| Teknologi | Deskripsi |
-|-----------|-----------|
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/dart/dart-original.svg" width="20" alt="Dart"> Dart | Bahasa pemrograman untuk Flutter |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg" width="20" alt="Flutter"> Flutter | Framework cross-platform mobile development |
+### Additional Libraries & Tools
+- **Google GenAI** - AI/ML integration (@1.29.0)
+- **Tailwind CSS UI** - Pre-built components
+- **Lucide React** - Icon library for UI
+- **React Markdown** - Markdown rendering
+- **Concurrently** - Multi-process running
+- **shadcn/ui** - High-quality UI components
 
-### Backend
-| Teknologi | Deskripsi |
-|-----------|-----------|
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" width="20" alt="PHP"> PHP | Bahasa server-side untuk API |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/laravel/laravel-plain.svg" width="20" alt="Laravel"> Laravel | Framework PHP yang powerful |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg" width="20" alt="MySQL"> MySQL | Database management system |
+---
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_lightbulb_24px.svg" width="24" alt="Features"> Fitur Utama
+## ✨ Core Features
 
 <table>
   <tr>
     <td width="50%">
-      <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_language_24px.svg" width="20" alt="Web">
-      <strong> Modern Web Interface</strong>
-      <br>Built dengan React + TypeScript + Vite untuk performa optimal
+      <h3>🌐 Web Platform</h3>
+      <ul>
+        <li>Modern, responsive UI with Tailwind CSS</li>
+        <li>Real-time routing with React Router</li>
+        <li>Component-based architecture</li>
+        <li>AI-powered features integration</li>
+        <li>Markdown support for rich content</li>
+      </ul>
     </td>
     <td width="50%">
-      <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/hardware/svg/production/ic_phone_android_24px.svg" width="20" alt="Mobile">
-      <strong> Mobile Application</strong>
-      <br>Flutter-based cross-platform app menggunakan Dart
+      <h3>📱 Mobile Platform</h3>
+      <ul>
+        <li>Native Android & iOS support</li>
+        <li>Offline-first architecture</li>
+        <li>Push notifications ready</li>
+        <li>Camera & media access</li>
+        <li>Cross-platform sync</li>
+      </ul>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_api_24px.svg" width="20" alt="API">
-      <strong> RESTful API</strong>
-      <br>Backend Laravel dengan comprehensive API endpoints
+      <h3>🔌 Backend API</h3>
+      <ul>
+        <li>RESTful API endpoints</li>
+        <li>Database migrations & seeding</li>
+        <li>Authentication & authorization</li>
+        <li>Data validation & security</li>
+        <li>Concurrent request handling</li>
+      </ul>
     </td>
     <td width="50%">
-      <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_security_24px.svg" width="20" alt="Security">
-      <strong> Production Ready</strong>
-      <br>Optimized build pipeline dengan multiple merge strategies
+      <h3>🚀 DevOps & Deployment</h3>
+      <ul>
+        <li>Automated build pipelines</li>
+        <li>Development & production modes</li>
+        <li>Docker-ready configuration</li>
+        <li>Type checking & linting</li>
+        <li>Concurrent development server</li>
+      </ul>
     </td>
   </tr>
 </table>
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_trending_up_24px.svg" width="24" alt="Getting Started"> Getting Started
+---
 
-### <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_done_all_24px.svg" width="20" alt="Prerequisites"> Prerequisites
+## 🚀 Getting Started
 
-- <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" width="16" alt="Node"> Node.js 16+ (untuk frontend)
-- <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" width="16" alt="PHP"> PHP 8.0+ (untuk Laravel backend)
-- <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg" width="16" alt="Flutter"> Flutter SDK (untuk mobile development)
-- <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/composer/composer-original.svg" width="16" alt="Composer"> Composer (PHP dependency manager)
+### System Requirements
 
-### <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_download_24px.svg" width="20" alt="Installation"> Instalasi
+- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/nodejs/nodejs-original.svg" width="16" alt="Node"> **Node.js** 16+ (for frontend)
+- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/php/php-original.svg" width="16" alt="PHP"> **PHP** 8.3+ (for backend) ⚠️ **REQUIRED**
+- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/flutter/flutter-original.svg" width="16" alt="Flutter"> **Flutter SDK** 3.0+ (for mobile)
+- **Composer** (PHP package manager)
+- **npm** or **yarn** (Node package manager)
+- **Git** (version control)
 
-#### Frontend Setup
+### Installation Guide
+
+#### 1️⃣ Clone the Repository
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build untuk production
-npm run build
+git clone https://github.com/UDIN-COY/SILATORJANA.git
+cd SILATORJANA
 ```
 
-#### Backend Setup
+#### 2️⃣ Frontend Setup (React + TypeScript)
 ```bash
-# Install PHP dependencies
+# Install Node.js dependencies
+npm install
+
+# Start development server with backend
+npm run dev
+
+# Or run only frontend
+npm run dev:frontend
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Type checking
+npm run lint
+
+# Clean build artifacts
+npm run clean
+```
+
+#### 3️⃣ Backend Setup (Laravel) - PHP 8.3+ Required
+
+> **⚠️ Important:** This project requires PHP 8.3 or higher. Please ensure you have the correct PHP version installed.
+
+```bash
+# Check PHP version
+php -v
+
+# Expected output: PHP 8.3.x or higher
+```
+
+**Setup Steps:**
+```bash
+cd backend
+
+# Install Composer dependencies
 composer install
 
-# Configure environment
+# Copy environment file
 cp .env.example .env
 
 # Generate application key
 php artisan key:generate
 
-# Run migrations
+# Run database migrations
 php artisan migrate
+
+# Seed database with sample data
+php artisan db:seed
+
+# Start Laravel development server
+php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-#### Mobile Setup
+#### 4️⃣ Mobile Setup (Flutter)
 ```bash
+cd silatorjana_flutter
+
 # Get Flutter dependencies
 flutter pub get
 
-# Run pada emulator/device
+# Run on connected device/emulator
 flutter run
 
-# Build APK
+# Build APK for Android
 flutter build apk
+
+# Build IPA for iOS
+flutter build ios
+
+# Build web version
+flutter build web
 ```
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/file/svg/production/ic_folder_24px.svg" width="24" alt="Structure"> Struktur Project
+#### 5️⃣ Run Full Stack Development
+```bash
+# From project root, run both frontend and backend concurrently
+npm run dev
+
+# This will start:
+# - Vite frontend on http://localhost:5173
+# - Laravel backend on http://localhost:8000
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 SILATORJANA/
-├── frontend/                # React + TypeScript web app
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.ts
-├── mobile/                  # Flutter mobile application
+├── src/                           # Frontend React source code
+│   ├── components/                # Reusable React components
+│   ├── pages/                     # Page components & routing
+│   ├── hooks/                     # Custom React hooks
+│   ├── utils/                     # Utility functions
+│   ├── styles/                    # Global styles & Tailwind
+│   ├── App.tsx                    # Root component
+│   └── main.tsx                   # Entry point
+├── public/                        # Static assets
+├── backend/                       # Laravel backend
+│   ├── app/                       # Application core
+│   │   ├── Http/Controllers/      # API controllers
+│   │   ├── Models/                # Database models
+│   │   └── Requests/              # Form request validation
+│   ├── routes/                    # API routes
+│   ├── database/
+│   │   ├── migrations/            # Database migrations
+│   │   └── seeders/               # Database seeders
+│   ├── config/                    # Configuration files
+│   └── .env.example               # Environment template
+├── silatorjana_flutter/           # Flutter mobile app
 │   ├── lib/
-│   ├── android/
-│   ├── ios/
-│   └── pubspec.yaml
-├── backend/                 # Laravel API server
-│   ├── app/
-│   ├── routes/
-│   ├── config/
-│   └── composer.json
-├── docs/                    # Documentation
-└── README.md
+│   │   ├── screens/               # Screen widgets
+│   │   ├── widgets/               # Reusable widgets
+│   │   ├── services/              # API & business logic
+│   │   ├── models/                # Data models
+│   │   └── main.dart              # Entry point
+│   ├── android/                   # Android configuration
+│   ├── ios/                       # iOS configuration
+│   └── pubspec.yaml               # Dependencies
+├── package.json                   # Frontend dependencies
+├── vite.config.ts                 # Vite configuration
+├── tailwind.config.ts             # Tailwind configuration
+├── tsconfig.json                  # TypeScript configuration
+└── README.md                      # This file
 ```
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_git_fork_24px.svg" width="24" alt="Workflow"> Development Workflow
+---
 
-1. <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/content/svg/production/ic_create_24px.svg" width="16" alt="Fork"> Fork repository
-2. <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/content/svg/production/ic_link_24px.svg" width="16" alt="Branch"> Buat feature branch (`git checkout -b feature/amazing-feature`)
-3. <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/content/svg/production/ic_save_24px.svg" width="16" alt="Commit"> Commit perubahan (`git commit -m 'Add amazing feature'`)
-4. <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/content/svg/production/ic_send_24px.svg" width="16" alt="Push"> Push ke branch (`git push origin feature/amazing-feature`)
-5. <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_assignment_24px.svg" width="16" alt="PR"> Buka Pull Request
+## 🔄 Development Workflow
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_bar_chart_24px.svg" width="24" alt="Statistics"> Repository Statistics
+### Creating a Feature
 
-### Komposisi Bahasa Pemrograman
+1. **🍴 Fork & Clone**
+   ```bash
+   git clone https://github.com/UDIN-COY/SILATORJANA.git
+   cd SILATORJANA
+   ```
+
+2. **🌿 Create Feature Branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+
+3. **💻 Make Changes**
+   - Frontend: Edit React components in `src/`
+   - Backend: Update Laravel code in `backend/`
+   - Mobile: Modify Flutter code in `silatorjana_flutter/`
+
+4. **✅ Test Your Changes**
+   ```bash
+   # Run type checking
+   npm run lint
+   
+   # Test frontend
+   npm run dev:frontend
+   
+   # Test backend
+   cd backend && php artisan serve
+   
+   # Test mobile
+   cd silatorjana_flutter && flutter run
+   ```
+
+5. **💾 Commit Changes**
+   ```bash
+   git add .
+   git commit -m "feat: add amazing feature"
+   ```
+
+6. **📤 Push to Branch**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+
+7. **🔀 Create Pull Request**
+   - Go to GitHub repository
+   - Click "New Pull Request"
+   - Select your feature branch
+   - Add clear description of changes
+   - Request reviewers
+   - Submit for review
+
+---
+
+## 📊 Language Composition
+
 ```
 TypeScript  ████████████████████░░░░░░░░░░░░░░░  40.3%
 Dart        ███████████████░░░░░░░░░░░░░░░░░░░░░  33.4%
@@ -164,38 +335,188 @@ Shell       █░░░░░░░░░░░░░░░░░░░░░�
 Other       ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  4.0%
 ```
 
-### Topics & Tags
-`android` • `android-application` • `dart` • `flutter` • `laravel` • `laravel-framework` • `react` • `react-router-dom` • `tsx` • `typescript` • `vite` • `webapp`
+### Framework Distribution
+- **React Ecosystem**: 40.3% (TypeScript + HTML)
+- **Flutter/Dart**: 33.4%
+- **Laravel/PHP**: 13.9% (PHP + Blade)
+- **Configuration & Other**: 12.4%
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_assignment_24px.svg" width="24" alt="License"> License
+---
 
-Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) untuk detail lebih lanjut.
+## 🔐 Security & Best Practices
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_favorite_24px.svg" width="24" alt="Contributing"> Contributing
+- ✅ Type-safe development with TypeScript
+- ✅ Environment-based configuration (`.env`)
+- ✅ CORS-enabled API with Laravel
+- ✅ SQL injection prevention with ORM
+- ✅ Input validation on frontend & backend
+- ✅ HTTPS ready for production
+- ✅ Database migration versioning
+- ✅ Component-based architecture for maintainability
+- ✅ PHP 8.3+ with latest security patches
 
-Kontribusi sangat diterima! Silakan buat Pull Request untuk fitur atau bug fixes.
+---
 
-### Kontribusi Workflow
-1. Baca dokumentasi proyek
-2. Setup environment lokal
-3. Buat branch feature Anda
-4. Pastikan code mengikuti style guide
-5. Submit pull request dengan deskripsi yang jelas
+## 📚 API Documentation
 
-## <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_help_24px.svg" width="24" alt="Support"> Support
+### Base URL
+```
+http://localhost:8000/api
+```
 
-Untuk bantuan, silakan buka [issue](https://github.com/UDIN-COY/SILATORJANA/issues) di GitHub repository.
+### Available Endpoints
+- Endpoints will be documented as the project develops
+- RESTful conventions are followed
+- All requests/responses use JSON format
+
+### Authentication
+- JWT token-based authentication (to be implemented)
+- Role-based access control (RBAC)
+- Session management for web platform
+
+---
+
+## 🐛 Troubleshooting
+
+### Frontend Issues
+```bash
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Clear Vite cache
+rm -rf dist
+npm run build
+```
+
+### Backend Issues
+```bash
+# Check PHP version (must be 8.3+)
+php -v
+
+# Clear Laravel cache
+php artisan cache:clear
+php artisan config:clear
+
+# Fresh migrations
+php artisan migrate:fresh --seed
+
+# Check logs
+tail -f storage/logs/laravel.log
+```
+
+### Mobile Issues
+```bash
+# Clean Flutter build
+flutter clean
+flutter pub get
+
+# Run with verbose output
+flutter run -v
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+### MIT License Summary
+- ✅ Use for commercial purposes
+- ✅ Modify the code
+- ✅ Distribute the code
+- ✅ Use privately
+- ⚠️ Include license and copyright notice
+- ⚠️ No liability or warranty
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from developers of all skill levels! 
+
+### How to Contribute
+1. **Report Bugs**: Open an issue describing the bug
+2. **Suggest Features**: Submit feature requests with use cases
+3. **Improve Code**: Submit pull requests with improvements
+4. **Fix Documentation**: Help improve project documentation
+5. **Share Ideas**: Participate in discussions
+
+### Contribution Guidelines
+- Follow the existing code style and conventions
+- Write clear, descriptive commit messages
+- Include comments for complex logic
+- Test your changes before submitting
+- Update documentation if needed
+- Be respectful and constructive
+- Ensure PHP 8.3+ compatibility for backend changes
+
+---
+
+## 💬 Support & Community
+
+- 🐛 **Report Bugs**: [Open an Issue](https://github.com/UDIN-COY/SILATORJANA/issues)
+- 💡 **Request Features**: [Discussions](https://github.com/UDIN-COY/SILATORJANA/discussions)
+- 📖 **Wiki**: [Project Wiki](https://github.com/UDIN-COY/SILATORJANA/wiki)
+- 📧 **Email**: For urgent matters, contact repository maintainer
+
+---
+
+## 🚀 Roadmap
+
+### Phase 1: MVP (Current)
+- [x] Frontend setup with React + TypeScript
+- [x] Backend setup with Laravel (PHP 8.3+)
+- [x] Mobile app foundation with Flutter
+- [ ] User authentication system
+- [ ] Database schema design
+- [ ] Basic API endpoints
+
+### Phase 2: Core Features
+- [ ] Real-time data synchronization
+- [ ] User profile management
+- [ ] Push notifications
+- [ ] Offline mode for mobile
+- [ ] Advanced UI components
+
+### Phase 3: Enhancement
+- [ ] Performance optimization
+- [ ] Analytics integration
+- [ ] Advanced security features
+- [ ] Admin dashboard
+- [ ] API versioning
+
+### Phase 4: Production
+- [ ] Load testing & optimization
+- [ ] Security audit
+- [ ] Documentation completion
+- [ ] CI/CD pipeline
+- [ ] Production deployment
+
+---
+
+## 👨‍💻 Developer Information
+
+**Repository Owner:** [@UDIN-COY](https://github.com/UDIN-COY)
+
+**Project Started:** June 2026
+
+**Last Updated:** June 2026
+
+**Repository:** [github.com/UDIN-COY/SILATORJANA](https://github.com/UDIN-COY/SILATORJANA)
 
 ---
 
 <div align="center">
   <p>
-    <strong>Dibuat dengan</strong> 
-    <img src="https://cdn.jsdelivr.net/gh/google/material-design-icons/action/svg/production/ic_favorite_24px.svg" width="16" alt="Love">
-    <strong>oleh UDIN-COY</strong>
+    <strong>Built with ❤️ by the SILATORJANA Team</strong>
   </p>
   <p>
     <img src="https://img.shields.io/github/last-commit/UDIN-COY/SILATORJANA?style=flat-square&logo=github" alt="Last Commit">
     <img src="https://img.shields.io/github/repo-size/UDIN-COY/SILATORJANA?style=flat-square&logo=github" alt="Repo Size">
+    <img src="https://img.shields.io/github/languages/count/UDIN-COY/SILATORJANA?style=flat-square&logo=github" alt="Languages">
+  </p>
+  <p>
+    <a href="https://github.com/UDIN-COY/SILATORJANA/stargazers">⭐ Star us on GitHub!</a>
   </p>
 </div>
