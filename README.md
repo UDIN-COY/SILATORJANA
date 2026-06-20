@@ -1,4 +1,4 @@
-# SILATORJANA
+# Si-LATORJANA
 
 <div align="center">
   <img src="https://img.shields.io/badge/TypeScript-40.3%25-blue?style=flat-square&logo=typescript" alt="TypeScript">
@@ -10,57 +10,85 @@
 
 ---
 
-## 📋 About SILATORJANA
+## 📋 About Si-LATORJANA
 
-**SILATORJANA** is a comprehensive full-stack application platform that integrates modern web technologies with cross-platform mobile capabilities. Built with a powerful combination of **React**, **TypeScript**, **Flutter/Dart**, and **Laravel**, SILATORJANA delivers a seamless user experience across web and mobile platforms.
+**Si-LATORJANA** (*Sistem Layanan Terpadu Administrasi Pengajuan*) is a campus activity-proposal administration system built for **Politeknik Negeri Jakarta (PNJ)**. It digitizes the full lifecycle of a kampus activity proposal — from submission, multi-level approval, fund disbursement, all the way to accountability reporting (LPJ) — across a **web dashboard**, a **mobile app**, and a shared **Laravel API**.
 
-The project is designed to serve as a complete solution for building scalable, maintainable, and production-ready applications that require both web and mobile presence.
+Unlike a generic CRUD app, the core of the system is a strict **role-based approval workflow**: a proposal moves sequentially through *Pengusul → Verifikator → PPK → Wadir → Bendahara → Rektorat*, with every status change automatically logged and snapshotted for audit purposes.
 
 ### Key Highlights
-- 🌐 **Modern Web Application** with React + TypeScript + Vite
-- 📱 **Cross-Platform Mobile App** powered by Flutter/Dart
-- 🔌 **Robust API Backend** built with Laravel framework
-- 🎨 **Responsive UI** with Tailwind CSS styling
-- 🚀 **AI-Ready** with Google GenAI integration
-- 📊 **Real-time Data Sync** between web and mobile
-- 🛡️ **Type-Safe Development** with full TypeScript support
+- 🔁 **Multi-level approval workflow** with 8 distinct roles and a locked status state-machine
+- 📝 **Integrated proposal form** — KAK, RAB (auto-calculated budget), and dynamic IKU indicators
+- 💰 **Staged fund disbursement** (bendahara can release funds in percentages, not just all-or-nothing)
+- 📊 **LPJ comparative verification** — planned budget (RAB) vs. realized expenses, with variance
+- 🧮 **Automated LPJ quality grading** using the **SPK MOORA** decision-support method (Grade A–D)
+- 🖨️ **PDF proposal export** with Indonesian number-to-words ("Terbilang") conversion
+- 🤖 **"Jana" AI Assistant** — in-app chatbot for help with the submission flow (via OpenRouter)
+- 🔐 **Sanctum token auth** with optional biometric login on mobile
+- 📱 **Native mobile companion app** built with Flutter (Feature-First MVVM)
 
 ---
 
 ## 🛠 Technology Stack
 
-### Frontend Web Development
+### Frontend Web (`/`)
 | Technology | Purpose | Version |
 |-----------|---------|---------|
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" width="20" alt="TypeScript"> **TypeScript** | Type-safe programming language | Latest |
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/react/react-original.svg" width="20" alt="React"> **React** | UI component library & framework | 19.0.1 |
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/vitejs/vitejs-original.svg" width="20" alt="Vite"> **Vite** | Next-gen frontend build tool | 6.2.3 |
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/tailwindcss/tailwindcss-plain.svg" width="20" alt="Tailwind"> **Tailwind CSS** | Utility-first CSS framework | 4.1.14 |
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/html5/html5-original.svg" width="20" alt="HTML"> **React Router** | Client-side routing | 7.15.0 |
+| **React** | UI library | 19.0.1 |
+| **TypeScript** | Type-safe development | ~5.8.2 |
+| **Vite** | Build tool & dev server | 6.2.3 |
+| **Tailwind CSS** | Utility-first styling | 4.1.14 |
+| **shadcn/ui** + **Base UI** | Component primitives | — |
+| **React Router** | Client-side routing | 7.15.0 |
+| **Motion** | Animations | 12.23.24 |
+| **React Markdown** + **remark-gfm** | Markdown rendering (Jana chat) | 10.1.0 |
+| **React Joyride** | Onboarding / guided tours | 3.1.0 |
+| **@google/genai** | AI SDK dependency | 1.29.0 |
 
-### Mobile Development
+### Mobile (`/silatorjana_flutter`)
+| Technology | Purpose |
+|-----------|---------|
+| **Flutter / Dart** | Cross-platform app (Android, iOS, also builds for Linux/macOS/Windows/Web) |
+| **Provider** | State management (Feature-First MVVM architecture) |
+| **flutter_secure_storage** | Secure Bearer-token storage on device |
+| **lucide_icons_flutter** | Icon set matching the web UI |
+
+### Backend (`/backend`)
 | Technology | Purpose | Version |
 |-----------|---------|---------|
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/flutter/flutter-original.svg" width="20" alt="Flutter"> **Flutter** | Cross-platform mobile framework | Latest |
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/dart/dart-original.svg" width="20" alt="Dart"> **Dart** | Programming language for Flutter | Latest |
-| **Android** | Native Android support | API 21+ |
-| **iOS** | Native iOS support | iOS 12+ |
+| **Laravel** | API framework | ^13.8 |
+| **PHP** | Language | ^8.3 |
+| **Laravel Sanctum** | Token-based API authentication | ^4.3 |
+| **MySQL / MariaDB** | Database | 8.0+ |
+| **Laravel Pail** | Real-time log viewer (dev) | — |
 
-### Backend Development
-| Technology | Purpose | Version |
-|-----------|---------|---------|
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/laravel/laravel-plain.svg" width="20" alt="Laravel"> **Laravel** | PHP web application framework | 11+ |
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/php/php-original.svg" width="20" alt="PHP"> **PHP** | Server-side language | **8.3+** |
-| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" width="20" alt="MySQL"> **MySQL** | Relational database | 8.0+ |
-| **RESTful API** | API architecture pattern | - |
+> The project previously used Appwrite + OpenRouter as a BaaS layer; this has since been **fully migrated off Appwrite**, and the backend is now 100% Laravel + MySQL.
 
-### Additional Libraries & Tools
-- **Google GenAI** - AI/ML integration (@1.29.0)
-- **Tailwind CSS UI** - Pre-built components
-- **Lucide React** - Icon library for UI
-- **React Markdown** - Markdown rendering
-- **Concurrently** - Multi-process running
-- **shadcn/ui** - High-quality UI components
+---
+
+## 👥 Roles & Approval Workflow
+
+The system enforces strict **Role-Based Access Control**. Each role has a deliberately limited set of actions — only the Verifikator can outright reject a proposal; everyone downstream can only request a revision or approve.
+
+| Role | Responsibility |
+|---|---|
+| `admin` | User management, IKU master data, system-wide monitoring |
+| `pengusul` | Creates proposals (student/lecturer/department), revises, uploads LPJ |
+| `verifikator` | First gate — checks completeness; the **only** role that can outright **reject** |
+| `ppk` | Reviews proposals that passed verification; can request revision or approve |
+| `wadir1`–`wadir4` | Vice-director final approval, routed by the proposer's department/unit |
+| `bendahara` | Disburses funds (can be staged/partial) and approves/rejects LPJ |
+| `rektorat` | Institution-level monitoring, recap reports, and timelines |
+
+### Proposal Lifecycle
+```
+draft → submitted → (verifikator: revision_requested | rejected | pending_ppk)
+      → pending_ppk → (ppk: revision_requested | approved_ppk)
+      → approved_ppk → (wadir: revision_requested | approved_wadir)
+      → approved_wadir → accepted_funds → funds_disbursed
+      → lpj_submitted → (bendahara: lpj_revision | lpj_approved / lpj_done)
+```
+Every transition is recorded in `status_histories`, including a JSON `payload_snapshot` of the proposal at the moment of approval — preventing data from being altered retroactively after sign-off.
 
 ---
 
@@ -69,45 +97,41 @@ The project is designed to serve as a complete solution for building scalable, m
 <table>
   <tr>
     <td width="50%">
-      <h3>🌐 Web Platform</h3>
+      <h3>📝 Proposal Submission (Pengusul)</h3>
       <ul>
-        <li>Modern, responsive UI with Tailwind CSS</li>
-        <li>Real-time routing with React Router</li>
-        <li>Component-based architecture</li>
-        <li>AI-powered features integration</li>
-        <li>Markdown support for rich content</li>
+        <li>Integrated form: KAK, RAB (auto-calculates qty × harga), dynamic IKU</li>
+        <li>Strict frontend validation — can't skip tabs, no past dates</li>
+        <li>One-click PDF export with "Terbilang" amount-to-words</li>
+        <li>Full status history with tamper-evident snapshots</li>
       </ul>
     </td>
     <td width="50%">
-      <h3>📱 Mobile Platform</h3>
+      <h3>✅ Approval Chain</h3>
       <ul>
-        <li>Native Android & iOS support</li>
-        <li>Offline-first architecture</li>
-        <li>Push notifications ready</li>
-        <li>Camera & media access</li>
-        <li>Cross-platform sync</li>
+        <li>Conditional action buttons per role/status</li>
+        <li>Multi-Wadir routing based on department/unit</li>
+        <li>"Smart Archive" views for PPK and Wadir</li>
+        <li>Actions auto-hidden when viewing archived items</li>
       </ul>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <h3>🔌 Backend API</h3>
+      <h3>💰 Finance (Bendahara)</h3>
       <ul>
-        <li>RESTful API endpoints</li>
-        <li>Database migrations & seeding</li>
-        <li>Authentication & authorization</li>
-        <li>Data validation & security</li>
-        <li>Concurrent request handling</li>
+        <li>Staged/partial fund disbursement</li>
+        <li>RAB (plan) vs. realization comparison with variance</li>
+        <li>SPK/MOORA-based LPJ quality grading (A–D)</li>
+        <li>Attached LPJ documents & receipts</li>
       </ul>
     </td>
     <td width="50%">
-      <h3>🚀 DevOps & Deployment</h3>
+      <h3>📊 Monitoring & AI</h3>
       <ul>
-        <li>Automated build pipelines</li>
-        <li>Development & production modes</li>
-        <li>Docker-ready configuration</li>
-        <li>Type checking & linting</li>
-        <li>Concurrent development server</li>
+        <li>Universal monitoring dashboard across roles</li>
+        <li>"Jana" AI assistant chatbot (OpenRouter-backed)</li>
+        <li>Biometric login support (mobile)</li>
+        <li>Guided product tour (React Joyride)</li>
       </ul>
     </td>
   </tr>
@@ -117,110 +141,60 @@ The project is designed to serve as a complete solution for building scalable, m
 
 ## 🚀 Getting Started
 
-### System Requirements
+### Requirements
+- **Node.js** 18+
+- **PHP** 8.3+ and **Composer**
+- **MySQL/MariaDB** 8.0+ (or Docker, see below)
+- **Flutter SDK** 3.0+ (only needed for the mobile app)
 
-- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/nodejs/nodejs-original.svg" width="16" alt="Node"> **Node.js** 16+ (for frontend)
-- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/php/php-original.svg" width="16" alt="PHP"> **PHP** 8.3+ (for backend) ⚠️ **REQUIRED**
-- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/flutter/flutter-original.svg" width="16" alt="Flutter"> **Flutter SDK** 3.0+ (for mobile)
-- **Composer** (PHP package manager)
-- **npm** or **yarn** (Node package manager)
-- **Git** (version control)
-
-### Installation Guide
-
-#### 1️⃣ Clone the Repository
+### 1. Clone
 ```bash
 git clone https://github.com/UDIN-COY/SILATORJANA.git
 cd SILATORJANA
 ```
 
-#### 2️⃣ Frontend Setup (React + TypeScript)
-```bash
-# Install Node.js dependencies
-npm install
-
-# Start development server with backend
-npm run dev
-
-# Or run only frontend
-npm run dev:frontend
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Type checking
-npm run lint
-
-# Clean build artifacts
-npm run clean
-```
-
-#### 3️⃣ Backend Setup (Laravel) - PHP 8.3+ Required
-
-> **⚠️ Important:** This project requires PHP 8.3 or higher. Please ensure you have the correct PHP version installed.
-
-```bash
-# Check PHP version
-php -v
-
-# Expected output: PHP 8.3.x or higher
-```
-
-**Setup Steps:**
+### 2. Backend (Laravel API)
 ```bash
 cd backend
-
-# Install Composer dependencies
 composer install
-
-# Copy environment file
 cp .env.example .env
-
-# Generate application key
 php artisan key:generate
-
-# Run database migrations
-php artisan migrate
-
-# Seed database with sample data
-php artisan db:seed
-
-# Start Laravel development server
+# set DB_DATABASE, DB_USERNAME, DB_PASSWORD in .env (default DB name: silatorjana)
+php artisan migrate --seed
 php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-#### 4️⃣ Mobile Setup (Flutter)
+### 3. Frontend (React web)
+```bash
+# from project root
+npm install
+npm run dev:frontend     # Vite dev server only (default http://localhost:5173)
+```
+
+### 4. Run both together
+```bash
+# from project root — starts Vite + runs migrations + starts Laravel concurrently
+npm run dev
+```
+The Vite dev server proxies `/api` and `/data/upload` to `http://localhost:8000` (see `vite.config.ts`), so no separate API base URL config is needed in dev.
+
+### 5. Mobile app (Flutter)
 ```bash
 cd silatorjana_flutter
-
-# Get Flutter dependencies
 flutter pub get
-
-# Run on connected device/emulator
 flutter run
-
-# Build APK for Android
-flutter build apk
-
-# Build IPA for iOS
-flutter build ios
-
-# Build web version
-flutter build web
 ```
 
-#### 5️⃣ Run Full Stack Development
+### Alternative: Docker (backend only)
+A `docker-compose.yml` is provided to run Laravel + MySQL without touching a local PHP install:
 ```bash
-# From project root, run both frontend and backend concurrently
-npm run dev
-
-# This will start:
-# - Vite frontend on http://localhost:5173
-# - Laravel backend on http://localhost:8000
+docker compose up -d
+docker compose exec app composer install --no-interaction --prefer-dist
+docker compose exec app cp .env.example .env
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --force --seed
 ```
+See `README_DEV.md` for the full Docker walkthrough.
 
 ---
 
@@ -228,295 +202,88 @@ npm run dev
 
 ```
 SILATORJANA/
-├── src/                           # Frontend React source code
-│   ├── components/                # Reusable React components
-│   ├── pages/                     # Page components & routing
-│   ├── hooks/                     # Custom React hooks
-│   ├── utils/                     # Utility functions
-│   ├── styles/                    # Global styles & Tailwind
-│   ├── App.tsx                    # Root component
-│   └── main.tsx                   # Entry point
-├── public/                        # Static assets
-├── backend/                       # Laravel backend
-│   ├── app/                       # Application core
-│   │   ├── Http/Controllers/      # API controllers
-│   │   ├── Models/                # Database models
-│   │   └── Requests/              # Form request validation
-│   ├── routes/                    # API routes
-│   ├── database/
-│   │   ├── migrations/            # Database migrations
-│   │   └── seeders/               # Database seeders
-│   ├── config/                    # Configuration files
-│   └── .env.example               # Environment template
-├── silatorjana_flutter/           # Flutter mobile app
-│   ├── lib/
-│   │   ├── screens/               # Screen widgets
-│   │   ├── widgets/               # Reusable widgets
-│   │   ├── services/              # API & business logic
-│   │   ├── models/                # Data models
-│   │   └── main.dart              # Entry point
-│   ├── android/                   # Android configuration
-│   ├── ios/                       # iOS configuration
-│   └── pubspec.yaml               # Dependencies
-├── package.json                   # Frontend dependencies
-├── vite.config.ts                 # Vite configuration
-├── tailwind.config.ts             # Tailwind configuration
-├── tsconfig.json                  # TypeScript configuration
-└── README.md                      # This file
+├── src/                          # React web frontend
+│   ├── pages/                    # Pages grouped by role
+│   │   ├── admin/  pengusul/  verifikator/  ppk/
+│   │   ├── wadir/  bendahara/  rektorat/  approval/  dashboard/  shared/
+│   ├── layouts/                  # RoleLayout (sidebar/topbar, role-aware nav)
+│   ├── lib/                      # api.ts (axios + auth interceptor), helpers
+│   └── components/                # Reusable UI (shadcn-based)
+│
+├── backend/                      # Laravel API
+│   ├── app/Http/Controllers/Api/ # AuthController, KegiatanController, LpjController, SpkController, UserController...
+│   ├── app/Http/Middleware/      # CheckRole (RBAC guard)
+│   ├── app/Models/                # Kegiatan, Kak, Iku, Rab, RabRealisasi, Lpj, LpjFile,
+│   │                               # PencairanDana, SpkKriteria, SpkPenilaian, StatusHistory, User, Jurusan
+│   ├── database/migrations/
+│   └── routes/api.php
+│
+├── silatorjana_flutter/          # Flutter mobile app (Feature-First MVVM)
+│   └── lib/features/
+│       ├── auth/  kegiatan/  lpj/  bendahara/  chat/
+│       └── documents/  master_data/  monitoring/  profile/  user_management/
+│
+├── docker-compose.yml             # Laravel + MySQL containers
+├── README_DEV.md                  # Docker dev environment guide
+└── skills/skill.md                # Full internal architecture reference
 ```
 
 ---
 
-## 🔄 Development Workflow
+## 🗄️ Database Overview
 
-### Creating a Feature
-
-1. **🍴 Fork & Clone**
-   ```bash
-   git clone https://github.com/UDIN-COY/SILATORJANA.git
-   cd SILATORJANA
-   ```
-
-2. **🌿 Create Feature Branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-
-3. **💻 Make Changes**
-   - Frontend: Edit React components in `src/`
-   - Backend: Update Laravel code in `backend/`
-   - Mobile: Modify Flutter code in `silatorjana_flutter/`
-
-4. **✅ Test Your Changes**
-   ```bash
-   # Run type checking
-   npm run lint
-   
-   # Test frontend
-   npm run dev:frontend
-   
-   # Test backend
-   cd backend && php artisan serve
-   
-   # Test mobile
-   cd silatorjana_flutter && flutter run
-   ```
-
-5. **💾 Commit Changes**
-   ```bash
-   git add .
-   git commit -m "feat: add amazing feature"
-   ```
-
-6. **📤 Push to Branch**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-
-7. **🔀 Create Pull Request**
-   - Go to GitHub repository
-   - Click "New Pull Request"
-   - Select your feature branch
-   - Add clear description of changes
-   - Request reviewers
-   - Submit for review
+Central table is `kegiatan` (the activity proposal), related to:
+- `kaks` (1:1) — KAK: general description, strategy, KPIs, timing
+- `ikus` (1:N) — IKU: percentage-based key performance indicators
+- `rabs` (1:N) — planned budget line items (category, price, qty)
+- `rab_realisasi` — actual/realized spending, compared against `rabs`
+- `status_histories` (1:N) — every status change, auto-logged via an Eloquent Observer, including a JSON snapshot
+- `lpjs` / `lpj_files` — accountability reports and their attachments
+- `pencairan_dana` — fund disbursement records (supports partial/staged release)
+- `spk_kriteria` / `spk_penilaian` — MOORA criteria & computed LPJ quality scores
+- `users` — bcrypt-hashed passwords, bound to a `role` column, with optional biometric login fields
 
 ---
 
-## 📊 Language Composition
+## 📚 API Overview
 
-```
-TypeScript  ████████████████████░░░░░░░░░░░░░░░  40.3%
-Dart        ███████████████░░░░░░░░░░░░░░░░░░░░░  33.4%
-PHP         █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  10.5%
-HTML        ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  6.6%
-Blade       ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  3.4%
-Shell       █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  1.8%
-Other       ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  4.0%
-```
+Base URL (dev): `http://localhost:8000/api`
 
-### Framework Distribution
-- **React Ecosystem**: 40.3% (TypeScript + HTML)
-- **Flutter/Dart**: 33.4%
-- **Laravel/PHP**: 13.9% (PHP + Blade)
-- **Configuration & Other**: 12.4%
+| Endpoint | Description |
+|---|---|
+| `POST /login` | Email/password login (rate-limited 5/min), returns a Sanctum bearer token |
+| `POST /biometric-login` | Mobile biometric login using a pre-issued device token |
+| `GET /health` | Liveness check |
+| `GET\|POST\|PUT\|PATCH /kegiatan` | Proposal CRUD (write access scoped to `pengusul`/`admin`; status updates scoped per-role) |
+| `GET\|POST /lpj` | Accountability report submission & review |
+| `POST /chat` | "Jana" AI assistant — proxies to OpenRouter with a Si-LATORJANA system prompt |
+| `GET /users` | Admin-only user management |
+
+All protected routes require `Authorization: Bearer <token>` and are guarded by the `auth:sanctum` and custom `role:` middleware.
 
 ---
 
-## 🔐 Security & Best Practices
+## 🔐 Security Notes
 
-- ✅ Type-safe development with TypeScript
-- ✅ Environment-based configuration (`.env`)
-- ✅ CORS-enabled API with Laravel
-- ✅ SQL injection prevention with ORM
-- ✅ Input validation on frontend & backend
-- ✅ HTTPS ready for production
-- ✅ Database migration versioning
-- ✅ Component-based architecture for maintainability
-- ✅ PHP 8.3+ with latest security patches
-
----
-
-## 📚 API Documentation
-
-### Base URL
-```
-http://localhost:8000/api
-```
-
-### Available Endpoints
-- Endpoints will be documented as the project develops
-- RESTful conventions are followed
-- All requests/responses use JSON format
-
-### Authentication
-- JWT token-based authentication (to be implemented)
-- Role-based access control (RBAC)
-- Session management for web platform
-
----
-
-## 🐛 Troubleshooting
-
-### Frontend Issues
-```bash
-# Clear node_modules and reinstall
-rm -rf node_modules package-lock.json
-npm install
-
-# Clear Vite cache
-rm -rf dist
-npm run build
-```
-
-### Backend Issues
-```bash
-# Check PHP version (must be 8.3+)
-php -v
-
-# Clear Laravel cache
-php artisan cache:clear
-php artisan config:clear
-
-# Fresh migrations
-php artisan migrate:fresh --seed
-
-# Check logs
-tail -f storage/logs/laravel.log
-```
-
-### Mobile Issues
-```bash
-# Clean Flutter build
-flutter clean
-flutter pub get
-
-# Run with verbose output
-flutter run -v
-```
+- Token-based auth via Laravel Sanctum (not session cookies) — same API serves web and mobile
+- Role middleware (`CheckRole`) enforced on every write endpoint, not just hidden in the UI
+- Login endpoint throttled to 5 attempts/minute
+- Approved proposal data is snapshotted (`payload_snapshot`) to prevent retroactive tampering
+- See `DOKUMEN_KEAMANAN.md` for the full security documentation (Bahasa Indonesia)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-### MIT License Summary
-- ✅ Use for commercial purposes
-- ✅ Modify the code
-- ✅ Distribute the code
-- ✅ Use privately
-- ⚠️ Include license and copyright notice
-- ⚠️ No liability or warranty
+This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🤝 Contributing
+## 👨‍💻 Developer
 
-We welcome contributions from developers of all skill levels! 
-
-### How to Contribute
-1. **Report Bugs**: Open an issue describing the bug
-2. **Suggest Features**: Submit feature requests with use cases
-3. **Improve Code**: Submit pull requests with improvements
-4. **Fix Documentation**: Help improve project documentation
-5. **Share Ideas**: Participate in discussions
-
-### Contribution Guidelines
-- Follow the existing code style and conventions
-- Write clear, descriptive commit messages
-- Include comments for complex logic
-- Test your changes before submitting
-- Update documentation if needed
-- Be respectful and constructive
-- Ensure PHP 8.3+ compatibility for backend changes
-
----
-
-## 💬 Support & Community
-
-- 🐛 **Report Bugs**: [Open an Issue](https://github.com/UDIN-COY/SILATORJANA/issues)
-- 💡 **Request Features**: [Discussions](https://github.com/UDIN-COY/SILATORJANA/discussions)
-- 📖 **Wiki**: [Project Wiki](https://github.com/UDIN-COY/SILATORJANA/wiki)
-- 📧 **Email**: For urgent matters, contact repository maintainer
-
----
-
-## 🚀 Roadmap
-
-### Phase 1: MVP (Current)
-- [x] Frontend setup with React + TypeScript
-- [x] Backend setup with Laravel (PHP 8.3+)
-- [x] Mobile app foundation with Flutter
-- [ ] User authentication system
-- [ ] Database schema design
-- [ ] Basic API endpoints
-
-### Phase 2: Core Features
-- [ ] Real-time data synchronization
-- [ ] User profile management
-- [ ] Push notifications
-- [ ] Offline mode for mobile
-- [ ] Advanced UI components
-
-### Phase 3: Enhancement
-- [ ] Performance optimization
-- [ ] Analytics integration
-- [ ] Advanced security features
-- [ ] Admin dashboard
-- [ ] API versioning
-
-### Phase 4: Production
-- [ ] Load testing & optimization
-- [ ] Security audit
-- [ ] Documentation completion
-- [ ] CI/CD pipeline
-- [ ] Production deployment
-
----
-
-## 👨‍💻 Developer Information
-
-**Repository Owner:** [@UDIN-COY](https://github.com/UDIN-COY)
-
-**Project Started:** June 2026
-
-**Last Updated:** June 2026
-
+**Owner:** [@UDIN-K](https://github.com/UDIN-K)
 **Repository:** [github.com/UDIN-COY/SILATORJANA](https://github.com/UDIN-COY/SILATORJANA)
 
----
-
 <div align="center">
-  <p>
-    <strong>Built with ❤️ by the SILATORJANA Team</strong>
-  </p>
-  <p>
-    <img src="https://img.shields.io/github/last-commit/UDIN-COY/SILATORJANA?style=flat-square&logo=github" alt="Last Commit">
-    <img src="https://img.shields.io/github/repo-size/UDIN-COY/SILATORJANA?style=flat-square&logo=github" alt="Repo Size">
-    <img src="https://img.shields.io/github/languages/count/UDIN-COY/SILATORJANA?style=flat-square&logo=github" alt="Languages">
-  </p>
-  <p>
-    <a href="https://github.com/UDIN-COY/SILATORJANA/stargazers">⭐ Star us on GitHub!</a>
-  </p>
+  <p><a href="https://github.com/UDIN-COY/SILATORJANA/stargazers">⭐ Star this repo if it's useful!</a></p>
 </div>
