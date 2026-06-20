@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/TypeScript-40.3%25-blue?style=flat-square&logo=typescript" alt="TypeScript">
   <img src="https://img.shields.io/badge/Dart-33.4%25-0175C2?style=flat-square&logo=dart" alt="Dart">
   <img src="https://img.shields.io/badge/PHP-10.5%25-777BB4?style=flat-square&logo=php" alt="PHP">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square&logo=opensource" alt="License">
+  <img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat-square&logo=gnu" alt="License">
   <img src="https://img.shields.io/github/stars/UDIN-COY/SILATORJANA?style=flat-square&logo=github" alt="Stars">
 </div>
 
@@ -275,7 +275,9 @@ All protected routes require `Authorization: Bearer <token>` and are guarded by 
 
 ## 📄 License
 
-This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** — see [LICENSE](LICENSE) for the full text.
+
+In short: anyone is free to use, modify, and even run this commercially or institutionally. The key condition is the **network copyleft clause** — if you run a modified version of this software as a service (e.g. deploy it for an organization's internal use over a network), you must make the modified source code available to that software's users. This prevents anyone from taking the code, modifying it, and operating it privately without giving back to the community.
 
 ---
 
