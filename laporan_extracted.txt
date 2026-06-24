@@ -1,0 +1,472 @@
+LAPORAN PROJEK AKHIR SPK
+Si-LATORJANA — Sistem Informasi Layanan Administrasi Pelaporan Kegiatan Jurusan Berbasis Metode MOORA (Multi-Objective Optimization on the basis of Ratio Analysis)
+ 
+KELAS : TI 4C
+ANGGOTA TIM:
+PASSA PANGGALANG - 2407411061
+MUHAMMAD IRZALDI ALAMSYAH - 2407411082
+MUHMAMAD AURAKHA GHAZY ZACKHARY - 2407411069
+MUHAMMAD SYAFRI SYAMSUDIN - 2407411085
+JUAN HERBERT APRIANTO MARPAUNG - 2407411080
+  
+ 
+PROGRAM STUDI TEKNIK INFORMATIKA
+JURUSAN TEKNIK INFORMATIKA DAN KOMPUTER
+POLITEKNIK NEGERI JAKARTA
+2026
+BAB I — PENDAHULUAN
+1.1 Latar Belakang Masalah
+Pengelolaan kegiatan kemahasiswaan di lingkungan Politeknik Negeri Jakarta melibatkan serangkaian proses administrasi yang kompleks dan multi-pihak, mulai dari pengajuan usulan kegiatan, verifikasi bertahap oleh beberapa pejabat, pencairan dana, hingga pelaporan pertanggungjawaban kegiatan (LPJ). Proses ini selama ini dilakukan secara manual atau semi-digital melalui dokumen fisik dan berkas yang terpisah-pisah, sehingga menyebabkan berbagai masalah, antara lain:
+Inefisiensi waktu: Proses persetujuan yang berjenjang (Pengusul  Verifikator  PPK  Wakil Direktur  Bendahara  Rektorat) memerlukan waktu lama karena berkas harus berpindah tangan secara fisik.
+Minimnya transparansi: Pengusul kegiatan tidak dapat memantau secara real-time di tahap mana proposal mereka berada dalam alur persetujuan.
+Ketidakkonsistenan evaluasi LPJ: Penilaian kualitas pelaksanaan kegiatan belum menggunakan standar yang terukur dan objektif, sehingga sulit membandingkan antar kegiatan secara adil.
+Arsip tidak terstruktur: Dokumen RAB, KAK, dan LPJ tersebar dan sulit diakses kembali untuk kebutuhan audit maupun evaluasi kinerja jurusan.
+Untuk mengatasi permasalahan tersebut, dikembangkan Si-LATORJANA (Sistem Layanan Administrasi Pelaporan Kegiatan Jurusan), sebuah aplikasi mobile berbasis Flutter yang terintegrasi dengan backend Laravel. Aplikasi ini mengotomasi seluruh alur administrasi kegiatan sekaligus mengintegrasikan modul Sistem Pendukung Keputusan (SPK) menggunakan metode MOORA untuk mengevaluasi dan meranking kualitas pelaksanaan kegiatan berdasarkan empat kriteria terukur.
+Metode MOORA dipilih karena memiliki keunggulan dalam kemampuannya menangani pengambilan keputusan multi-kriteria secara matematis, mudah dipahami, komputasinya efisien, serta telah terbukti dalam berbagai penelitian untuk menyelesaikan masalah perankingan alternatif yang melibatkan bobot kepentingan berbeda.
+1.2 Tujuan dan Manfaat
+Tujuan
+Membangun sistem informasi terintegrasi yang mengotomasi alur administrasi pengajuan, persetujuan, pencairan dana, dan pelaporan kegiatan jurusan di Politeknik Negeri Jakarta.
+Mengimplementasikan metode MOORA sebagai algoritma evaluasi kualitas pelaksanaan kegiatan berdasarkan kriteria ketepatan waktu, ketepatan anggaran, kesesuaian output IKU, dan kecepatan proses approval LPJ.
+Menyediakan dashboard monitoring dan rekap kinerja jurusan berbasis skor MOORA untuk mendukung pengambilan keputusan pimpinan.
+Manfaat
+Pemangku Kepentingan
+Manfaat
+Pengusul Kegiatan
+Dapat memantau status proposal secara real-time, menerima notifikasi perubahan status, dan mengunggah berkas LPJ secara digital.
+Verifikator / PPK
+Proses review dan persetujuan lebih cepat melalui antarmuka mobile/web.
+Wakil Direktur
+Dapat memonitor seluruh kegiatan di bawah unit masing-masing.
+Bendahara
+Pencatatan pencairan dana terstruktur dan terintegrasi dengan evaluasi LPJ.
+Rektorat
+Akses laporan rekap kinerja seluruh jurusan berbasis skor SPK MOORA.
+Admin
+Manajemen pengguna, konfigurasi IKU, dan manajemen akses biometrik.
+1.3 Pembagian Kerja Anggota Tim
+No
+Nama Anggota
+Peran
+Tanggung Jawab Utama
+1
+MUHAMMAD IRZALDI ALAMSYAH
+Team Leader & Backend Developer
+Arsitektur sistem, Laravel API, alur workflow persetujuan, database design
+2
+MUHMAMAD AURAKHA GHAZY ZACKHARY
+SPK Analyst & Backend Developer
+ Rubrik penilaian kriteria, modul SPK, dan database design
+3
+MUHAMMAD SYAFRI SYAMSUDIN
+Mobile Developer & Backend Developer
+Flutter UI/UX, seluruh tampilan aplikasi, integrasi REST API, dan Arsitektur sistem
+4
+JUAN HERBERT APRIANTO MARPAUN
+SPK Analyst & Developer
+Implementasi algoritma MOORA, rubrik penilaian kriteria, modul SPK
+5
+PASSA PANGGALANG
+Quality Assurance & Dokumentasi
+Pengujian sistem, dokumentasi teknis, studi kasus perhitungan
+BAB II — PERANCANGAN SOLUSI DAN IMPLEMENTASI
+2.1 Metode yang Digunakan
+Sistem Pendukung Keputusan pada Si-LATORJANA menggunakan metode MOORA (Multi-Objective Optimization on the basis of Ratio Analysis), sebuah metode MCDM (Multi-Criteria Decision Making) yang diperkenalkan oleh Brauers & Zavadskas (2006).
+Alasan Pemilihan MOORA
+Sederhana dan transparan: Langkah perhitungan mudah dipahami dan dapat diaudit.
+Efisien secara komputasi: Cocok untuk integrasi real-time dalam sistem API.
+Robust: Terbukti menghasilkan ranking yang konsisten meski jumlah alternatif berubah.
+Fleksibel: Mendukung kriteria benefit (semakin besar semakin baik) dan cost (semakin kecil semakin baik).
+Tahapan Metode MOORA
+Tahap 1 — Pra-pemrosesan (Rubrik Penalti)
+Data lapangan (tanggal, nominal, capaian IKU) dikonversi ke skor skala  untuk setiap kriteria menggunakan rubrik yang telah ditentukan.
+Tahap 2 — Pembentukan Matriks Keputusan
+Di mana  adalah skor kriteria ke- untuk alternatif ke-.
+Tahap 3 — Normalisasi Matriks (Rasio Akar Kuadrat)
+Tahap 4 — Nilai Preferensi Akhir ()
+Karena semua kriteria bersifat benefit:
+Di mana  adalah bobot kriteria ke-.
+Tahap 5 — Penentuan Grade
+Skor Yi​
+Grade
+Keterangan
+A
+Sangat Baik
+B
+Baik
+C
+Cukup
+D
+Kurang
+2.2 Kriteria dan Alternatif
+Proses Penggalian Kriteria dan Alternatif
+Kriteria, bobot, dan kebutuhan sistem diperoleh melalui wawancara yang dilaksanakan secara daring menggunakan platform Google Meet bersama Wakil Direktur II (Wadir II) Politeknik Negeri Jakarta. Metode wawancara dipilih karena memungkinkan penggalian informasi secara mendalam dan interaktif langsung dari pemangku kepentingan yang berwenang dalam proses administrasi kegiatan jurusan.
+Wawancara berfokus pada:
+Aspek-aspek apa yang dianggap penting dalam mengevaluasi keberhasilan pelaksanaan kegiatan jurusan
+Alur proses administrasi yang selama ini berjalan (pengajuan $\rightarrow$ persetujuan $\rightarrow$ pencairan $\rightarrow$ LPJ)
+Permasalahan yang dihadapi dalam proses evaluasi LPJ yang berjalan saat ini
+Kebutuhan fitur dan informasi yang perlu ditampilkan dalam sistem
+Dari hasil wawancara tersebut diperoleh empat kriteria utama beserta bobot kepentingannya, alur persetujuan multi-pihak, serta kebutuhan fungsional sistem yang kemudian menjadi dasar perancangan Si-LATORJANA.
+Kriteria yang Digunakan
+Kode
+Nama Kriteria
+Tipe
+Bobot
+Rubrik Penilaian
+C1
+Ketepatan Waktu Pelaksanaan
+Benefit
+. Tepat waktu = ; meleset  hari = 
+C2
+Ketepatan Anggaran
+Benefit
+. Realisasi = RAB = ; selisih  = 
+C3
+Kesesuaian Output IKU
+Benefit
+. Tidak ada IKU =  (netral)
+C4
+Waktu Approval LPJ
+Benefit
+. Disetujui hari yang sama = ;  hari = 
+Alternatif
+No
+Kode
+Nama Kegiatan
+Jurusan
+Pengusul
+1
+A1
+Seminar Nasional Teknologi dan Inovasi 2026
+Teknik Informatika dan Komputer
+Himpunan Mahasiswa TIK
+2
+A2
+Lomba Rancang Bangun Mesin Tingkat Nasional
+Teknik Mesin
+Himpunan Mahasiswa Mesin
+3
+A3
+Pelatihan Sertifikasi Akuntansi Dasar
+Akuntansi
+Himpunan Mahasiswa Akuntansi
+4
+A4
+Workshop Digital Marketing UMKM
+Administrasi Niaga
+Himpunan Mahasiswa Adm. Niaga
+5
+A5
+Pameran Karya Desain Grafis Mahasiswa
+Teknik Grafika dan Penerbitan
+Himpunan Mahasiswa TGP
+2.3 Perhitungan Studi Kasus Menggunakan Metode MOORA
+NOTE: Contoh di bawah menggunakan data hipotetis. Ganti dengan data nyata dari sistem sesuai alternatif yang dipilih tim.
+Langkah 1 — Data Mentah & Konversi ke Skor Rubrik
+Alternatif
+Deviasi C1
+Deviasi C2
+Capaian C3
+Durasi C4
+Skor C1
+Skor C2
+Skor C3
+Skor C4
+A1
+ hari
+ hari
+A2
+ hari
+ hari
+A3
+ hari
+ hari
+A4
+ hari
+ hari
+A5
+ hari
+ hari
+Rumus konversi:
+C1: 
+C2: 
+C3: 
+C4: 
+Langkah 2 — Matriks Keputusan (X)
+Langkah 3 — Normalisasi MOORA
+Hitung  per kolom:
+Kriteria
+∑xij2​
+∑xij2​​
+C1
+C2
+C3
+C4
+Normalisasi:
+Alternatif
+xC1∗​
+xC2∗​
+xC3∗​
+xC4∗​
+A1
+A2
+A3
+A4
+A5
+Langkah 4 — Nilai Preferensi Akhir ()
+Bobot semua kriteria . Karena semua benefit:
+Alternatif
+Perhitungan Yi​
+Skor Yi​
+Grade
+Ranking
+A1
+B
+1
+A2
+C
+2
+A3
+C
+3
+A4
+D
+4
+A5
+D
+5
+Kesimpulan: A1 menempati ranking tertinggi dengan  (Grade B), artinya kegiatan tersebut dilaksanakan dengan ketepatan waktu, anggaran, dan kualitas output terbaik di antara semua alternatif yang dievaluasi.
+2.4 Use Case Diagram
+Si-LATORJANA System
+Aktor:
+👤 Pengusul
+👤 Verifikator
+👤 PPK
+👤 Wakil Direktur
+👤 Bendahara
+👤 Rektorat
+👤 Admin
+Daftar Use Case Utama:
+📝 Buat Usulan Kegiatan (KAK + IKU + RAB)
+📤 Submit Proposal ke PPK
+✅ Verifikasi Proposal
+🖊️ Persetujuan PPK
+🖊️ Persetujuan Wakil Direktur
+💰 Kelola Pencairan Dana
+📋 Upload LPJ & Realisasi
+🔍 Verifikasi LPJ
+✅ Approval LPJ
+🧮 Hitung SPK MOORA
+📊 Lihat Ranking & Grade
+📈 Monitoring & Timeline
+🏫 Rekap Kinerja Jurusan
+👥 Manajemen Pengguna
+⚙️ Konfigurasi IKU Master
+🤖 Chat Jana AI
+🔐 Login / Biometrik
+2.5 Entity Relationship (ER) Diagram
+Struktur basis data Si-LATORJANA memuat entitas berikut:
+1. USERS
+Kolom
+Tipe Data
+Keterangan
+id
+bigint
+Primary Key
+nama
+string
+email
+string
+role
+string
+jurusan
+string
+verifikator_unit
+string
+allow_biometric
+boolean
+biometric_token
+string
+created_at
+timestamp
+2. KEGIATAN
+Kolom
+Tipe Data
+Keterangan
+id
+bigint
+Primary Key
+nama_kegiatan
+string
+jenis_kegiatan
+string
+pengusul_id
+bigint
+Foreign Key (USERS)
+pengusul_nama
+string
+pengusul_organisasi
+string
+nama_jurusan
+string
+tanggal_kegiatan
+date
+tempat
+string
+status
+string
+total_anggaran
+decimal
+catatan_revisi
+string
+verifikator_target
+string
+kode_mak
+string
+penanggung_jawab
+json
+surat_pengantar
+string
+uang_muka_diambil
+boolean
+deadline_lpj
+date
+3. KAK (Kerangka Acuan Kegiatan)
+Kolom
+Tipe Data
+Keterangan
+id
+bigint
+Primary Key
+kegiatan_id
+bigint
+Foreign Key (KEGIATAN)
+gambaran_umum
+text
+penerima_manfaat
+text
+strategi_pencapaian
+text
+metode_pelaksanaan
+text
+tahapan_pelaksanaan
+text
+indikator_kinerja
+text
+kurun_waktu_mulai
+date
+kurun_waktu_selesai
+date
+4. IKU & IKU_MASTER
+IKU_MASTER: id (PK, bigint), kode_iku (string), nama_iku (string), deskripsi (text)
+IKU: id (PK, bigint), kegiatan_id (FK, bigint), nama_iku (string), target_persen (decimal), capaian_persen (decimal)
+5. RAB & RAB_REALISASI
+RAB: id (PK), kegiatan_id (FK), uraian, kategori, harga_satuan, qty1, satuan1, qty2, satuan2, qty3, satuan3, total
+RAB_REALISASI: id (PK), kegiatan_id (FK), rab_id (FK), qty1, satuan1, qty2, satuan2, qty3, satuan3, harga_satuan
+6. LPJ & LPJ_FILES
+LPJ: id (PK), kegiatan_id (FK), catatan_pengusul, catatan_verifikasi, catatan_bendahara, status_verifikasi, file_lpj, tanggal_pengajuan, tanggal_pelaksanaan_real, tanggal_disetujui, deadline, verified_by
+LPJ_FILES: id (PK), lpj_id (FK), kegiatan_id (FK), rab_id (FK), kategori, filename, original_name, file_size, uploaded_at
+7. PENCAIRAN_DANA
+Kolom
+Tipe Data
+Keterangan
+id
+bigint
+Primary Key
+kegiatan_id
+bigint
+Foreign Key (KEGIATAN)
+persentase
+decimal
+nominal
+decimal
+catatan
+string
+is_taken
+boolean
+tanggal_pengambilan
+date
+created_by
+bigint
+Foreign Key (USERS)
+8. SPK_KRITERIA & SPK_PENILAIAN
+SPK_KRITERIA: id (PK), kode, nama, tipe, bobot, deskripsi
+SPK_PENILAIAN: id (PK), kegiatan_id (FK), lpj_id (FK), skor_c1, skor_c2, skor_c3, skor_c4, norm_c1, norm_c2, norm_c3, norm_c4, skor_akhir, grade, dinilai_oleh, dinilai_pada
+9. STATUS_HISTORY
+Kolom
+Tipe Data
+Keterangan
+id
+bigint
+Primary Key
+ref_type
+string
+ref_id
+bigint
+status_lama
+string
+status_baru
+string
+catatan
+string
+user_id
+bigint
+Foreign Key (USERS)
+user_nama
+string
+user_role
+string
+payload_snapshot
+json
+created_at
+timestamp
+BAB III — IMPLEMENTASI
+3.1 Tampilan Aplikasi Per Fitur
+Aplikasi Si-LATORJANA dikembangkan menggunakan Flutter (frontend mobile/desktop) dan Laravel 11 (backend REST API). Berikut deskripsi tampilan per fitur:
+3.1.1 Alur Persetujuan (Approval Workflow)
+Fitur: Tombol aksi sesuai role dan status kegiatan aktif.
+Status
+Aktor
+Aksi Tersedia
+draft
+Pengusul
+Submit ke PPK
+submitted
+Verifikator
+Verifikasi / Minta Revisi
+verified / pending_ppk
+PPK
+Setujui / Tolak
+approved_ppk
+Wakil Direktur
+Setujui / Tolak
+approved_wadir
+Bendahara
+Cairkan Dana Pertama ()
+lpj_submitted
+Bendahara
+Approve / Revisi / Tolak LPJ
+lpj_approved
+System
+Auto  completed, hitung SPK
+3.1.2 SPK MOORA — Evaluasi & Ranking
+Fitur: Kalkulasi dan tampilan hasil evaluasi MOORA per kegiatan.
+Hitung Real-time: Menampilkan detail perhitungan per kegiatan:
+Skor rubrik C1, C2, C3, C4 ()
+Matriks keputusan
+Nilai normalisasi per kriteria
+Skor akhir  dan Grade (A/B/C/D)
+Penjelasan keterangan per kriteria
+Ranking Batch: Tabel ranking semua LPJ yang menunggu evaluasi, diurutkan dari  tertinggi
+Riwayat Penilaian: Arsip seluruh kegiatan yang sudah dinilai
+Rekap Jurusan: Rata-rata skor per jurusan dengan distribusi grade
+DAFTAR REFERENSI
+Brauers, W. K. M., & Zavadskas, E. K. (2006). The MOORA Method and its Application to Privatization in a Transition Economy. Control and Cybernetics, 35(2), 445–469.
+Brauers, W. K. M., & Zavadskas, E. K. (2009). Robustness of the Multi-Objective MOORA Method with a Test for the Facilities Sector. Technological and Economic Development of Economy, 15(2), 352–375.
+Gadakh, V. S. (2011). Application of MOORA Method for Parametric Optimization of Milling Process. International Journal of Applied Engineering Research, 1(4), 743–758.
+Stanujkic, D., Djordjevic, B., & Djordjevic, M. (2013). Comparative Analysis of Some Prominent MCDM Methods: A Case of Ranking Serbian Banks. Serbian Journal of Management, 8(2), 213–241.
+Karande, P., & Chakraborty, S. (2012). Application of Multi-Objective Optimization on the Basis of Ratio Analysis (MOORA) Method for Materials Selection. Materials & Design, 37, 317–324.
+Chakraborty, S. (2011). Applications of the MOORA Method for Decision Making in Manufacturing Environment. International Journal of Advanced Manufacturing Technology, 54(9–12), 1155–1166.
+Sharma, H. K., Kour, R., & Singh, M. (2020). A Study on MOORA Method for Decision Making. International Journal of Scientific Research and Engineering Development, 3(2), 532–535.
+Laravel LLC. (2024). Laravel 11.x Documentation. https://laravel.com/docs/11.x
+Google LLC. (2024). Flutter 3.x Documentation. https://docs.flutter.dev
+Politeknik Negeri Jakarta. (2024). Pedoman Administrasi Kegiatan Kemahasiswaan Politeknik Negeri Jakarta. Depok: PNJ Press.

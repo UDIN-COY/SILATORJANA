@@ -483,11 +483,22 @@ class MooraCalculator
             $matriksTerbobot[] = $weightedRow;
         }
 
-        // Hitung preferensi Yi dan ambil skorAkhir target (indeks 0)
+        // Hitung preferensi Yi (Skor MOORA baku)
         $skorList = $this->hitungPreferensi($matriksNorm, $bobot);
-        $skorAkhir = $skorList[0] ?? 0.0;
+        $yiTarget = $skorList[0] ?? 0.0;
 
-        $grade = $this->tentukanGrade($skorAkhir);
+        // Hitung Y_ideal (Nilai MOORA maksimal teoritis jika skor rubrik = 100)
+        $yIdeal = 0;
+        foreach ($bobot as $j => $w) {
+            $p = $pembagi[$j] ?? 1.0;
+            $yIdeal += $w * (100.0 / $p);
+        }
+
+        // Skor Relatif untuk Grading (skala 0 - 1)
+        $skorAkhirRelatif = $yIdeal > 0 ? ($yiTarget / $yIdeal) : 0;
+        $skorAkhirRelatif = min(1.0, max(0.0, $skorAkhirRelatif));
+
+        $grade = $this->tentukanGrade($skorAkhirRelatif);
 
         return [
             'kegiatan_id'         => $kegiatanId,
@@ -497,7 +508,7 @@ class MooraCalculator
             'pembagi'             => array_map(fn($v) => round($v, 6), $pembagi),
             'matriks_normalisasi' => $matriksNorm,
             'matriks_terbobot'    => $matriksTerbobot,
-            'skor_akhir'          => round($skorAkhir, 6),
+            'skor_akhir'          => round($skorAkhirRelatif, 6),
             'grade'               => $grade,
             'detail_rubrik'       => $rubrikTarget['detail'],
         ];
@@ -539,6 +550,13 @@ class MooraCalculator
         $matriksNorm = $normResult['normalisasi'];
         $pembagi     = $normResult['pembagi'];
 
+        // Hitung Y_ideal untuk normalisasi Absolute Grading
+        $yIdeal = 0;
+        foreach ($bobot as $j => $w) {
+            $p = $pembagi[$j] ?? 1.0;
+            $yIdeal += $w * (100.0 / $p);
+        }
+
         // Hitung matriks terbobot (Y)
         $matriksTerbobotAll = [];
         foreach ($matriksNorm as $row) {
@@ -556,9 +574,12 @@ class MooraCalculator
             $rubrik = $rubrikList[$id];
 
             // Skor akhir Yi dari matriks normalisasi melalui hitungPreferensi() — MOORA baku
-            // Yi = Σ (wj × x*ij)  (semua kriteria benefit)
             $skorList  = $this->hitungPreferensi([$matriksNorm[$idx] ?? [0, 0, 0, 0]], $bobot);
-            $skorAkhir = $skorList[0] ?? 0.0;
+            $yiTarget  = $skorList[0] ?? 0.0;
+
+            // Skor Relatif untuk Grading (skala 0 - 1)
+            $skorAkhirRelatif = $yIdeal > 0 ? ($yiTarget / $yIdeal) : 0;
+            $skorAkhirRelatif = min(1.0, max(0.0, $skorAkhirRelatif));
 
             $hasil[] = [
                 'kegiatan_id'       => $id,
@@ -566,8 +587,8 @@ class MooraCalculator
                 'matriks_keputusan' => $matriksKeputusan[$idx],
                 'normalisasi'       => $matriksNorm[$idx] ?? [0, 0, 0, 0],
                 'matriks_terbobot'  => [$matriksTerbobotAll[$idx] ?? [0, 0, 0, 0]],
-                'skor_akhir'        => round($skorAkhir, 6),
-                'grade'             => $this->tentukanGrade($skorAkhir),
+                'skor_akhir'        => round($skorAkhirRelatif, 6),
+                'grade'             => $this->tentukanGrade($skorAkhirRelatif),
                 'detail_rubrik'     => $rubrikList[$id]['detail'] ?? [],
             ];
             $idx++;
